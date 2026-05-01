@@ -2,6 +2,8 @@
 
 $links = [
     ['label' => 'Quan tri', 'href' => '/admin', 'roles' => ['ADMIN']],
+    ['label' => 'Quan ly tai khoan', 'href' => '/admin/users', 'roles' => ['ADMIN']],
+    ['label' => 'Quan ly nguoi dung', 'href' => '/admin/nguoi-dung', 'roles' => ['ADMIN']],
     ['label' => 'Ban to chuc', 'href' => '/ban-to-chuc', 'roles' => ['BAN_TO_CHUC', 'ADMIN']],
     ['label' => 'Trong tai', 'href' => '/trong-tai', 'roles' => ['TRONG_TAI', 'ADMIN']],
     ['label' => 'Huan luyen vien', 'href' => '/huan-luyen-vien', 'roles' => ['HUAN_LUYEN_VIEN', 'ADMIN']],

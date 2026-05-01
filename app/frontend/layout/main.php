@@ -9,8 +9,11 @@ $authUser = Auth::user();
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= e(config('app.name', 'VTMS')) ?></title>
+    <title><?= e($pageTitle ?? config('app.name', 'VTMS')) ?></title>
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
+    <?php foreach (($styles ?? []) as $style): ?>
+        <link rel="stylesheet" href="<?= e(asset($style)) ?>">
+    <?php endforeach; ?>
 </head>
 <body>
     <header class="topbar">
@@ -32,5 +35,8 @@ $authUser = Auth::user();
     <main class="page">
         <?= $content ?>
     </main>
+    <?php foreach (($scripts ?? []) as $script): ?>
+        <script src="<?= e(asset($script)) ?>"></script>
+    <?php endforeach; ?>
 </body>
 </html>
