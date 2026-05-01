@@ -1,0 +1,30 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime files
+*.log
+logs/
+cache/
+tmp/
+temp/
+
+# User uploads and generated files
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Dependencies installed locally
+vendor/
+node_modules/
+
+# IDE and OS metadata
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Local agent/tooling state
+.sixth/
