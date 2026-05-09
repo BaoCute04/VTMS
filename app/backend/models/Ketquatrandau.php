@@ -69,13 +69,47 @@ final class Ketquatrandau extends Model
         );
     }
 
+    public function listForSpectator(array $filters = []): array
+    {
+        [$where, $bindings] = $this->whereForSpectator($filters);
+
+        $statement = $this->db()->prepare(
+            $this->baseSelect() . '
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY td.thoigianbatdau DESC, kq.idketqua DESC'
+        );
+        $statement->execute($bindings);
+
+        return $statement->fetchAll();
+    }
+
+    public function findForSpectator(int $resultId): ?array
+    {
+        return $this->first(
+            $this->baseSelect() . "
+             WHERE kq.idketqua = :result_id
+               AND kq.trangthai = 'DA_CONG_BO'
+               AND gd.trangthai IN ('DA_CONG_BO', 'DANG_DIEN_RA', 'DA_KET_THUC')
+             LIMIT 1",
+            ['result_id' => $resultId]
+        );
+    }
+
     public function setsForResult(int $resultId): array
     {
         $statement = $this->db()->prepare(
-            "SELECT iddiemset, idketqua, setthu, diemdoi1, diemdoi2, doithangset
-             FROM Diemset
-             WHERE idketqua = :result_id
-             ORDER BY setthu"
+            "SELECT
+                ds.iddiemset,
+                ds.idketqua,
+                ds.setthu,
+                ds.diemdoi1,
+                ds.diemdoi2,
+                ds.doithangset,
+                winner.tendoibong AS doithangset_ten
+             FROM Diemset ds
+             LEFT JOIN Doibong winner ON winner.iddoibong = ds.doithangset
+             WHERE ds.idketqua = :result_id
+             ORDER BY ds.setthu"
         );
         $statement->execute(['result_id' => $resultId]);
 
@@ -240,6 +274,58 @@ final class Ketquatrandau extends Model
         if (($filters['tournament_id'] ?? null) !== null) {
             $where[] = 'td.idgiaidau = :tournament_id';
             $bindings['tournament_id'] = (int) $filters['tournament_id'];
+        }
+
+        if (($filters['match_id'] ?? null) !== null) {
+            $where[] = 'td.idtrandau = :match_id';
+            $bindings['match_id'] = (int) $filters['match_id'];
+        }
+
+        if (($filters['from'] ?? '') !== '') {
+            $where[] = 'td.thoigianbatdau >= :from_date';
+            $bindings['from_date'] = $filters['from'] . ' 00:00:00';
+        }
+
+        if (($filters['to'] ?? '') !== '') {
+            $where[] = 'td.thoigianbatdau <= :to_date';
+            $bindings['to_date'] = $filters['to'] . ' 23:59:59';
+        }
+
+        return [$where, $bindings];
+    }
+
+    private function whereForSpectator(array $filters): array
+    {
+        $where = [
+            "kq.trangthai = 'DA_CONG_BO'",
+            "gd.trangthai IN ('DA_CONG_BO', 'DANG_DIEN_RA', 'DA_KET_THUC')",
+        ];
+        $bindings = [];
+
+        if (($filters['q'] ?? '') !== '') {
+            $where[] = "(gd.tengiaidau LIKE :keyword_tournament
+                OR d1.tendoibong LIKE :keyword_team_one
+                OR d2.tendoibong LIKE :keyword_team_two
+                OR bd.tenbang LIKE :keyword_group
+                OR sd.tensandau LIKE :keyword_venue
+                OR td.vongdau LIKE :keyword_round)";
+            $keyword = '%' . $filters['q'] . '%';
+            $bindings['keyword_tournament'] = $keyword;
+            $bindings['keyword_team_one'] = $keyword;
+            $bindings['keyword_team_two'] = $keyword;
+            $bindings['keyword_group'] = $keyword;
+            $bindings['keyword_venue'] = $keyword;
+            $bindings['keyword_round'] = $keyword;
+        }
+
+        if (($filters['tournament_id'] ?? null) !== null) {
+            $where[] = 'td.idgiaidau = :tournament_id';
+            $bindings['tournament_id'] = (int) $filters['tournament_id'];
+        }
+
+        if (($filters['team_id'] ?? null) !== null) {
+            $where[] = '(td.iddoibong1 = :team_id OR td.iddoibong2 = :team_id)';
+            $bindings['team_id'] = (int) $filters['team_id'];
         }
 
         if (($filters['match_id'] ?? null) !== null) {

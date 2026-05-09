@@ -196,6 +196,100 @@ final class Yeucaucapnhathoso extends Model
         );
     }
 
+    public function listAthleteChangeRequestsForCoach(int $coachId, array $filters, int $limit, int $offset): array
+    {
+        [$where, $bindings] = $this->buildAthleteCoachWhere($coachId, $filters);
+        $sql = $this->baseAthleteCoachSelect() . ' WHERE ' . implode(' AND ', $where)
+            . ' ORDER BY yc.ngaygui DESC, yc.idyeucaucapnhat DESC LIMIT :limit OFFSET :offset';
+
+        $statement = $this->db()->prepare($sql);
+        $this->bindWhere($statement, $bindings);
+        $statement->bindValue('limit', $limit, PDO::PARAM_INT);
+        $statement->bindValue('offset', $offset, PDO::PARAM_INT);
+        $statement->execute();
+
+        return $statement->fetchAll();
+    }
+
+    public function countAthleteChangeRequestsForCoach(int $coachId, array $filters): int
+    {
+        [$where, $bindings] = $this->buildAthleteCoachWhere($coachId, $filters);
+        $sql = "SELECT COUNT(DISTINCT yc.idyeucaucapnhat) AS total
+            FROM Yeucaucapnhathoso yc
+            JOIN Vandongvien vdv ON vdv.idnguoidung = yc.idnguoidung
+            JOIN Nguoidung nd ON nd.idnguoidung = vdv.idnguoidung
+            JOIN Taikhoan tk ON tk.idtaikhoan = nd.idtaikhoan
+            JOIN Role r ON r.idrole = tk.idrole
+            JOIN Thanhviendoibong tv ON tv.idvandongvien = vdv.idvandongvien
+            JOIN Doibong db ON db.iddoibong = tv.iddoibong
+            LEFT JOIN Thanhviendoibong tv_filter ON tv_filter.idvandongvien = vdv.idvandongvien
+            LEFT JOIN Doibong db_filter ON db_filter.iddoibong = tv_filter.iddoibong";
+
+        $statement = $this->db()->prepare($sql . ' WHERE ' . implode(' AND ', $where));
+        $this->bindWhere($statement, $bindings);
+        $statement->execute();
+        $row = $statement->fetch();
+
+        return (int) ($row['total'] ?? 0);
+    }
+
+    public function statusCountsAthleteChangeRequestsForCoach(int $coachId, array $filters): array
+    {
+        [$where, $bindings] = $this->buildAthleteCoachWhere($coachId, $filters);
+        $sql = "SELECT yc.trangthai, COUNT(DISTINCT yc.idyeucaucapnhat) AS total
+            FROM Yeucaucapnhathoso yc
+            JOIN Vandongvien vdv ON vdv.idnguoidung = yc.idnguoidung
+            JOIN Nguoidung nd ON nd.idnguoidung = vdv.idnguoidung
+            JOIN Taikhoan tk ON tk.idtaikhoan = nd.idtaikhoan
+            JOIN Role r ON r.idrole = tk.idrole
+            JOIN Thanhviendoibong tv ON tv.idvandongvien = vdv.idvandongvien
+            JOIN Doibong db ON db.iddoibong = tv.iddoibong
+            LEFT JOIN Thanhviendoibong tv_filter ON tv_filter.idvandongvien = vdv.idvandongvien
+            LEFT JOIN Doibong db_filter ON db_filter.iddoibong = tv_filter.iddoibong
+            WHERE " . implode(' AND ', $where) . "
+            GROUP BY yc.trangthai";
+
+        $statement = $this->db()->prepare($sql);
+        $this->bindWhere($statement, $bindings);
+        $statement->execute();
+
+        $counts = [
+            'CHO_DUYET' => 0,
+            'DA_DUYET' => 0,
+            'TU_CHOI' => 0,
+        ];
+
+        foreach ($statement->fetchAll() as $row) {
+            $status = (string) $row['trangthai'];
+
+            if (array_key_exists($status, $counts)) {
+                $counts[$status] = (int) $row['total'];
+            }
+        }
+
+        return $counts;
+    }
+
+    public function findAthleteChangeRequestForCoach(int $coachId, int $requestId): ?array
+    {
+        return $this->first(
+            $this->baseAthleteCoachSelect() . "
+             WHERE yc.idyeucaucapnhat = :request_id
+               AND db.idhuanluyenvien = :coach_id
+               AND tv.trangthai IN ('CHO_XAC_NHAN','DANG_THAM_GIA')
+               AND r.namerole = 'VAN_DONG_VIEN'
+               AND (
+                    yc.banglienquan IN ('Nguoidung','Taikhoan')
+                    OR yc.banglienquan = 'Vandongvien'
+               )
+             LIMIT 1",
+            [
+                'request_id' => $requestId,
+                'coach_id' => $coachId,
+            ]
+        );
+    }
+
     public function approveOrganizerChangeRequest(
         int $requestId,
         int $organizerId,
@@ -341,6 +435,20 @@ final class Yeucaucapnhathoso extends Model
             ) !== null;
         }
 
+        if ($targetTable === 'Vandongvien' && $field === 'mavandongvien') {
+            return $this->first(
+                "SELECT 1
+                 FROM Vandongvien
+                 WHERE mavandongvien = :value
+                   AND idnguoidung <> :exclude_user_id
+                 LIMIT 1",
+                [
+                    'value' => $value,
+                    'exclude_user_id' => $excludeUserId,
+                ]
+            ) !== null;
+        }
+
         return false;
     }
 
@@ -377,6 +485,9 @@ final class Yeucaucapnhathoso extends Model
                  SET {$field} = :value
                  WHERE idnguoidung = :user_id",
             'Huanluyenvien' => "UPDATE Huanluyenvien
+                 SET {$field} = :value
+                 WHERE idnguoidung = :user_id",
+            'Vandongvien' => "UPDATE Vandongvien
                  SET {$field} = :value
                  WHERE idnguoidung = :user_id",
             default => throw new RuntimeException('INVALID_TARGET_TABLE'),
@@ -553,6 +664,75 @@ final class Yeucaucapnhathoso extends Model
         ];
     }
 
+    private function baseAthleteCoachSelect(): string
+    {
+        return "SELECT DISTINCT
+                yc.idyeucaucapnhat,
+                yc.idnguoidung,
+                yc.banglienquan,
+                yc.truongcapnhat,
+                yc.giatricu,
+                yc.giatrimoi,
+                yc.lydo,
+                yc.trangthai,
+                yc.ngaygui,
+                yc.ngayxuly,
+                tk.idtaikhoan,
+                tk.username,
+                tk.email,
+                tk.sodienthoai,
+                r.namerole AS role,
+                nd.hodem,
+                nd.ten,
+                TRIM(CONCAT(COALESCE(nd.hodem, ''), ' ', COALESCE(nd.ten, ''))) AS hoten,
+                nd.gioitinh,
+                nd.ngaysinh,
+                nd.quequan,
+                nd.diachi,
+                nd.avatar,
+                nd.cccd,
+                vdv.idvandongvien,
+                vdv.mavandongvien,
+                vdv.chieucao,
+                vdv.cannang,
+                vdv.vitri,
+                vdv.trangthaidaugiai,
+                db.iddoibong,
+                db.tendoibong,
+                tv.idthanhvien,
+                tv.vaitro AS vaitrotrongdoi,
+                tv.trangthai AS trangthaithanhvien,
+                nd.ten AS current_ten,
+                nd.hodem AS current_hodem,
+                nd.gioitinh AS current_gioitinh,
+                nd.ngaysinh AS current_ngaysinh,
+                nd.quequan AS current_quequan,
+                nd.diachi AS current_diachi,
+                nd.avatar AS current_avatar,
+                nd.cccd AS current_cccd,
+                tk.username AS current_username,
+                tk.email AS current_email,
+                tk.sodienthoai AS current_sodienthoai,
+                vdv.mavandongvien AS current_mavandongvien,
+                vdv.chieucao AS current_chieucao,
+                vdv.cannang AS current_cannang,
+                vdv.vitri AS current_vitri,
+                CASE
+                    WHEN yc.banglienquan = 'Taikhoan' THEN tk.idtaikhoan
+                    WHEN yc.banglienquan = 'Vandongvien' THEN vdv.idvandongvien
+                    ELSE nd.idnguoidung
+                END AS iddoituong
+            FROM Yeucaucapnhathoso yc
+            JOIN Vandongvien vdv ON vdv.idnguoidung = yc.idnguoidung
+            JOIN Nguoidung nd ON nd.idnguoidung = vdv.idnguoidung
+            JOIN Taikhoan tk ON tk.idtaikhoan = nd.idtaikhoan
+            JOIN Role r ON r.idrole = tk.idrole
+            JOIN Thanhviendoibong tv ON tv.idvandongvien = vdv.idvandongvien
+            JOIN Doibong db ON db.iddoibong = tv.iddoibong
+            LEFT JOIN Thanhviendoibong tv_filter ON tv_filter.idvandongvien = vdv.idvandongvien
+            LEFT JOIN Doibong db_filter ON db_filter.iddoibong = tv_filter.iddoibong";
+    }
+
     private function baseOrganizerSelect(): string
     {
         return "SELECT
@@ -626,6 +806,85 @@ final class Yeucaucapnhathoso extends Model
         if (($filters['idnguoidung'] ?? null) !== null) {
             $where[] = 'yc.idnguoidung = :user_id';
             $bindings['user_id'] = (int) $filters['idnguoidung'];
+        }
+
+        if (($filters['from'] ?? '') !== '') {
+            $where[] = 'yc.ngaygui >= :from_date';
+            $bindings['from_date'] = $filters['from'] . ' 00:00:00';
+        }
+
+        if (($filters['to'] ?? '') !== '') {
+            $where[] = 'yc.ngaygui <= :to_date';
+            $bindings['to_date'] = $filters['to'] . ' 23:59:59';
+        }
+
+        return [$where, $bindings];
+    }
+
+    private function buildAthleteCoachWhere(int $coachId, array $filters): array
+    {
+        $where = [
+            'db.idhuanluyenvien = :coach_id',
+            "tv.trangthai IN ('CHO_XAC_NHAN','DANG_THAM_GIA')",
+            "r.namerole = 'VAN_DONG_VIEN'",
+            "(
+                yc.banglienquan IN ('Nguoidung','Taikhoan')
+                OR yc.banglienquan = 'Vandongvien'
+            )",
+        ];
+        $bindings = ['coach_id' => $coachId];
+
+        if (($filters['q'] ?? '') !== '') {
+            $where[] = "(yc.banglienquan LIKE :q_target
+                OR yc.truongcapnhat LIKE :q_field
+                OR yc.giatricu LIKE :q_old_value
+                OR yc.giatrimoi LIKE :q_new_value
+                OR yc.lydo LIKE :q_reason
+                OR tk.username LIKE :q_username
+                OR tk.email LIKE :q_email
+                OR tk.sodienthoai LIKE :q_phone
+                OR nd.hodem LIKE :q_hodem
+                OR nd.ten LIKE :q_ten
+                OR vdv.mavandongvien LIKE :q_athlete_code
+                OR db.tendoibong LIKE :q_team_name)";
+            $like = '%' . $filters['q'] . '%';
+            $bindings['q_target'] = $like;
+            $bindings['q_field'] = $like;
+            $bindings['q_old_value'] = $like;
+            $bindings['q_new_value'] = $like;
+            $bindings['q_reason'] = $like;
+            $bindings['q_username'] = $like;
+            $bindings['q_email'] = $like;
+            $bindings['q_phone'] = $like;
+            $bindings['q_hodem'] = $like;
+            $bindings['q_ten'] = $like;
+            $bindings['q_athlete_code'] = $like;
+            $bindings['q_team_name'] = $like;
+        }
+
+        if (($filters['trangthai'] ?? '') !== '') {
+            $where[] = 'yc.trangthai = :status';
+            $bindings['status'] = $filters['trangthai'];
+        }
+
+        if (($filters['banglienquan'] ?? '') !== '') {
+            $where[] = 'yc.banglienquan = :target_table';
+            $bindings['target_table'] = $filters['banglienquan'];
+        }
+
+        if (($filters['truongcapnhat'] ?? '') !== '') {
+            $where[] = 'yc.truongcapnhat = :field';
+            $bindings['field'] = $filters['truongcapnhat'];
+        }
+
+        if (($filters['iddoibong'] ?? null) !== null) {
+            $where[] = 'db_filter.iddoibong = :team_id';
+            $bindings['team_id'] = (int) $filters['iddoibong'];
+        }
+
+        if (($filters['idvandongvien'] ?? null) !== null) {
+            $where[] = 'vdv.idvandongvien = :athlete_id';
+            $bindings['athlete_id'] = (int) $filters['idvandongvien'];
         }
 
         if (($filters['from'] ?? '') !== '') {

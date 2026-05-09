@@ -29,6 +29,185 @@ final class Huanluyenvien extends Model
         return $this->first($sql, $bindings);
     }
 
+    public function accountValueExists(string $field, string $value): bool
+    {
+        if (!in_array($field, ['username', 'email', 'sodienthoai'], true)) {
+            return false;
+        }
+
+        return $this->first(
+            "SELECT 1
+             FROM Taikhoan
+             WHERE {$field} = :value
+             LIMIT 1",
+            ['value' => $value]
+        ) !== null;
+    }
+
+    public function profileValueExists(string $field, string $value): bool
+    {
+        if (!in_array($field, ['cccd'], true)) {
+            return false;
+        }
+
+        return $this->first(
+            "SELECT 1
+             FROM Nguoidung
+             WHERE {$field} = :value
+             LIMIT 1",
+            ['value' => $value]
+        ) !== null;
+    }
+
+    public function roleIdByName(string $roleName): ?int
+    {
+        $role = $this->first(
+            "SELECT idrole
+             FROM `Role`
+             WHERE namerole = :role_name
+             LIMIT 1",
+            ['role_name' => $roleName]
+        );
+
+        return $role === null ? null : (int) $role['idrole'];
+    }
+
+    public function receivingOrganizer(?int $organizerId = null): ?array
+    {
+        $bindings = [];
+        $where = [
+            "btc.trangthai = 'HOAT_DONG'",
+            "tk.trangthai = 'HOAT_DONG'",
+        ];
+
+        if ($organizerId !== null) {
+            $where[] = 'btc.idbantochuc = :organizer_id';
+            $bindings['organizer_id'] = $organizerId;
+        }
+
+        return $this->first(
+            "SELECT
+                btc.idbantochuc,
+                btc.idnguoidung,
+                btc.donvi,
+                btc.chucvu,
+                btc.trangthai,
+                tk.idtaikhoan,
+                tk.username,
+                nd.hodem,
+                nd.ten,
+                TRIM(CONCAT(COALESCE(nd.hodem, ''), ' ', COALESCE(nd.ten, ''))) AS hoten
+             FROM Bantochuc btc
+             JOIN Nguoidung nd ON nd.idnguoidung = btc.idnguoidung
+             JOIN Taikhoan tk ON tk.idtaikhoan = nd.idtaikhoan
+             WHERE " . implode(' AND ', $where) . "
+             ORDER BY btc.idbantochuc ASC
+             LIMIT 1",
+            $bindings
+        );
+    }
+
+    public function registerAccount(
+        array $account,
+        array $profile,
+        array $coach,
+        array $confirmation,
+        ?string $ipAddress,
+        string $logNote
+    ): array {
+        $db = $this->db();
+
+        try {
+            $db->beginTransaction();
+
+            $statement = $db->prepare(
+                "INSERT INTO Taikhoan (username, password, email, sodienthoai, idrole, trangthai)
+                 VALUES (:username, :password, :email, :sodienthoai, :idrole, 'CHO_DUYET')"
+            );
+            $statement->execute([
+                'username' => $account['username'],
+                'password' => $account['password'],
+                'email' => $account['email'],
+                'sodienthoai' => $account['sodienthoai'],
+                'idrole' => $account['idrole'],
+            ]);
+
+            $accountId = (int) $db->lastInsertId();
+
+            $statement = $db->prepare(
+                "INSERT INTO Nguoidung
+                    (idtaikhoan, ten, hodem, gioitinh, ngaysinh, quequan, diachi, avatar, cccd)
+                 VALUES
+                    (:idtaikhoan, :ten, :hodem, :gioitinh, :ngaysinh, :quequan, :diachi, :avatar, :cccd)"
+            );
+            $statement->execute([
+                'idtaikhoan' => $accountId,
+                'ten' => $profile['ten'],
+                'hodem' => $profile['hodem'],
+                'gioitinh' => $profile['gioitinh'],
+                'ngaysinh' => $profile['ngaysinh'],
+                'quequan' => $profile['quequan'],
+                'diachi' => $profile['diachi'],
+                'avatar' => $profile['avatar'],
+                'cccd' => $profile['cccd'],
+            ]);
+
+            $userId = (int) $db->lastInsertId();
+
+            $statement = $db->prepare(
+                "INSERT INTO Huanluyenvien (idnguoidung, bangcap, kinhnghiem, trangthai)
+                 VALUES (:idnguoidung, :bangcap, :kinhnghiem, 'CHO_DUYET')"
+            );
+            $statement->execute([
+                'idnguoidung' => $userId,
+                'bangcap' => $coach['bangcap'],
+                'kinhnghiem' => $coach['kinhnghiem'],
+            ]);
+
+            $coachId = (int) $db->lastInsertId();
+
+            $statement = $db->prepare(
+                "INSERT INTO Yeucauxacnhan
+                    (loainguoigui, idnguoigui, loainguoinhan, idnguoinhan, loaixacnhan, noidung, trangthai)
+                 VALUES
+                    ('HUAN_LUYEN_VIEN', :coach_id, 'BAN_TO_CHUC', :organizer_id, 'XAC_NHAN_HLV', :content, 'CHO_DUYET')"
+            );
+            $statement->execute([
+                'coach_id' => $coachId,
+                'organizer_id' => $confirmation['organizer_id'],
+                'content' => $confirmation['content'],
+            ]);
+
+            $requestId = (int) $db->lastInsertId();
+            $reason = 'Dang ky tai khoan huan luyen vien';
+
+            $this->recordStatusHistory('TAI_KHOAN', $accountId, null, 'CHO_DUYET', $reason, $accountId);
+            $this->recordStatusHistory('YEU_CAU_XAC_NHAN', $requestId, null, 'CHO_DUYET', 'Gui yeu cau xac nhan tu cach HLV', $accountId);
+            $this->recordSystemLog($accountId, 'Dang ky tai khoan huan luyen vien', 'Taikhoan', $accountId, $ipAddress, $logNote);
+            $this->recordSystemLog($accountId, 'Tao ho so huan luyen vien cho duyet', 'Huanluyenvien', $coachId, $ipAddress, $logNote);
+            $this->recordSystemLog($accountId, 'Gui yeu cau xac nhan tu cach huan luyen vien', 'Yeucauxacnhan', $requestId, $ipAddress, $logNote);
+
+            $db->commit();
+
+            return [
+                'account_id' => $accountId,
+                'user_id' => $userId,
+                'coach_id' => $coachId,
+                'request_id' => $requestId,
+                'organizer_id' => (int) $confirmation['organizer_id'],
+                'account_status' => 'CHO_DUYET',
+                'coach_status' => 'CHO_DUYET',
+                'request_status' => 'CHO_DUYET',
+            ];
+        } catch (Throwable $exception) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
     public function teamsForCoach(int $coachId): array
     {
         $statement = $this->db()->prepare(
@@ -93,6 +272,8 @@ final class Huanluyenvien extends Model
             if ($statement->rowCount() !== 1) {
                 throw new \RuntimeException('COACH_QUALIFICATION_NOT_UPDATED');
             }
+
+            $this->syncAccountStatusForQualification($coachId, $oldStatus, $newStatus, $reason, $actorAccountId);
 
             if ($requestId !== null && $requestStatus !== null) {
                 $statement = $db->prepare(
@@ -234,6 +415,71 @@ final class Huanluyenvien extends Model
         }
 
         return [$sql, $bindings];
+    }
+
+    private function syncAccountStatusForQualification(
+        int $coachId,
+        string $oldCoachStatus,
+        string $newCoachStatus,
+        string $reason,
+        int $actorAccountId
+    ): void {
+        $account = $this->accountForCoach($coachId);
+
+        if ($account === null) {
+            return;
+        }
+
+        $newAccountStatus = null;
+
+        if ($newCoachStatus === 'DA_XAC_NHAN') {
+            $newAccountStatus = 'HOAT_DONG';
+        }
+
+        if ($newCoachStatus === 'BI_HUY_TU_CACH' && $oldCoachStatus === 'CHO_DUYET') {
+            $newAccountStatus = 'DA_HUY';
+        }
+
+        if ($newCoachStatus === 'BI_HUY_TU_CACH' && $oldCoachStatus === 'DA_XAC_NHAN') {
+            $newAccountStatus = 'TAM_KHOA';
+        }
+
+        if ($newAccountStatus === null || (string) $account['trangthai'] === $newAccountStatus) {
+            return;
+        }
+
+        $statement = $this->db()->prepare(
+            "UPDATE Taikhoan
+             SET trangthai = :new_status,
+                 ngaycapnhat = CURRENT_TIMESTAMP
+             WHERE idtaikhoan = :account_id"
+        );
+        $statement->execute([
+            'new_status' => $newAccountStatus,
+            'account_id' => (int) $account['idtaikhoan'],
+        ]);
+
+        $this->recordStatusHistory(
+            'TAI_KHOAN',
+            (int) $account['idtaikhoan'],
+            (string) $account['trangthai'],
+            $newAccountStatus,
+            $reason,
+            $actorAccountId
+        );
+    }
+
+    private function accountForCoach(int $coachId): ?array
+    {
+        return $this->first(
+            "SELECT tk.idtaikhoan, tk.trangthai
+             FROM Huanluyenvien hlv
+             JOIN Nguoidung nd ON nd.idnguoidung = hlv.idnguoidung
+             JOIN Taikhoan tk ON tk.idtaikhoan = nd.idtaikhoan
+             WHERE hlv.idhuanluyenvien = :coach_id
+             LIMIT 1",
+            ['coach_id' => $coachId]
+        );
     }
 
     private function recordSystemLog(?int $accountId, string $action, string $targetTable, ?int $targetId, ?string $ipAddress, ?string $note = null): void

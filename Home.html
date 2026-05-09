@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trang chủ các actor - Hệ thống quản lý giải bóng chuyền</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    :root {
+      --primary: #1d4ed8;
+      --primary-dark: #1e3a8a;
+      --primary-light: #dbeafe;
+      --success: #15803d;
+      --success-light: #dcfce7;
+      --warning: #b45309;
+      --warning-light: #fef3c7;
+      --danger: #b91c1c;
+      --danger-light: #fee2e2;
+      --purple: #7c3aed;
+      --purple-light: #ede9fe;
+      --cyan: #0891b2;
+      --cyan-light: #cffafe;
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --sidebar: #0f172a;
+      --sidebar-hover: #1e293b;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 270px;
+      background: var(--sidebar);
+      color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      padding: 22px 16px;
+      z-index: 100;
+      transition: 0.25s ease;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 10px 22px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .brand h1 {
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .brand p {
+      color: #cbd5e1;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .role-label {
+      margin: 20px 10px 8px;
+      color: #94a3b8;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .role-switch {
+      display: grid;
+      gap: 8px;
+    }
+
+    .role-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: none;
+      background: transparent;
+      color: #d1d5db;
+      padding: 12px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 14px;
+      transition: 0.2s ease;
+    }
+
+    .role-btn:hover,
+    .role-btn.active {
+      background: var(--sidebar-hover);
+      color: white;
+    }
+
+    .role-nav {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      color: #d1d5db;
+      border-radius: 10px;
+      font-size: 14px;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+    }
+
+    .main {
+      flex: 1;
+      margin-left: 270px;
+      padding: 24px;
+    }
+
+    .topbar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+      margin-bottom: 24px;
+      position: sticky;
+      top: 16px;
+      z-index: 40;
+    }
+
+    .mobile-menu {
+      display: none;
+      width: 42px;
+      height: 42px;
+      border: none;
+      border-radius: 10px;
+      background: var(--primary);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title-wrap h2 {
+      font-size: 23px;
+      margin-bottom: 4px;
+    }
+
+    .title-wrap p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-box {
+      position: relative;
+      width: 320px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 11px 14px 11px 38px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+    }
+
+    .search-box span {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-left: 12px;
+      border-left: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .role-page {
+      display: none;
+      animation: fadeIn 0.22s ease;
+    }
+
+    .role-page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      border-radius: 20px;
+      padding: 28px;
+      margin-bottom: 24px;
+      color: white;
+      display: grid;
+      gap: 24px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+    }
+
+    .hero h3 {
+      font-size: 29px;
+      line-height: 1.3;
+      margin-bottom: 10px;
+    }
+
+    .hero p {
+      line-height: 1.7;
+      color: rgba(255, 255, 255, 0.86);
+      max-width: 780px;
+      font-size: 15px;
+    }
+
+    .hero.admin {
+      grid-template-columns: 1.3fr 0.9fr;
+      background: linear-gradient(135deg, #0f172a, #1d4ed8);
+    }
+
+    .hero.organizer {
+      grid-template-columns: 1.15fr 1fr;
+      background: linear-gradient(135deg, #1e3a8a, #0369a1);
+    }
+
+    .hero.referee {
+      grid-template-columns: 1fr 1fr;
+      background: linear-gradient(135deg, #374151, #1d4ed8);
+    }
+
+    .hero.athlete {
+      grid-template-columns: 0.95fr 1.05fr;
+      background: linear-gradient(135deg, #15803d, #0f766e);
+    }
+
+    .hero.audience {
+      grid-template-columns: 1.35fr 0.85fr;
+      background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+    }
+
+    .btn-row {
+      margin-top: 20px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 11px 16px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    .btn-white {
+      background: white;
+      color: var(--primary-dark);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.52);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .hero-card {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .hero-card h4 {
+      font-size: 18px;
+      margin-bottom: 14px;
+    }
+
+    .status-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .status-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+      font-size: 14px;
+    }
+
+    .status-line:last-child {
+      border-bottom: none;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card,
+    .panel,
+    .action-card,
+    .compact-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+    }
+
+    .stat-card {
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .stat-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .stat-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .tag.blue { background: var(--primary-light); color: var(--primary-dark); }
+    .tag.green { background: var(--success-light); color: var(--success); }
+    .tag.orange { background: var(--warning-light); color: var(--warning); }
+    .tag.red { background: var(--danger-light); color: var(--danger); }
+    .tag.purple { background: var(--purple-light); color: var(--purple); }
+    .tag.cyan { background: var(--cyan-light); color: var(--cyan); }
+
+    .stat-card h4 {
+      font-size: 28px;
+      margin-bottom: 4px;
+    }
+
+    .stat-card p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.25fr 0.9fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .panel {
+      border-radius: 16px;
+      padding: 22px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .panel-header h3 {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .panel-header p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f9fafb;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    tr:hover td {
+      background: #f8fafc;
+    }
+
+    .list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .list-item,
+    .match-card,
+    .team-card,
+    .timeline-item {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fff;
+      transition: 0.2s;
+    }
+
+    .list-item:hover,
+    .match-card:hover,
+    .team-card:hover,
+    .timeline-item:hover {
+      border-color: var(--primary);
+      background: #f8fafc;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .item-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .item-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f3f4f6;
+      font-size: 21px;
+    }
+
+    .item-main strong,
+    .match-card strong,
+    .team-card strong {
+      font-size: 14px;
+    }
+
+    .item-main small,
+    .match-card small,
+    .team-card small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .action-card {
+      border-radius: 16px;
+      padding: 18px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .action-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .action-card span {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    .action-card h4 {
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+
+    .action-card p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .score-board {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 18px;
+      text-align: center;
+      margin: 18px 0;
+    }
+
+    .team-symbol {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin: 0 auto 8px;
+    }
+
+    .score-number {
+      font-size: 36px;
+      font-weight: bold;
+    }
+
+    .court-map {
+      background: #eef2ff;
+      border: 1px dashed #93c5fd;
+      border-radius: 16px;
+      padding: 18px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      min-height: 240px;
+    }
+
+    .position {
+      background: white;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 10px;
+      min-height: 82px;
+    }
+
+    .position strong {
+      font-size: 13px;
+    }
+
+    .position small {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .public-nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .public-nav a {
+      color: white;
+      text-decoration: none;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .team-card {
+      text-align: center;
+    }
+
+    .public-team-logo {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin: 0 auto 10px;
+    }
+
+    .progress-item {
+      margin-bottom: 16px;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .progress-bar {
+      height: 9px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: 999px;
+      background: var(--primary);
+      transition: width 1s ease;
+    }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      background: #111827;
+      color: white;
+      padding: 13px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: 0.25s ease;
+      z-index: 300;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 90;
+    }
+
+    @media (max-width: 1250px) {
+      .hero,
+      .hero.admin,
+      .hero.organizer,
+      .hero.referee,
+      .hero.athlete,
+      .hero.audience,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid,
+      .quick-actions,
+      .team-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .overlay.show {
+        display: block;
+      }
+
+      .main {
+        margin-left: 0;
+        padding: 16px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        position: static;
+      }
+
+      .title-wrap {
+        width: 100%;
+        align-items: flex-start;
+      }
+
+      .mobile-menu {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .top-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-box {
+        width: 100%;
+      }
+
+      .user-pill {
+        border-left: none;
+        padding-left: 0;
+      }
+
+      .stats-grid,
+      .quick-actions,
+      .team-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+
+      .hero h3 {
+        font-size: 24px;
+      }
+
+      .court-map {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="overlay"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-icon">🏐</div>
+        <div>
+          <h1>Volley Manager</h1>
+          <p>Trang chủ theo từng vai trò</p>
+        </div>
+      </div>
+
+      <div class="role-label">Chọn actor</div>
+      <div class="role-switch">
+        <button class="role-btn active" data-role="admin">🛡️ Quản trị viên</button>
+        <button class="role-btn" data-role="organizer">📋 Ban tổ chức</button>
+        <button class="role-btn" data-role="referee">🧑‍⚖️ Trọng tài</button>
+        <button class="role-btn" data-role="athlete">🏃 Vận động viên</button>
+        <button class="role-btn" data-role="audience">👀 Khán giả</button>
+      </div>
+
+      <div class="role-nav" id="roleNav"></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="title-wrap">
+          <button class="mobile-menu" id="mobileMenu">☰</button>
+          <div>
+            <h2 id="pageTitle">Trang chủ Quản trị viên</h2>
+            <p id="pageSubtitle">Theo dõi tài khoản, trạng thái người dùng và nhật ký hệ thống.</p>
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <div class="search-box">
+            <span>🔎</span>
+            <input id="searchInput" type="text" placeholder="Tìm kiếm trong trang hiện tại..." />
+          </div>
+
+          <div class="user-pill">
+            <div>
+              <strong id="roleName">Admin System</strong><br />
+              <small style="color: var(--muted);" id="roleCode">ADMIN</small>
+            </div>
+            <div class="avatar" id="avatarText">AD</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ADMIN HOME -->
+      <section class="role-page active" id="adminPage">
+        <div class="hero admin">
+          <div>
+            <h3>Trung tâm kiểm soát hệ thống</h3>
+            <p>
+              Trang chủ dành cho quản trị viên tập trung vào tài khoản, trạng thái người dùng,
+              yêu cầu xác nhận và nhật ký hệ thống. Đây là nơi nhìn thấy hệ thống có đang ổn không,
+              thay vì chỉ cầu mong server đừng tự chọn nghỉ phép.
+            </p>
+            <div class="btn-row">
+              <button class="btn btn-white" onclick="showToast('Mở chức năng tạo tài khoản')">+ Tạo tài khoản</button>
+              <button class="btn btn-outline" onclick="showToast('Mở danh sách yêu cầu xác nhận')">Xem yêu cầu xác nhận</button>
+            </div>
+          </div>
+
+          <div class="hero-card">
+            <h4>Trạng thái hệ thống</h4>
+            <div class="status-stack">
+              <div class="status-line"><span>Dịch vụ xác thực</span><strong>Hoạt động</strong></div>
+              <div class="status-line"><span>CSDL người dùng</span><strong>Ổn định</strong></div>
+              <div class="status-line"><span>Yêu cầu chờ duyệt</span><strong>12 yêu cầu</strong></div>
+              <div class="status-line"><span>Log cảnh báo hôm nay</span><strong>3 cảnh báo</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card searchable">
+            <div class="stat-head"><div class="stat-icon">👤</div><span class="tag blue">Tài khoản</span></div>
+            <h4 data-count="284">0</h4>
+            <p>Tài khoản đang quản lý</p>
+          </div>
+          <div class="stat-card searchable">
+            <div class="stat-head"><div class="stat-icon">⏳</div><span class="tag orange">Chờ duyệt</span></div>
+            <h4 data-count="12">0</h4>
+            <p>Yêu cầu xác nhận thông tin</p>
+          </div>
+          <div class="stat-card searchable">
+            <div class="stat-head"><div class="stat-icon">🚫</div><span class="tag red">Khóa</span></div>
+            <h4 data-count="7">0</h4>
+            <p>Tài khoản bị khóa/hủy</p>
+          </div>
+          <div class="stat-card searchable">
+            <div class="stat-head"><div class="stat-icon">📜</div><span class="tag green">Log</span></div>
+            <h4 data-count="156">0</h4>
+            <p>Nhật ký hệ thống hôm nay</p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel searchable">
+            <div class="panel-header">
+              <div>
+                <h3>Nhật ký hệ thống gần đây</h3>
+                <p>Theo dõi các hoạt động quan trọng trong hệ thống.</p>
+              </div>
+              <span class="tag blue">Realtime</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Thời gian</th><th>Người dùng</th><th>Hành động</th><th>Mức độ</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>08:12</td><td>BTC Nguyễn An</td><td>Cập nhật trạng thái giải đấu</td><td><span class="tag green">Thông tin</span></td></tr>
+                  <tr><td>09:05</td><td>Admin System</td><td>Khóa tài khoản không hợp lệ</td><td><span class="tag orange">Cảnh báo</span></td></tr>
+                  <tr><td>10:21</td><td>HLV Trần Minh</td><td>Yêu cầu sửa thông tin đội bóng</td><td><span class="tag blue">Chờ duyệt</span></td></tr>
+                  <tr><td>11:40</td><td>Hệ thống</td><td>Sao lưu dữ liệu hoàn tất</td><td><span class="tag green">Thành công</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel searchable">
+            <div class="panel-header">
+              <div>
+                <h3>Yêu cầu cần xử lý</h3>
+                <p>Các yêu cầu xác nhận từ ban tổ chức và người dùng.</p>
+              </div>
+            </div>
+            <div class="list">
+              <div class="list-item"><div class="item-main"><div class="item-icon">📋</div><div><strong>Xác nhận thay đổi thông tin BTC</strong><small>4 yêu cầu mới</small></div></div><span class="tag orange">Ưu tiên</span></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">👥</div><div><strong>Duyệt trạng thái tài khoản</strong><small>6 tài khoản chờ duyệt</small></div></div><span class="tag blue">Đang chờ</span></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">🔐</div><div><strong>Kiểm tra đăng nhập bất thường</strong><small>3 cảnh báo bảo mật</small></div></div><span class="tag red">Cảnh báo</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <div class="action-card searchable" onclick="showToast('Mở quản lý tài khoản')"><span>👤</span><h4>Quản lý tài khoản</h4><p>Thêm, sửa, xóa và phân quyền tài khoản.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở trạng thái người dùng')"><span>🔄</span><h4>Trạng thái người dùng</h4><p>Theo dõi tài khoản hoạt động, bị khóa hoặc chờ duyệt.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở nhật ký hệ thống')"><span>📜</span><h4>Nhật ký hệ thống</h4><p>Xem lịch sử thao tác và cảnh báo hệ thống.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở xác nhận thông tin')"><span>✅</span><h4>Xác nhận thông tin</h4><p>Duyệt thay đổi thông tin từ ban tổ chức.</p></div>
+        </div>
+      </section>
+
+      <!-- ORGANIZER HOME -->
+      <section class="role-page" id="organizerPage">
+        <div class="hero organizer">
+          <div>
+            <h3>Bảng điều phối giải đấu</h3>
+            <p>
+              Trang chủ ban tổ chức ưu tiên quản lý giải đấu, đăng ký, sân đấu, trọng tài,
+              lịch thi đấu, kết quả, xếp hạng và khiếu nại. Nói ngắn gọn: nơi dập mọi đám cháy vận hành trước khi nó thành đám cháy thật.
+            </p>
+            <div class="btn-row">
+              <button class="btn btn-white" onclick="showToast('Mở chức năng tạo giải đấu')">+ Tạo giải đấu</button>
+              <button class="btn btn-outline" onclick="showToast('Mở danh sách đăng ký giải đấu')">Duyệt đăng ký</button>
+            </div>
+          </div>
+
+          <div class="hero-card">
+            <h4>Tiến độ giải mùa xuân 2026</h4>
+            <div class="progress-item">
+              <div class="progress-info"><span>Đăng ký đội bóng</span><strong>80%</strong></div>
+              <div class="progress-bar"><div class="progress-fill" data-width="80%"></div></div>
+            </div>
+            <div class="progress-item">
+              <div class="progress-info"><span>Phân công trọng tài</span><strong>65%</strong></div>
+              <div class="progress-bar"><div class="progress-fill" data-width="65%"></div></div>
+            </div>
+            <div class="progress-item">
+              <div class="progress-info"><span>Công bố lịch thi đấu</span><strong>90%</strong></div>
+              <div class="progress-bar"><div class="progress-fill" data-width="90%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">🏆</div><span class="tag blue">Giải đấu</span></div><h4 data-count="5">0</h4><p>Giải đấu đang quản lý</p></div>
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">📝</div><span class="tag orange">Đăng ký</span></div><h4 data-count="18">0</h4><p>Đội chờ duyệt đăng ký</p></div>
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">🧑‍⚖️</div><span class="tag purple">Trọng tài</span></div><h4 data-count="9">0</h4><p>Trận chưa phân công trọng tài</p></div>
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">📣</div><span class="tag red">Khiếu nại</span></div><h4 data-count="4">0</h4><p>Khiếu nại đang chờ xử lý</p></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel searchable">
+            <div class="panel-header">
+              <div>
+                <h3>Luồng công việc hôm nay</h3>
+                <p>Các đầu việc vận hành cần xử lý theo thứ tự ưu tiên.</p>
+              </div>
+              <span class="tag orange">Cần xử lý</span>
+            </div>
+            <div class="list">
+              <div class="list-item"><div class="item-main"><div class="item-icon">✅</div><div><strong>Duyệt đăng ký đội bóng</strong><small>18 đội đang chờ xác nhận</small></div></div><button class="btn btn-primary" onclick="showToast('Mở duyệt đăng ký')">Xử lý</button></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">📅</div><div><strong>Cập nhật lịch thi đấu bảng B</strong><small>3 trận cần đổi sân</small></div></div><button class="btn btn-primary" onclick="showToast('Mở quản lý lịch')">Mở</button></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">🏟️</div><div><strong>Kiểm tra tình trạng sân đấu</strong><small>Sân C đang bảo trì</small></div></div><button class="btn btn-primary" onclick="showToast('Mở quản lý sân')">Xem</button></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">📊</div><div><strong>Công bố bảng xếp hạng vòng 1</strong><small>Chờ xác nhận kết quả cuối</small></div></div><button class="btn btn-primary" onclick="showToast('Mở quản lý xếp hạng')">Công bố</button></div>
+            </div>
+          </div>
+
+          <div class="panel searchable">
+            <div class="panel-header">
+              <div>
+                <h3>Tình trạng đăng ký</h3>
+                <p>Theo dõi trạng thái đăng ký của đội bóng.</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Đội bóng</th><th>HLV</th><th>Trạng thái</th></tr></thead>
+                <tbody>
+                  <tr><td>IUH Eagles</td><td>Nguyễn Hùng</td><td><span class="tag green">Đã duyệt</span></td></tr>
+                  <tr><td>Fire Smash</td><td>Lê Minh</td><td><span class="tag orange">Chờ duyệt</span></td></tr>
+                  <tr><td>Sky Blockers</td><td>Trần Nam</td><td><span class="tag blue">Bổ sung hồ sơ</span></td></tr>
+                  <tr><td>Green Wolves</td><td>Phạm Vy</td><td><span class="tag red">Từ chối</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <div class="action-card searchable" onclick="showToast('Mở quản lý giải đấu')"><span>🏆</span><h4>Quản lý giải đấu</h4><p>Tạo, cập nhật, công bố, đóng hoặc mở giải đấu.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở quản lý lịch thi đấu')"><span>📅</span><h4>Quản lý lịch</h4><p>Tạo bảng đấu, trận đấu, thời gian và sân thi đấu.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở quản lý trọng tài')"><span>🧑‍⚖️</span><h4>Phân công trọng tài</h4><p>Thêm, phân công hoặc cho nghỉ trọng tài.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở xử lý khiếu nại')"><span>📣</span><h4>Khiếu nại</h4><p>Tiếp nhận, xử lý và cập nhật trạng thái khiếu nại.</p></div>
+        </div>
+      </section>
+
+      <!-- REFEREE HOME -->
+      <section class="role-page" id="refereePage">
+        <div class="hero referee">
+          <div>
+            <h3>Trang trực trận của trọng tài</h3>
+            <p>
+              Trọng tài cần thấy ngay trận được phân công, trạng thái xác nhận tham gia,
+              thông tin trận, ghi nhận kết quả, báo cáo sự cố và xin nghỉ phép. Không cần 40 biểu đồ,
+              vì trên sân bóng đã đủ căng rồi.
+            </p>
+            <div class="btn-row">
+              <button class="btn btn-white" onclick="showToast('Xác nhận tham gia trận đấu')">Xác nhận tham gia</button>
+              <button class="btn btn-outline" onclick="showToast('Mở form báo cáo sự cố')">Báo cáo sự cố</button>
+            </div>
+          </div>
+
+          <div class="hero-card">
+            <h4>Trận cần giám sát tiếp theo</h4>
+            <div class="score-board">
+              <div><div class="team-symbol">🦅</div><strong>IUH Eagles</strong></div>
+              <div class="score-number">18:30</div>
+              <div><div class="team-symbol">🔥</div><strong>Fire Smash</strong></div>
+            </div>
+            <div class="status-stack">
+              <div class="status-line"><span>Sân</span><strong>Sân A</strong></div>
+              <div class="status-line"><span>Vai trò</span><strong>Trọng tài chính</strong></div>
+              <div class="status-line"><span>Trạng thái</span><strong>Chờ xác nhận</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">📅</div><span class="tag blue">Lịch</span></div><h4 data-count="6">0</h4><p>Trận được phân công tuần này</p></div>
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">✅</div><span class="tag green">Đã xác nhận</span></div><h4 data-count="4">0</h4><p>Trận đã xác nhận tham gia</p></div>
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">📝</div><span class="tag orange">Báo cáo</span></div><h4 data-count="2">0</h4><p>Báo cáo sự cố đã gửi</p></div>
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">🌙</div><span class="tag purple">Nghỉ phép</span></div><h4 data-count="1">0</h4><p>Đơn xin nghỉ đang chờ</p></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel searchable">
+            <div class="panel-header">
+              <div>
+                <h3>Lịch phân công</h3>
+                <p>Danh sách trận đấu trọng tài được giao giám sát.</p>
+              </div>
+              <span class="tag blue">Tuần này</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Mã trận</th><th>Thời gian</th><th>Trận đấu</th><th>Vai trò</th><th>Trạng thái</th></tr></thead>
+                <tbody>
+                  <tr><td>M002</td><td>12/05 - 18:30</td><td>IUH Eagles vs Fire Smash</td><td>Trọng tài chính</td><td><span class="tag orange">Chờ xác nhận</span></td></tr>
+                  <tr><td>M006</td><td>14/05 - 15:00</td><td>Thunder Team vs Net Kings</td><td>Trọng tài phụ</td><td><span class="tag green">Đã xác nhận</span></td></tr>
+                  <tr><td>M009</td><td>16/05 - 08:00</td><td>Red Tigers vs Sky Blockers</td><td>Thư ký trận</td><td><span class="tag green">Đã xác nhận</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel searchable">
+            <div class="panel-header">
+              <div>
+                <h3>Điều khiển trận đấu</h3>
+                <p>Thao tác nhanh khi trận đấu bắt đầu.</p>
+              </div>
+            </div>
+            <div class="list">
+              <div class="list-item"><div class="item-main"><div class="item-icon">▶️</div><div><strong>Bắt đầu trận</strong><small>Ghi nhận thời gian bắt đầu</small></div></div><button class="btn btn-success" onclick="showToast('Trận đấu đã bắt đầu')">Bắt đầu</button></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">⏸️</div><div><strong>Tạm dừng</strong><small>Ghi nhận thời gian nghỉ</small></div></div><button class="btn btn-primary" onclick="showToast('Trận đấu đã tạm dừng')">Tạm dừng</button></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">🏁</div><div><strong>Kết thúc trận</strong><small>Lưu kết quả cuối cùng</small></div></div><button class="btn btn-danger" onclick="showToast('Trận đấu đã kết thúc')">Kết thúc</button></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">📋</div><div><strong>Ghi nhận kết quả</strong><small>Nhập tỷ số từng set</small></div></div><button class="btn btn-primary" onclick="showToast('Mở nhập kết quả')">Nhập</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <div class="action-card searchable" onclick="showToast('Mở chi tiết trận đấu')"><span>🔎</span><h4>Chi tiết trận</h4><p>Xem đội thi đấu, sân, thời gian và danh sách trọng tài.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở nhập kết quả')"><span>📝</span><h4>Ghi kết quả</h4><p>Cập nhật điểm số, set đấu và trạng thái trận đấu.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở báo cáo sự cố')"><span>⚠️</span><h4>Báo cáo sự cố</h4><p>Gửi báo cáo về tranh chấp, lỗi sân hoặc vi phạm.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở xin nghỉ phép')"><span>🌙</span><h4>Xin nghỉ phép</h4><p>Tạo đơn xin nghỉ và theo dõi trạng thái xử lý.</p></div>
+        </div>
+      </section>
+
+      <!-- ATHLETE HOME -->
+      <section class="role-page" id="athletePage">
+        <div class="hero athlete">
+          <div>
+            <h3>Trang cá nhân vận động viên</h3>
+            <p>
+              Vận động viên cần xem đội bóng, đội hình, lịch thi đấu cá nhân, thống kê cá nhân,
+              lời mời tham gia đội và yêu cầu nghỉ phép. Giao diện ưu tiên thông tin của chính người chơi,
+              không biến họ thành kế toán giải đấu bất đắc dĩ.
+            </p>
+            <div class="btn-row">
+              <button class="btn btn-white" onclick="showToast('Mở lịch thi đấu cá nhân')">Xem lịch cá nhân</button>
+              <button class="btn btn-outline" onclick="showToast('Mở form xin nghỉ thi đấu')">Xin nghỉ thi đấu</button>
+            </div>
+          </div>
+
+          <div class="hero-card">
+            <h4>Hồ sơ thi đấu</h4>
+            <div class="status-stack">
+              <div class="status-line"><span>Đội bóng</span><strong>IUH Eagles</strong></div>
+              <div class="status-line"><span>Vị trí</span><strong>Chủ công</strong></div>
+              <div class="status-line"><span>Số áo</span><strong>09</strong></div>
+              <div class="status-line"><span>Tư cách thi đấu</span><strong>Hợp lệ</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">🏐</div><span class="tag green">Thi đấu</span></div><h4 data-count="12">0</h4><p>Trận đã tham gia</p></div>
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">⚡</div><span class="tag blue">Điểm</span></div><h4 data-count="86">0</h4><p>Điểm ghi được</p></div>
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">🛡️</div><span class="tag purple">Phòng thủ</span></div><h4 data-count="34">0</h4><p>Pha chắn bóng thành công</p></div>
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">📩</div><span class="tag orange">Lời mời</span></div><h4 data-count="1">0</h4><p>Lời mời đội bóng chờ phản hồi</p></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel searchable">
+            <div class="panel-header">
+              <div>
+                <h3>Đội hình hiện tại</h3>
+                <p>Vị trí của vận động viên trong đội hình thi đấu.</p>
+              </div>
+              <span class="tag green">Đã thiết lập</span>
+            </div>
+            <div class="court-map">
+              <div class="position"><strong>Chủ công</strong><small>Nguyễn Bảo · #09</small></div>
+              <div class="position"><strong>Phụ công</strong><small>Lê Nam · #07</small></div>
+              <div class="position"><strong>Đối chuyền</strong><small>Trần Long · #11</small></div>
+              <div class="position"><strong>Chuyền hai</strong><small>Phạm Minh · #03</small></div>
+              <div class="position"><strong>Libero</strong><small>Võ Huy · #01</small></div>
+              <div class="position"><strong>Dự bị</strong><small>2 vận động viên</small></div>
+            </div>
+          </div>
+
+          <div class="panel searchable">
+            <div class="panel-header">
+              <div>
+                <h3>Lịch thi đấu cá nhân</h3>
+                <p>Các trận liên quan đến đội của vận động viên.</p>
+              </div>
+            </div>
+            <div class="list">
+              <div class="list-item"><div class="item-main"><div class="item-icon">🔥</div><div><strong>IUH Eagles vs Fire Smash</strong><small>12/05/2026 · 18:30 · Sân A</small></div></div><span class="tag orange">Sắp diễn ra</span></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">🐯</div><div><strong>IUH Eagles vs Red Tigers</strong><small>15/05/2026 · 08:00 · Sân B</small></div></div><span class="tag blue">Vòng bảng</span></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">⚡</div><div><strong>IUH Eagles vs Thunder Team</strong><small>18/05/2026 · 14:00 · Sân C</small></div></div><span class="tag blue">Vòng bảng</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="panel searchable">
+            <div class="panel-header"><div><h3>Lời mời đội bóng</h3><p>Yêu cầu xác nhận tham gia đội.</p></div></div>
+            <div class="list">
+              <div class="list-item"><div class="item-main"><div class="item-icon">📩</div><div><strong>Gia hạn tư cách thành viên</strong><small>IUH Eagles gửi yêu cầu xác nhận</small></div></div><span class="tag orange">Chờ phản hồi</span></div>
+            </div>
+          </div>
+          <div class="panel searchable">
+            <div class="panel-header"><div><h3>Yêu cầu thông tin</h3><p>Theo dõi yêu cầu sửa ID cá nhân.</p></div></div>
+            <div class="list">
+              <div class="list-item"><div class="item-main"><div class="item-icon">🪪</div><div><strong>Sửa ID cá nhân</strong><small>Chưa có yêu cầu đang chờ</small></div></div><span class="tag green">Ổn định</span></div>
+            </div>
+          </div>
+          <div class="panel searchable">
+            <div class="panel-header"><div><h3>Nghỉ phép thi đấu</h3><p>Yêu cầu vắng mặt trong trận đấu.</p></div></div>
+            <div class="list">
+              <div class="list-item"><div class="item-main"><div class="item-icon">🌙</div><div><strong>Xin nghỉ trận M009</strong><small>Đang chờ HLV xác nhận</small></div></div><span class="tag orange">Chờ duyệt</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <div class="action-card searchable" onclick="showToast('Mở thông tin đội bóng')"><span>👥</span><h4>Đội bóng</h4><p>Xem thông tin đội, huấn luyện viên và thành viên.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở đội hình')"><span>📌</span><h4>Đội hình</h4><p>Xem vị trí thi đấu và danh sách ra sân.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở thống kê cá nhân')"><span>📊</span><h4>Thống kê cá nhân</h4><p>Theo dõi điểm số, số trận và chỉ số thi đấu.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở xin nghỉ thi đấu')"><span>🌙</span><h4>Xin nghỉ thi đấu</h4><p>Gửi yêu cầu nghỉ phép cho huấn luyện viên.</p></div>
+        </div>
+      </section>
+
+      <!-- AUDIENCE HOME -->
+      <section class="role-page" id="audiencePage">
+        <div class="hero audience">
+          <div>
+            <h3>Cổng thông tin giải bóng chuyền</h3>
+            <p>
+              Khán giả không cần tài khoản, vì cuối cùng cũng có một nhóm người được tha khỏi mật khẩu.
+              Trang này tập trung vào thông tin công khai: danh sách đội bóng, lịch thi đấu, kết quả và bảng xếp hạng.
+            </p>
+            <div class="public-nav">
+              <a href="#" onclick="showToast('Cuộn đến lịch thi đấu')">Lịch thi đấu</a>
+              <a href="#" onclick="showToast('Cuộn đến kết quả')">Kết quả</a>
+              <a href="#" onclick="showToast('Cuộn đến bảng xếp hạng')">Bảng xếp hạng</a>
+              <a href="#" onclick="showToast('Cuộn đến đội bóng')">Đội bóng</a>
+            </div>
+          </div>
+
+          <div class="hero-card">
+            <h4>Trận nổi bật</h4>
+            <div class="score-board">
+              <div><div class="team-symbol">🦅</div><strong>IUH Eagles</strong></div>
+              <div class="score-number">VS</div>
+              <div><div class="team-symbol">🔥</div><strong>Fire Smash</strong></div>
+            </div>
+            <div class="status-stack">
+              <div class="status-line"><span>Thời gian</span><strong>18:30 · 12/05</strong></div>
+              <div class="status-line"><span>Địa điểm</span><strong>Nhà thi đấu IUH</strong></div>
+              <div class="status-line"><span>Trạng thái</span><strong>Sắp diễn ra</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">👥</div><span class="tag blue">Đội</span></div><h4 data-count="16">0</h4><p>Đội bóng tham gia</p></div>
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">📅</div><span class="tag purple">Lịch</span></div><h4 data-count="32">0</h4><p>Trận đấu công khai</p></div>
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">🏁</div><span class="tag green">Kết quả</span></div><h4 data-count="18">0</h4><p>Trận đã có kết quả</p></div>
+          <div class="stat-card searchable"><div class="stat-head"><div class="stat-icon">🏆</div><span class="tag orange">BXH</span></div><h4 data-count="4">0</h4><p>Bảng đấu đang theo dõi</p></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel searchable">
+            <div class="panel-header">
+              <div>
+                <h3>Lịch thi đấu công khai</h3>
+                <p>Các trận đấu sắp diễn ra trong giải.</p>
+              </div>
+              <span class="tag blue">Công khai</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Thời gian</th><th>Trận đấu</th><th>Địa điểm</th><th>Trạng thái</th></tr></thead>
+                <tbody>
+                  <tr><td>12/05 · 18:30</td><td>IUH Eagles vs Fire Smash</td><td>Sân A</td><td><span class="tag orange">Sắp diễn ra</span></td></tr>
+                  <tr><td>13/05 · 08:00</td><td>Red Tigers vs Sky Blockers</td><td>Sân B</td><td><span class="tag orange">Sắp diễn ra</span></td></tr>
+                  <tr><td>14/05 · 15:00</td><td>Thunder Team vs Net Kings</td><td>Sân C</td><td><span class="tag blue">Vòng bảng</span></td></tr>
+                  <tr><td>15/05 · 19:00</td><td>Green Wolves vs Blue Warriors</td><td>Sân A</td><td><span class="tag blue">Vòng bảng</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel searchable">
+            <div class="panel-header">
+              <div>
+                <h3>Bảng xếp hạng</h3>
+                <p>Cập nhật theo kết quả đã công bố.</p>
+              </div>
+            </div>
+            <div class="list">
+              <div class="list-item"><div class="item-main"><div class="item-icon">1</div><div><strong>IUH Eagles</strong><small>8 thắng · 1 thua</small></div></div><span class="tag blue">24đ</span></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">2</div><div><strong>Fire Smash</strong><small>7 thắng · 2 thua</small></div></div><span class="tag blue">21đ</span></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">3</div><div><strong>Red Tigers</strong><small>6 thắng · 3 thua</small></div></div><span class="tag blue">18đ</span></div>
+              <div class="list-item"><div class="item-main"><div class="item-icon">4</div><div><strong>Thunder Team</strong><small>5 thắng · 4 thua</small></div></div><span class="tag blue">15đ</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel searchable" style="margin-bottom: 24px;">
+          <div class="panel-header">
+            <div>
+              <h3>Danh sách đội bóng nổi bật</h3>
+              <p>Khán giả có thể xem thông tin đội bóng và câu lạc bộ.</p>
+            </div>
+          </div>
+          <div class="team-grid">
+            <div class="team-card"><div class="public-team-logo">🦅</div><strong>IUH Eagles</strong><small>TP.HCM · 12 thành viên</small></div>
+            <div class="team-card"><div class="public-team-logo">🔥</div><strong>Fire Smash</strong><small>Bình Dương · 12 thành viên</small></div>
+            <div class="team-card"><div class="public-team-logo">🐯</div><strong>Red Tigers</strong><small>Đồng Nai · 11 thành viên</small></div>
+            <div class="team-card"><div class="public-team-logo">⚡</div><strong>Thunder Team</strong><small>TP.HCM · 13 thành viên</small></div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <div class="action-card searchable" onclick="showToast('Mở danh sách đội bóng')"><span>👥</span><h4>Đội bóng</h4><p>Xem danh sách và thông tin câu lạc bộ.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở lịch thi đấu')"><span>📅</span><h4>Lịch thi đấu</h4><p>Theo dõi thời gian, sân đấu và cặp đấu.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở kết quả trận đấu')"><span>🏁</span><h4>Kết quả</h4><p>Xem kết quả các trận đã được công bố.</p></div>
+          <div class="action-card searchable" onclick="showToast('Mở bảng xếp hạng')"><span>🏆</span><h4>Bảng xếp hạng</h4><p>Theo dõi thứ hạng các đội theo từng bảng.</p></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast">Thông báo</div>
+
+  <script>
+    const roleData = {
+      admin: {
+        title: 'Trang chủ Quản trị viên',
+        subtitle: 'Theo dõi tài khoản, trạng thái người dùng và nhật ký hệ thống.',
+        name: 'Admin System',
+        code: 'ADMIN',
+        avatar: 'AD',
+        nav: ['Quản lý tài khoản', 'Trạng thái người dùng', 'Nhật ký hệ thống', 'Xác nhận thông tin BTC']
+      },
+      organizer: {
+        title: 'Trang chủ Ban tổ chức',
+        subtitle: 'Điều phối giải đấu, lịch thi đấu, trọng tài, kết quả và khiếu nại.',
+        name: 'Ban tổ chức',
+        code: 'ORGANIZER',
+        avatar: 'BT',
+        nav: ['Quản lý giải đấu', 'Duyệt đăng ký', 'Phân công trọng tài', 'Sân đấu', 'Lịch thi đấu', 'Kết quả & xếp hạng', 'Khiếu nại']
+      },
+      referee: {
+        title: 'Trang chủ Trọng tài',
+        subtitle: 'Xem lịch phân công, xác nhận tham gia, giám sát trận và báo cáo sự cố.',
+        name: 'Trọng tài',
+        code: 'REFEREE',
+        avatar: 'TT',
+        nav: ['Lịch phân công', 'Chi tiết trận đấu', 'Giám sát trận', 'Ghi nhận kết quả', 'Báo cáo sự cố', 'Xin nghỉ phép']
+      },
+      athlete: {
+        title: 'Trang chủ Vận động viên',
+        subtitle: 'Theo dõi đội bóng, đội hình, lịch thi đấu và thống kê cá nhân.',
+        name: 'Vận động viên',
+        code: 'ATHLETE',
+        avatar: 'VD',
+        nav: ['Thông tin đội bóng', 'Đội hình', 'Lịch thi đấu cá nhân', 'Thống kê cá nhân', 'Sửa ID cá nhân', 'Xin nghỉ thi đấu']
+      },
+      audience: {
+        title: 'Trang chủ Khán giả',
+        subtitle: 'Xem thông tin công khai về đội bóng, lịch thi đấu, kết quả và bảng xếp hạng.',
+        name: 'Khán giả',
+        code: 'PUBLIC',
+        avatar: 'KG',
+        nav: ['Danh sách đội bóng', 'Thông tin câu lạc bộ', 'Lịch thi đấu', 'Kết quả trận đấu', 'Bảng xếp hạng']
+      }
+    };
+
+    const roleButtons = document.querySelectorAll('.role-btn');
+    const rolePages = document.querySelectorAll('.role-page');
+    const pageTitle = document.getElementById('pageTitle');
+    const pageSubtitle = document.getElementById('pageSubtitle');
+    const roleName = document.getElementById('roleName');
+    const roleCode = document.getElementById('roleCode');
+    const avatarText = document.getElementById('avatarText');
+    const roleNav = document.getElementById('roleNav');
+    const searchInput = document.getElementById('searchInput');
+    const toast = document.getElementById('toast');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    function setRole(role) {
+      const data = roleData[role];
+
+      roleButtons.forEach(function (button) {
+        button.classList.toggle('active', button.dataset.role === role);
+      });
+
+      rolePages.forEach(function (page) {
+        page.classList.remove('active');
+      });
+
+      document.getElementById(role + 'Page').classList.add('active');
+
+      pageTitle.textContent = data.title;
+      pageSubtitle.textContent = data.subtitle;
+      roleName.textContent = data.name;
+      roleCode.textContent = data.code;
+      avatarText.textContent = data.avatar;
+      searchInput.value = '';
+      resetSearch();
+      renderNav(data.nav);
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    }
+
+    function renderNav(items) {
+      roleNav.innerHTML = '<div class="role-label" style="margin-top: 0;">Chức năng chính</div>';
+
+      items.forEach(function (item) {
+        const div = document.createElement('div');
+        div.className = 'nav-item searchable';
+        div.innerHTML = '<span>•</span><span>' + item + '</span>';
+        div.addEventListener('click', function () {
+          showToast('Mở chức năng: ' + item);
+        });
+        roleNav.appendChild(div);
+      });
+    }
+
+    roleButtons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        setRole(button.dataset.role);
+      });
+    });
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+
+      setTimeout(function () {
+        toast.classList.remove('show');
+      }, 2200);
+    }
+
+    function animateCounters() {
+      document.querySelectorAll('[data-count]').forEach(function (counter) {
+        const target = Number(counter.getAttribute('data-count'));
+        let current = 0;
+        const step = Math.max(1, Math.ceil(target / 45));
+
+        const timer = setInterval(function () {
+          current += step;
+
+          if (current >= target) {
+            current = target;
+            clearInterval(timer);
+          }
+
+          counter.textContent = current;
+        }, 20);
+      });
+    }
+
+    function animateProgress() {
+      document.querySelectorAll('.progress-fill').forEach(function (bar) {
+        setTimeout(function () {
+          bar.style.width = bar.getAttribute('data-width');
+        }, 250);
+      });
+    }
+
+    function resetSearch() {
+      document.querySelectorAll('.role-page.active .searchable, .role-page.active tr, .role-page.active .ranking-item').forEach(function (item) {
+        item.style.display = '';
+      });
+    }
+
+    searchInput.addEventListener('input', function () {
+      const keyword = searchInput.value.trim().toLowerCase();
+      const activePage = document.querySelector('.role-page.active');
+      const searchableItems = activePage.querySelectorAll('.searchable, tr, .team-card, .list-item, .action-card');
+
+      searchableItems.forEach(function (item) {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(keyword) ? '' : 'none';
+      });
+    });
+
+    mobileMenu.addEventListener('click', function () {
+      sidebar.classList.add('open');
+      overlay.classList.add('show');
+    });
+
+    overlay.addEventListener('click', function () {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    });
+
+    renderNav(roleData.admin.nav);
+    animateCounters();
+    animateProgress();
+  </script>
+</body>
+</html>

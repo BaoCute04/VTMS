@@ -119,6 +119,72 @@ final class Bangxephang extends Model
         );
     }
 
+    public function listForSpectator(array $filters = []): array
+    {
+        [$where, $bindings] = $this->whereForSpectator($filters);
+
+        $statement = $this->db()->prepare(
+             $this->baseSelect() . '
+             WHERE ' . implode(' AND ', $where) . '
+             GROUP BY
+                bxh.idbangxephang,
+                bxh.idgiaidau,
+                gd.tengiaidau,
+                gd.idbantochuc,
+                bxh.tenbangxephang,
+                bxh.trangthai,
+                bxh.ngaytao,
+                bxh.ngaycongbo
+             ORDER BY bxh.ngaycongbo DESC, bxh.idbangxephang DESC'
+        );
+        $statement->execute($bindings);
+
+        return $statement->fetchAll();
+    }
+
+    public function findForSpectator(int $rankingId): ?array
+    {
+        return $this->first(
+             $this->baseSelect() . "
+             WHERE bxh.idbangxephang = :ranking_id
+               AND bxh.trangthai = 'DA_CONG_BO'
+               AND gd.trangthai IN ('DA_CONG_BO', 'DANG_DIEN_RA', 'DA_KET_THUC')
+             GROUP BY
+                bxh.idbangxephang,
+                bxh.idgiaidau,
+                gd.tengiaidau,
+                gd.idbantochuc,
+                bxh.tenbangxephang,
+                bxh.trangthai,
+                bxh.ngaytao,
+                bxh.ngaycongbo
+             LIMIT 1",
+            ['ranking_id' => $rankingId]
+        );
+    }
+
+    public function latestPublishedForTournament(int $tournamentId): ?array
+    {
+        return $this->first(
+             $this->baseSelect() . "
+             WHERE bxh.idgiaidau = :tournament_id
+               AND bxh.trangthai = 'DA_CONG_BO'
+               AND gd.trangthai IN ('DA_CONG_BO', 'DANG_DIEN_RA', 'DA_KET_THUC')
+             GROUP BY
+                bxh.idbangxephang,
+                bxh.idgiaidau,
+                gd.tengiaidau,
+                gd.idbantochuc,
+                bxh.tenbangxephang,
+                bxh.trangthai,
+                bxh.ngaytao,
+                bxh.ngaycongbo
+             ORDER BY bxh.ngaycongbo DESC, bxh.idbangxephang DESC
+             LIMIT 1",
+            ['tournament_id' => $tournamentId]
+        );
+    }
+
     public function detailsForRanking(int $rankingId): array
     {
         $statement = $this->db()->prepare(
@@ -412,6 +478,29 @@ final class Bangxephang extends Model
         if (($filters['status'] ?? '') !== '') {
             $where[] = 'bxh.trangthai = :status';
             $bindings['status'] = $filters['status'];
+        }
+
+        if (($filters['tournament_id'] ?? null) !== null) {
+            $where[] = 'bxh.idgiaidau = :tournament_id';
+            $bindings['tournament_id'] = (int) $filters['tournament_id'];
+        }
+
+        return [$where, $bindings];
+    }
+
+    private function whereForSpectator(array $filters): array
+    {
+        $where = [
+            "bxh.trangthai = 'DA_CONG_BO'",
+            "gd.trangthai IN ('DA_CONG_BO', 'DANG_DIEN_RA', 'DA_KET_THUC')",
+        ];
+        $bindings = [];
+
+        if (($filters['q'] ?? '') !== '') {
+            $where[] = '(bxh.tenbangxephang LIKE :keyword_ranking OR gd.tengiaidau LIKE :keyword_tournament)';
+            $keyword = '%' . $filters['q'] . '%';
+            $bindings['keyword_ranking'] = $keyword;
+            $bindings['keyword_tournament'] = $keyword;
         }
 
         if (($filters['tournament_id'] ?? null) !== null) {

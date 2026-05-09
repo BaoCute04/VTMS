@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trang chủ quản lý bóng chuyền</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    :root {
+      --primary: #1d4ed8;
+      --primary-light: #dbeafe;
+      --primary-dark: #1e3a8a;
+      --success: #15803d;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --sidebar: #0f172a;
+      --sidebar-hover: #1e293b;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: var(--sidebar);
+      color: white;
+      padding: 22px 16px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 100;
+      transition: 0.25s ease;
+    }
+
+    .logo-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 10px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .logo-box h1 {
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .logo-box p {
+      font-size: 12px;
+      color: #cbd5e1;
+      margin-top: 3px;
+    }
+
+    .menu-title {
+      font-size: 12px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin: 24px 10px 10px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      color: #d1d5db;
+      text-decoration: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      font-size: 15px;
+    }
+
+    .menu-item:hover,
+    .menu-item.active {
+      background: var(--sidebar-hover);
+      color: white;
+    }
+
+    .main {
+      flex: 1;
+      margin-left: 260px;
+      padding: 24px;
+    }
+
+    .topbar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+      margin-bottom: 24px;
+    }
+
+    .menu-button {
+      display: none;
+      width: 42px;
+      height: 42px;
+      border: none;
+      border-radius: 10px;
+      background: var(--primary);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .page-title h2 {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    .page-title p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-box {
+      position: relative;
+      width: 300px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 11px 14px 11px 38px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+    }
+
+    .search-box span {
+      position: absolute;
+      top: 50%;
+      left: 13px;
+      transform: translateY(-50%);
+      color: var(--muted);
+    }
+
+    .admin-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-left: 12px;
+      border-left: 1px solid var(--border);
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+      color: white;
+      border-radius: 20px;
+      padding: 30px;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(29, 78, 216, 0.22);
+    }
+
+    .hero h3 {
+      font-size: 30px;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+
+    .hero p {
+      color: #dbeafe;
+      line-height: 1.7;
+      max-width: 720px;
+      font-size: 15px;
+    }
+
+    .hero-buttons {
+      margin-top: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 11px 16px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    .btn-white {
+      background: white;
+      color: var(--primary-dark);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .next-match-card {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .next-match-card h4 {
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+
+    .match-teams {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .match-team {
+      text-align: center;
+      flex: 1;
+    }
+
+    .team-symbol {
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 8px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    .vs {
+      font-size: 18px;
+      font-weight: bold;
+      color: #bfdbfe;
+    }
+
+    .match-meta {
+      color: #dbeafe;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+    }
+
+    .stat-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .stat-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .stat-growth {
+      font-size: 12px;
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .stat-card h4 {
+      font-size: 28px;
+      margin-bottom: 4px;
+    }
+
+    .stat-card p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1.35fr 0.85fr;
+      gap: 24px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .panel-header h3 {
+      font-size: 20px;
+    }
+
+    .panel-header p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 3px;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .filter-btn {
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 13px;
+      transition: 0.2s;
+    }
+
+    .filter-btn.active,
+    .filter-btn:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    th {
+      background: #f9fafb;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    tr:hover td {
+      background: #f8fafc;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .status.live {
+      background: #fee2e2;
+      color: var(--danger);
+    }
+
+    .status.upcoming {
+      background: #fef3c7;
+      color: var(--warning);
+    }
+
+    .status.finished {
+      background: #dcfce7;
+      color: var(--success);
+    }
+
+    .ranking-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ranking-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      transition: 0.2s;
+    }
+
+    .ranking-item:hover {
+      border-color: var(--primary);
+      background: #f8fafc;
+    }
+
+    .ranking-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .rank-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .ranking-logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .ranking-name strong {
+      font-size: 14px;
+    }
+
+    .ranking-name span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .points {
+      font-weight: bold;
+      color: var(--primary-dark);
+    }
+
+    .progress-section {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .progress-item {
+      margin-bottom: 16px;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .progress-bar {
+      height: 9px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      background: var(--primary);
+      border-radius: 999px;
+      transition: width 1s ease;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .action-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+    }
+
+    .action-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .action-card span {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    .action-card h4 {
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .action-card p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      background: #111827;
+      color: white;
+      padding: 13px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: 0.25s ease;
+      z-index: 300;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 90;
+    }
+
+    @media (max-width: 1200px) {
+      .hero,
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid,
+      .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .overlay.show {
+        display: block;
+      }
+
+      .main {
+        margin-left: 0;
+        padding: 16px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .top-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-box {
+        width: 100%;
+      }
+
+      .admin-box {
+        border-left: none;
+        padding-left: 0;
+      }
+
+      .menu-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .page-title {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+
+      .hero h3 {
+        font-size: 24px;
+      }
+
+      .stats-grid,
+      .quick-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="overlay"></div>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="logo-box">
+        <div class="logo-icon">🏐</div>
+        <div>
+          <h1>Volley Manager</h1>
+          <p>Hệ thống quản lý giải đấu</p>
+        </div>
+      </div>
+
+      <div class="menu-title">Điều hướng</div>
+      <a class="menu-item active"><span>🏠</span> Trang chủ</a>
+      <a class="menu-item"><span>📅</span> Lịch thi đấu</a>
+      <a class="menu-item"><span>🏆</span> Bảng xếp hạng</a>
+      <a class="menu-item"><span>👥</span> Đội bóng</a>
+      <a class="menu-item"><span>🏃</span> Vận động viên</a>
+
+      <div class="menu-title">Quản trị</div>
+      <a class="menu-item"><span>🧑‍⚖️</span> Trọng tài</a>
+      <a class="menu-item"><span>📊</span> Báo cáo</a>
+      <a class="menu-item"><span>⚙️</span> Cài đặt</a>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="page-title">
+          <button class="menu-button" id="menuButton">☰</button>
+          <div>
+            <h2>Trang chủ quản lý bóng chuyền</h2>
+            <p>Tổng quan hoạt động giải đấu, lịch thi đấu và kết quả mới nhất.</p>
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <div class="search-box">
+            <span>🔎</span>
+            <input type="text" id="searchInput" placeholder="Tìm trận đấu, đội bóng..." />
+          </div>
+
+          <div class="admin-box">
+            <div>
+              <strong>Quản trị viên</strong><br />
+              <small style="color: var(--muted);">Admin System</small>
+            </div>
+            <div class="avatar">AD</div>
+          </div>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div>
+          <h3>Quản lý giải bóng chuyền tập trung, rõ ràng và chuyên nghiệp</h3>
+          <p>
+            Giao diện hỗ trợ ban tổ chức theo dõi lịch thi đấu, đội tham gia, vận động viên,
+            kết quả trận đấu và bảng xếp hạng. Mọi thông tin quan trọng được trình bày trên một màn hình,
+            thay vì thất lạc trong 17 file Excel tên gần giống nhau như một nghi lễ cổ xưa của nhân loại.
+          </p>
+
+          <div class="hero-buttons">
+            <button class="btn btn-white" onclick="showToast('Chức năng tạo trận đấu mới')">+ Tạo trận đấu</button>
+            <button class="btn btn-outline" onclick="showToast('Chức năng thêm đội bóng')">Thêm đội bóng</button>
+          </div>
+        </div>
+
+        <div class="next-match-card">
+          <h4>Trận đấu sắp diễn ra</h4>
+
+          <div class="match-teams">
+            <div class="match-team">
+              <div class="team-symbol">🦅</div>
+              <strong>IUH Eagles</strong>
+            </div>
+            <div class="vs">VS</div>
+            <div class="match-team">
+              <div class="team-symbol">🔥</div>
+              <strong>Fire Smash</strong>
+            </div>
+          </div>
+
+          <div class="match-meta">
+            <p>Thời gian: <strong>18:30 - 12/05/2026</strong></p>
+            <p>Địa điểm: <strong>Nhà thi đấu IUH</strong></p>
+            <p>Sân thi đấu: <strong>Sân A</strong></p>
+            <p>Còn lại: <strong id="countdown">Đang tính...</strong></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-top">
+            <div class="stat-icon">📅</div>
+            <span class="stat-growth">+12%</span>
+          </div>
+          <h4 data-count="32">0</h4>
+          <p>Tổng số trận đấu</p>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-top">
+            <div class="stat-icon">👥</div>
+            <span class="stat-growth">+4</span>
+          </div>
+          <h4 data-count="16">0</h4>
+          <p>Đội bóng tham gia</p>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-top">
+            <div class="stat-icon">🏃</div>
+            <span class="stat-growth">+28</span>
+          </div>
+          <h4 data-count="192">0</h4>
+          <p>Vận động viên</p>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-top">
+            <div class="stat-icon">🏆</div>
+            <span class="stat-growth">4 bảng</span>
+          </div>
+          <h4 data-count="8">0</h4>
+          <p>Vòng đấu đã hoàn tất</p>
+        </div>
+      </section>
+
+      <section class="content-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Lịch thi đấu hôm nay</h3>
+              <p>Danh sách các trận đấu được cập nhật theo trạng thái.</p>
+            </div>
+            <button class="btn btn-white" style="border: 1px solid var(--border);" onclick="showToast('Xuất lịch thi đấu')">Xuất lịch</button>
+          </div>
+
+          <div class="filter-group">
+            <button class="filter-btn active" data-filter="all">Tất cả</button>
+            <button class="filter-btn" data-filter="live">Đang diễn ra</button>
+            <button class="filter-btn" data-filter="upcoming">Sắp diễn ra</button>
+            <button class="filter-btn" data-filter="finished">Đã kết thúc</button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mã trận</th>
+                  <th>Thời gian</th>
+                  <th>Đội 1</th>
+                  <th>Đội 2</th>
+                  <th>Sân</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="matchTable">
+                <tr data-status="live">
+                  <td>M001</td>
+                  <td>08:00</td>
+                  <td>Blue Warriors</td>
+                  <td>Red Tigers</td>
+                  <td>Sân A</td>
+                  <td><span class="status live">Đang diễn ra</span></td>
+                </tr>
+                <tr data-status="upcoming">
+                  <td>M002</td>
+                  <td>10:00</td>
+                  <td>IUH Eagles</td>
+                  <td>Fire Smash</td>
+                  <td>Sân A</td>
+                  <td><span class="status upcoming">Sắp diễn ra</span></td>
+                </tr>
+                <tr data-status="upcoming">
+                  <td>M003</td>
+                  <td>14:00</td>
+                  <td>Thunder Team</td>
+                  <td>Sky Blockers</td>
+                  <td>Sân B</td>
+                  <td><span class="status upcoming">Sắp diễn ra</span></td>
+                </tr>
+                <tr data-status="finished">
+                  <td>M004</td>
+                  <td>16:00</td>
+                  <td>Net Kings</td>
+                  <td>Green Wolves</td>
+                  <td>Sân C</td>
+                  <td><span class="status finished">Đã kết thúc</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Bảng xếp hạng</h3>
+              <p>Top đội có thành tích tốt nhất.</p>
+            </div>
+          </div>
+
+          <div class="ranking-list" id="rankingList">
+            <div class="ranking-item">
+              <div class="ranking-left">
+                <div class="rank-number">1</div>
+                <div class="ranking-logo">🦅</div>
+                <div class="ranking-name">
+                  <strong>IUH Eagles</strong>
+                  <span>8 thắng · 1 thua</span>
+                </div>
+              </div>
+              <div class="points">24đ</div>
+            </div>
+
+            <div class="ranking-item">
+              <div class="ranking-left">
+                <div class="rank-number">2</div>
+                <div class="ranking-logo">🔥</div>
+                <div class="ranking-name">
+                  <strong>Fire Smash</strong>
+                  <span>7 thắng · 2 thua</span>
+                </div>
+              </div>
+              <div class="points">21đ</div>
+            </div>
+
+            <div class="ranking-item">
+              <div class="ranking-left">
+                <div class="rank-number">3</div>
+                <div class="ranking-logo">🐯</div>
+                <div class="ranking-name">
+                  <strong>Red Tigers</strong>
+                  <span>6 thắng · 3 thua</span>
+                </div>
+              </div>
+              <div class="points">18đ</div>
+            </div>
+
+            <div class="ranking-item">
+              <div class="ranking-left">
+                <div class="rank-number">4</div>
+                <div class="ranking-logo">⚡</div>
+                <div class="ranking-name">
+                  <strong>Thunder Team</strong>
+                  <span>5 thắng · 4 thua</span>
+                </div>
+              </div>
+              <div class="points">15đ</div>
+            </div>
+          </div>
+
+          <div class="progress-section">
+            <div class="progress-item">
+              <div class="progress-info">
+                <span>Tiến độ vòng bảng</span>
+                <strong>75%</strong>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" data-width="75%"></div>
+              </div>
+            </div>
+
+            <div class="progress-item">
+              <div class="progress-info">
+                <span>Hồ sơ vận động viên hợp lệ</span>
+                <strong>88%</strong>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" data-width="88%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="quick-actions">
+        <div class="action-card" onclick="showToast('Mở trang quản lý đội bóng')">
+          <span>👥</span>
+          <h4>Quản lý đội bóng</h4>
+          <p>Thêm, sửa, xem danh sách đội tham gia giải đấu.</p>
+        </div>
+
+        <div class="action-card" onclick="showToast('Mở trang quản lý vận động viên')">
+          <span>🏃</span>
+          <h4>Quản lý VĐV</h4>
+          <p>Theo dõi hồ sơ, số áo và đội thi đấu của vận động viên.</p>
+        </div>
+
+        <div class="action-card" onclick="showToast('Mở trang nhập kết quả')">
+          <span>📝</span>
+          <h4>Nhập kết quả</h4>
+          <p>Cập nhật tỷ số, trạng thái trận đấu và kết quả chung cuộc.</p>
+        </div>
+
+        <div class="action-card" onclick="showToast('Mở trang báo cáo thống kê')">
+          <span>📊</span>
+          <h4>Báo cáo</h4>
+          <p>Xem thống kê đội bóng, trận đấu và hiệu suất giải đấu.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast">Thông báo</div>
+
+  <script>
+    const menuButton = document.getElementById('menuButton');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const toast = document.getElementById('toast');
+    const searchInput = document.getElementById('searchInput');
+    const matchRows = document.querySelectorAll('#matchTable tr');
+    const rankingItems = document.querySelectorAll('.ranking-item');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+
+    menuButton.addEventListener('click', function () {
+      sidebar.classList.add('open');
+      overlay.classList.add('show');
+    });
+
+    overlay.addEventListener('click', function () {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    });
+
+    document.querySelectorAll('.menu-item').forEach(function (item) {
+      item.addEventListener('click', function () {
+        document.querySelectorAll('.menu-item').forEach(function (link) {
+          link.classList.remove('active');
+        });
+
+        item.classList.add('active');
+        showToast('Đã chọn: ' + item.textContent.trim());
+      });
+    });
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+
+      setTimeout(function () {
+        toast.classList.remove('show');
+      }, 2200);
+    }
+
+    function animateCounters() {
+      const counters = document.querySelectorAll('[data-count]');
+
+      counters.forEach(function (counter) {
+        const target = Number(counter.getAttribute('data-count'));
+        let current = 0;
+        const step = Math.max(1, Math.ceil(target / 45));
+
+        const timer = setInterval(function () {
+          current += step;
+
+          if (current >= target) {
+            current = target;
+            clearInterval(timer);
+          }
+
+          counter.textContent = current;
+        }, 20);
+      });
+    }
+
+    function animateProgressBars() {
+      const bars = document.querySelectorAll('.progress-fill');
+
+      bars.forEach(function (bar) {
+        setTimeout(function () {
+          bar.style.width = bar.getAttribute('data-width');
+        }, 300);
+      });
+    }
+
+    filterButtons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        filterButtons.forEach(function (btn) {
+          btn.classList.remove('active');
+        });
+
+        button.classList.add('active');
+        const filter = button.getAttribute('data-filter');
+
+        matchRows.forEach(function (row) {
+          const status = row.getAttribute('data-status');
+          row.style.display = filter === 'all' || status === filter ? '' : 'none';
+        });
+      });
+    });
+
+    searchInput.addEventListener('input', function () {
+      const keyword = searchInput.value.toLowerCase().trim();
+
+      matchRows.forEach(function (row) {
+        const content = row.textContent.toLowerCase();
+        row.style.display = content.includes(keyword) ? '' : 'none';
+      });
+
+      rankingItems.forEach(function (item) {
+        const content = item.textContent.toLowerCase();
+        item.style.display = content.includes(keyword) ? 'flex' : 'none';
+      });
+    });
+
+    function updateCountdown() {
+      const targetDate = new Date('2026-05-12T18:30:00+07:00');
+      const now = new Date();
+      const distance = targetDate - now;
+      const countdown = document.getElementById('countdown');
+
+      if (distance <= 0) {
+        countdown.textContent = 'Trận đấu đã bắt đầu';
+        return;
+      }
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((distance / (1000 * 60)) % 60);
+      const seconds = Math.floor((distance / 1000) % 60);
+
+      countdown.textContent = days + ' ngày ' + hours + ' giờ ' + minutes + ' phút ' + seconds + ' giây';
+    }
+
+    animateCounters();
+    animateProgressBars();
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  </script>
+</body>
+</html>

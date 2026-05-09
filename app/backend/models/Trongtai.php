@@ -711,6 +711,216 @@ final class Trongtai extends Model
         return $statement->fetchAll();
     }
 
+    public function leaveRequestsForReferee(int $refereeId, array $filters = []): array
+    {
+        [$where, $bindings] = $this->leaveRequestWhereForReferee($refereeId, $filters);
+
+        $statement = $this->db()->prepare(
+            $this->baseLeaveRequestSelect() . '
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY dntt.ngaygui DESC, dntt.iddonnghi DESC'
+        );
+        $statement->execute($bindings);
+
+        return $statement->fetchAll();
+    }
+
+    public function leaveRequestStatsForReferee(int $refereeId, array $filters = []): array
+    {
+        [$where, $bindings] = $this->leaveRequestWhereForReferee($refereeId, $filters);
+
+        $statement = $this->db()->prepare(
+            "SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN dntt.trangthai = 'CHO_DUYET' THEN 1 ELSE 0 END) AS cho_duyet,
+                SUM(CASE WHEN dntt.trangthai = 'DA_DUYET' THEN 1 ELSE 0 END) AS da_duyet,
+                SUM(CASE WHEN dntt.trangthai = 'TU_CHOI' THEN 1 ELSE 0 END) AS tu_choi,
+                SUM(CASE WHEN dntt.trangthai = 'DA_HUY' THEN 1 ELSE 0 END) AS da_huy,
+                SUM(DATEDIFF(dntt.denngay, dntt.tungay) + 1) AS total_days,
+                SUM(CASE WHEN dntt.trangthai = 'DA_DUYET' THEN DATEDIFF(dntt.denngay, dntt.tungay) + 1 ELSE 0 END) AS approved_days
+             FROM Donnghitrongtai dntt
+             WHERE " . implode(' AND ', $where)
+        );
+        $statement->execute($bindings);
+        $row = $statement->fetch() ?: [];
+
+        return [
+            'total' => (int) ($row['total'] ?? 0),
+            'CHO_DUYET' => (int) ($row['cho_duyet'] ?? 0),
+            'DA_DUYET' => (int) ($row['da_duyet'] ?? 0),
+            'TU_CHOI' => (int) ($row['tu_choi'] ?? 0),
+            'DA_HUY' => (int) ($row['da_huy'] ?? 0),
+            'total_days' => (int) ($row['total_days'] ?? 0),
+            'approved_days' => (int) ($row['approved_days'] ?? 0),
+        ];
+    }
+
+    public function findLeaveRequestForReferee(int $refereeId, int $leaveId): ?array
+    {
+        return $this->first(
+            $this->baseLeaveRequestSelect() . '
+             WHERE dntt.idtrongtai = :referee_id
+               AND dntt.iddonnghi = :leave_id
+             LIMIT 1',
+            [
+                'referee_id' => $refereeId,
+                'leave_id' => $leaveId,
+            ]
+        );
+    }
+
+    public function hasOverlappingLeaveRequest(int $refereeId, string $fromDate, string $toDate, ?int $exceptLeaveId = null): bool
+    {
+        $where = [
+            'idtrongtai = :referee_id',
+            "trangthai IN ('CHO_DUYET','DA_DUYET')",
+            'tungay <= :to_date',
+            'denngay >= :from_date',
+        ];
+        $bindings = [
+            'referee_id' => $refereeId,
+            'from_date' => $fromDate,
+            'to_date' => $toDate,
+        ];
+
+        if ($exceptLeaveId !== null) {
+            $where[] = 'iddonnghi <> :except_leave_id';
+            $bindings['except_leave_id'] = $exceptLeaveId;
+        }
+
+        return $this->first(
+            'SELECT 1
+             FROM Donnghitrongtai
+             WHERE ' . implode(' AND ', $where) . '
+             LIMIT 1',
+            $bindings
+        ) !== null;
+    }
+
+    public function createSelfLeaveRequest(
+        int $refereeId,
+        string $fromDate,
+        string $toDate,
+        string $reason,
+        int $actorAccountId,
+        ?string $ipAddress,
+        string $logNote
+    ): int {
+        $db = $this->db();
+
+        try {
+            $db->beginTransaction();
+
+            $statement = $db->prepare(
+                "INSERT INTO Donnghitrongtai (idtrongtai, tungay, denngay, lydo, trangthai)
+                 VALUES (:referee_id, :from_date, :to_date, :reason, 'CHO_DUYET')"
+            );
+            $statement->execute([
+                'referee_id' => $refereeId,
+                'from_date' => $fromDate,
+                'to_date' => $toDate,
+                'reason' => $reason,
+            ]);
+
+            $leaveId = (int) $db->lastInsertId();
+
+            $this->recordSystemLog($actorAccountId, 'Xin nghi phep trong tai', 'Donnghitrongtai', $leaveId, $ipAddress, $logNote);
+
+            $db->commit();
+
+            return $leaveId;
+        } catch (Throwable $exception) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
+    public function cancelSelfLeaveRequest(
+        int $refereeId,
+        int $leaveId,
+        string $reason,
+        int $actorAccountId,
+        ?string $ipAddress,
+        string $logNote
+    ): ?array {
+        $db = $this->db();
+
+        try {
+            $db->beginTransaction();
+
+            $leave = $this->first(
+                $this->baseLeaveRequestSelect() . '
+                 WHERE dntt.idtrongtai = :referee_id
+                   AND dntt.iddonnghi = :leave_id
+                 LIMIT 1
+                 FOR UPDATE',
+                [
+                    'referee_id' => $refereeId,
+                    'leave_id' => $leaveId,
+                ]
+            );
+
+            if ($leave === null) {
+                $db->rollBack();
+                return null;
+            }
+
+            if ((string) $leave['trangthai'] !== 'CHO_DUYET') {
+                throw new \RuntimeException('LEAVE_NOT_CANCELABLE');
+            }
+
+            $statement = $db->prepare(
+                "UPDATE Donnghitrongtai
+                 SET trangthai = 'DA_HUY',
+                     ngayxuly = CURRENT_TIMESTAMP
+                 WHERE iddonnghi = :leave_id
+                   AND idtrongtai = :referee_id
+                   AND trangthai = 'CHO_DUYET'"
+            );
+            $statement->execute([
+                'leave_id' => $leaveId,
+                'referee_id' => $refereeId,
+            ]);
+
+            if ($statement->rowCount() !== 1) {
+                throw new \RuntimeException('LEAVE_NOT_CANCELABLE');
+            }
+
+            $this->recordSystemLog($actorAccountId, 'Huy don nghi phep trong tai', 'Donnghitrongtai', $leaveId, $ipAddress, $logNote);
+
+            $db->commit();
+
+            return $this->findLeaveRequestForReferee($refereeId, $leaveId);
+        } catch (Throwable $exception) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
+    public function recordRefereeLeaveRequestListView(
+        int $refereeId,
+        int $actorAccountId,
+        ?string $ipAddress,
+        string $logNote
+    ): void {
+        $this->recordSystemLog($actorAccountId, 'Xem danh sach don nghi phep trong tai', 'Trongtai', $refereeId, $ipAddress, $logNote);
+    }
+
+    public function recordRefereeLeaveRequestDetailView(
+        int $leaveId,
+        int $actorAccountId,
+        ?string $ipAddress,
+        string $logNote
+    ): void {
+        $this->recordSystemLog($actorAccountId, 'Xem chi tiet don nghi phep trong tai', 'Donnghitrongtai', $leaveId, $ipAddress, $logNote);
+    }
+
     public function tournamentsForReferee(int $refereeId): array
     {
         $statement = $this->db()->prepare(
@@ -1432,6 +1642,60 @@ final class Trongtai extends Model
                 'winner_team_id' => $set['doithangset'],
             ]);
         }
+    }
+
+    private function baseLeaveRequestSelect(): string
+    {
+        return "SELECT
+                dntt.iddonnghi,
+                dntt.idtrongtai,
+                dntt.tungay,
+                dntt.denngay,
+                DATEDIFF(dntt.denngay, dntt.tungay) + 1 AS songay,
+                dntt.lydo,
+                dntt.trangthai,
+                dntt.ngaygui,
+                dntt.ngayxuly,
+                tt.capbac,
+                tt.kinhnghiem,
+                tt.trangthai AS trangthaitrongtai,
+                nd.idtaikhoan,
+                TRIM(CONCAT(COALESCE(nd.hodem, ''), ' ', COALESCE(nd.ten, ''))) AS hoten,
+                tk.username,
+                tk.email,
+                tk.trangthai AS trangthai_taikhoan
+             FROM Donnghitrongtai dntt
+             JOIN Trongtai tt ON tt.idtrongtai = dntt.idtrongtai
+             JOIN Nguoidung nd ON nd.idnguoidung = tt.idnguoidung
+             JOIN Taikhoan tk ON tk.idtaikhoan = nd.idtaikhoan";
+    }
+
+    private function leaveRequestWhereForReferee(int $refereeId, array $filters): array
+    {
+        $where = ['dntt.idtrongtai = :referee_id'];
+        $bindings = ['referee_id' => $refereeId];
+
+        if (($filters['status'] ?? '') !== '') {
+            $where[] = 'dntt.trangthai = :status';
+            $bindings['status'] = $filters['status'];
+        }
+
+        if (($filters['from'] ?? '') !== '') {
+            $where[] = 'dntt.tungay >= :from_date';
+            $bindings['from_date'] = $filters['from'];
+        }
+
+        if (($filters['to'] ?? '') !== '') {
+            $where[] = 'dntt.tungay <= :to_date';
+            $bindings['to_date'] = $filters['to'];
+        }
+
+        if (($filters['q'] ?? '') !== '') {
+            $where[] = '(dntt.lydo LIKE :keyword OR dntt.trangthai LIKE :keyword)';
+            $bindings['keyword'] = '%' . $filters['q'] . '%';
+        }
+
+        return [$where, $bindings];
     }
 
     private function recordSystemLog(?int $accountId, string $action, string $targetTable, ?int $targetId, ?string $ipAddress, ?string $note = null): void

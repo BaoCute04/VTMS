@@ -506,6 +506,93 @@ final class Lichthidau extends Model
         );
     }
 
+    public function scheduleViewForOrganizer(int $organizerId, array $filters = []): array
+    {
+        [$where, $bindings] = $this->whereForOrganizerScheduleView($organizerId, $filters);
+
+        $statement = $this->db()->prepare(
+            $this->organizerScheduleViewSelect() . '
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY td.thoigianbatdau, td.idtrandau'
+        );
+        $statement->execute($bindings);
+
+        return $statement->fetchAll();
+    }
+
+    public function scheduleViewStatsForOrganizer(int $organizerId, array $filters = []): array
+    {
+        [$where, $bindings] = $this->whereForOrganizerScheduleView($organizerId, $filters);
+
+        $statement = $this->db()->prepare(
+            'SELECT td.trangthai, COUNT(*) AS total
+             FROM Trandau td
+             JOIN Giaidau gd ON gd.idgiaidau = td.idgiaidau
+             LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
+             JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
+             JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
+             JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Ketquatrandau kq ON kq.idtrandau = td.idtrandau
+             WHERE ' . implode(' AND ', $where) . '
+             GROUP BY td.trangthai'
+        );
+        $statement->execute($bindings);
+
+        $stats = [
+            'CHUA_DIEN_RA' => 0,
+            'SAP_DIEN_RA' => 0,
+            'DANG_DIEN_RA' => 0,
+            'TAM_DUNG' => 0,
+            'DA_KET_THUC' => 0,
+            'DA_HUY' => 0,
+        ];
+
+        foreach ($statement->fetchAll() as $row) {
+            $stats[(string) $row['trangthai']] = (int) $row['total'];
+        }
+
+        return $stats;
+    }
+
+    public function scheduleViewMatchForOrganizer(int $organizerId, int $matchId): ?array
+    {
+        return $this->first(
+            $this->organizerScheduleViewSelect() . '
+             WHERE gd.idbantochuc = :organizer_id
+               AND td.idtrandau = :match_id
+             LIMIT 1',
+            [
+                'organizer_id' => $organizerId,
+                'match_id' => $matchId,
+            ]
+        );
+    }
+
+    public function matchesForSpectator(array $filters = []): array
+    {
+        [$where, $bindings] = $this->whereForSpectator($filters);
+
+        $statement = $this->db()->prepare(
+            $this->spectatorMatchSelect() . '
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY td.thoigianbatdau, td.idtrandau'
+        );
+        $statement->execute($bindings);
+
+        return $statement->fetchAll();
+    }
+
+    public function findMatchForSpectator(int $matchId): ?array
+    {
+        return $this->first(
+            $this->spectatorMatchSelect() . "
+             WHERE td.idtrandau = :match_id
+               AND gd.trangthai IN ('DA_CONG_BO', 'DANG_DIEN_RA', 'DA_KET_THUC')
+             LIMIT 1",
+            ['match_id' => $matchId]
+        );
+    }
+
     public function activeVenueById(int $venueId): ?array
     {
         return $this->first(
@@ -557,6 +644,210 @@ final class Lichthidau extends Model
              LIMIT 1",
             $bindings
         );
+    }
+
+    private function whereForOrganizerScheduleView(int $organizerId, array $filters): array
+    {
+        $where = ['gd.idbantochuc = :organizer_id'];
+        $bindings = ['organizer_id' => $organizerId];
+
+        if (($filters['status'] ?? '') !== '') {
+            $where[] = 'td.trangthai = :status';
+            $bindings['status'] = $filters['status'];
+        } else {
+            $where[] = "td.trangthai <> 'DA_HUY'";
+        }
+
+        if (($filters['q'] ?? '') !== '') {
+            $where[] = "(gd.tengiaidau LIKE :keyword
+                OR bd.tenbang LIKE :keyword
+                OR d1.tendoibong LIKE :keyword
+                OR d2.tendoibong LIKE :keyword
+                OR sd.tensandau LIKE :keyword
+                OR sd.diachi LIKE :keyword
+                OR td.vongdau LIKE :keyword)";
+            $bindings['keyword'] = '%' . $filters['q'] . '%';
+        }
+
+        if (($filters['tournament_id'] ?? null) !== null) {
+            $where[] = 'td.idgiaidau = :tournament_id';
+            $bindings['tournament_id'] = (int) $filters['tournament_id'];
+        }
+
+        if (($filters['group_id'] ?? null) !== null) {
+            $where[] = 'td.idbangdau = :group_id';
+            $bindings['group_id'] = (int) $filters['group_id'];
+        }
+
+        if (($filters['team_id'] ?? null) !== null) {
+            $where[] = '(td.iddoibong1 = :team_id OR td.iddoibong2 = :team_id)';
+            $bindings['team_id'] = (int) $filters['team_id'];
+        }
+
+        if (($filters['venue_id'] ?? null) !== null) {
+            $where[] = 'td.idsandau = :venue_id';
+            $bindings['venue_id'] = (int) $filters['venue_id'];
+        }
+
+        if (($filters['result_status'] ?? '') !== '') {
+            $where[] = 'kq.trangthai = :result_status';
+            $bindings['result_status'] = $filters['result_status'];
+        }
+
+        if (($filters['from'] ?? '') !== '') {
+            $where[] = 'td.thoigianbatdau >= :from_date';
+            $bindings['from_date'] = $filters['from'] . ' 00:00:00';
+        }
+
+        if (($filters['to'] ?? '') !== '') {
+            $where[] = 'td.thoigianbatdau <= :to_date';
+            $bindings['to_date'] = $filters['to'] . ' 23:59:59';
+        }
+
+        return [$where, $bindings];
+    }
+
+    private function organizerScheduleViewSelect(): string
+    {
+        return "SELECT
+                td.idtrandau,
+                td.idgiaidau,
+                gd.tengiaidau,
+                gd.trangthai AS trangthaigiaidau,
+                gd.trangthaidangky AS trangthaidangkygiaidau,
+                gd.thoigianbatdau AS giaidau_batdau,
+                gd.thoigianketthuc AS giaidau_ketthuc,
+                gd.diadiem AS giaidau_diadiem,
+                gd.idbantochuc,
+                td.idbangdau,
+                bd.tenbang,
+                bd.trangthai AS bangdau_trangthai,
+                td.iddoibong1,
+                d1.tendoibong AS doi1,
+                d1.logo AS doi1_logo,
+                td.iddoibong2,
+                d2.tendoibong AS doi2,
+                d2.logo AS doi2_logo,
+                td.idsandau,
+                sd.tensandau,
+                sd.diachi AS sandau_diachi,
+                sd.trangthai AS sandau_trangthai,
+                td.thoigianbatdau,
+                td.thoigianketthuc,
+                td.vongdau,
+                td.trangthai,
+                td.ngaytao,
+                td.ngaycapnhat,
+                kq.idketqua,
+                kq.trangthai AS ketqua_trangthai,
+                kq.sosetdoi1,
+                kq.sosetdoi2,
+                kq.diemdoi1,
+                kq.diemdoi2,
+                kq.iddoithang,
+                winner.tendoibong AS doithang
+             FROM Trandau td
+             JOIN Giaidau gd ON gd.idgiaidau = td.idgiaidau
+             LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
+             JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
+             JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
+             JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Ketquatrandau kq ON kq.idtrandau = td.idtrandau
+             LEFT JOIN Doibong winner ON winner.iddoibong = kq.iddoithang";
+    }
+
+    private function whereForSpectator(array $filters): array
+    {
+        $where = ["gd.trangthai IN ('DA_CONG_BO', 'DANG_DIEN_RA', 'DA_KET_THUC')"];
+        $bindings = [];
+
+        if (($filters['status'] ?? '') !== '') {
+            $where[] = 'td.trangthai = :status';
+            $bindings['status'] = $filters['status'];
+        } else {
+            $where[] = "td.trangthai <> 'DA_HUY'";
+        }
+
+        if (($filters['q'] ?? '') !== '') {
+            $where[] = "(gd.tengiaidau LIKE :keyword
+                OR bd.tenbang LIKE :keyword
+                OR d1.tendoibong LIKE :keyword
+                OR d2.tendoibong LIKE :keyword
+                OR sd.tensandau LIKE :keyword
+                OR sd.diachi LIKE :keyword
+                OR td.vongdau LIKE :keyword)";
+            $bindings['keyword'] = '%' . $filters['q'] . '%';
+        }
+
+        if (($filters['tournament_id'] ?? null) !== null) {
+            $where[] = 'td.idgiaidau = :tournament_id';
+            $bindings['tournament_id'] = (int) $filters['tournament_id'];
+        }
+
+        if (($filters['team_id'] ?? null) !== null) {
+            $where[] = '(td.iddoibong1 = :team_id OR td.iddoibong2 = :team_id)';
+            $bindings['team_id'] = (int) $filters['team_id'];
+        }
+
+        if (($filters['venue_id'] ?? null) !== null) {
+            $where[] = 'td.idsandau = :venue_id';
+            $bindings['venue_id'] = (int) $filters['venue_id'];
+        }
+
+        if (($filters['from'] ?? '') !== '') {
+            $where[] = 'td.thoigianbatdau >= :from_date';
+            $bindings['from_date'] = $filters['from'] . ' 00:00:00';
+        }
+
+        if (($filters['to'] ?? '') !== '') {
+            $where[] = 'td.thoigianbatdau <= :to_date';
+            $bindings['to_date'] = $filters['to'] . ' 23:59:59';
+        }
+
+        return [$where, $bindings];
+    }
+
+    private function spectatorMatchSelect(): string
+    {
+        return "SELECT
+                td.idtrandau,
+                td.idgiaidau,
+                gd.tengiaidau,
+                gd.trangthai AS trangthaigiaidau,
+                gd.trangthaidangky AS trangthaidangkygiaidau,
+                td.idbangdau,
+                bd.tenbang,
+                td.iddoibong1,
+                d1.tendoibong AS doi1,
+                d1.logo AS doi1_logo,
+                td.iddoibong2,
+                d2.tendoibong AS doi2,
+                d2.logo AS doi2_logo,
+                td.idsandau,
+                sd.tensandau,
+                sd.diachi AS sandau_diachi,
+                td.thoigianbatdau,
+                td.thoigianketthuc,
+                td.vongdau,
+                td.trangthai,
+                td.ngaytao,
+                td.ngaycapnhat,
+                kq.idketqua,
+                kq.trangthai AS ketqua_trangthai,
+                kq.sosetdoi1,
+                kq.sosetdoi2,
+                kq.diemdoi1,
+                kq.diemdoi2,
+                kq.iddoithang,
+                winner.tendoibong AS doithang
+             FROM Trandau td
+             JOIN Giaidau gd ON gd.idgiaidau = td.idgiaidau
+             LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
+             JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
+             JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
+             JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Ketquatrandau kq ON kq.idtrandau = td.idtrandau AND kq.trangthai = 'DA_CONG_BO'
+             LEFT JOIN Doibong winner ON winner.iddoibong = kq.iddoithang";
     }
 
     public function createMatch(

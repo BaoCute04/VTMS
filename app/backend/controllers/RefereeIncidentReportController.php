@@ -19,6 +19,15 @@ final class RefereeIncidentReportController extends Controller
         $this->service = new RefereeIncidentReportService();
     }
 
+    public function page(Request $request): Response
+    {
+        return $this->view('trongtai.incidents', [
+            'pageTitle' => 'VTMS - Bao cao su co',
+            'styles' => ['css/referee-incidents.css'],
+            'scripts' => ['js/referee-incidents.js'],
+        ]);
+    }
+
     public function index(Request $request): Response
     {
         return $this->respond(

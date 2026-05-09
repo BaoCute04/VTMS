@@ -8,54 +8,63 @@ use App\Backend\Core\Auth\Auth;
 use App\Backend\Core\Controller;
 use App\Backend\Core\Http\Request;
 use App\Backend\Core\Http\Response;
+use App\Backend\Services\DashboardSummaryService;
 
 final class DashboardController extends Controller
 {
     public function index(Request $request): Response
     {
+        $user = Auth::user();
+        $dashboard = $user !== null ? (new DashboardSummaryService())->forUser($user, $request->ip()) : [];
+
         return $this->view('dashboard.index', [
-            'user' => Auth::user(),
-            'moduleTitle' => 'Tong quan he thong',
-            'moduleDescription' => 'Man hinh dieu huong ban dau theo vai tro nguoi dung.',
+            'user' => $user,
+            'dashboardData' => $dashboard,
+            'moduleTitle' => $dashboard['top_title'] ?? 'Tổng quan hệ thống',
+            'moduleDescription' => $dashboard['top_subtitle'] ?? 'Màn hình điều hướng ban đầu theo vai trò người dùng.',
         ]);
     }
 
     public function admin(Request $request): Response
     {
-        return $this->module('Quan tri he thong', 'Quan ly tai khoan, vai tro, cau hinh va nhat ky.');
+        return $this->module('Quản trị hệ thống', 'Quản lý tài khoản, vai trò, cấu hình và nhật ký.', $request);
     }
 
     public function organizer(Request $request): Response
     {
-        return $this->module('Ban to chuc', 'Quan ly giai dau, dieu le, doi bong, lich thi dau va ket qua.');
+        return $this->module('Ban tổ chức', 'Quản lý giải đấu, điều lệ, đội bóng, lịch thi đấu và kết quả.', $request);
     }
 
     public function referee(Request $request): Response
     {
-        return $this->module('Trong tai', 'Xem phan cong, ghi nhan su kien tran dau va bao cao su co.');
+        return $this->module('Trọng tài', 'Xem phân công, ghi nhận sự kiện trận đấu và báo cáo sự cố.', $request);
     }
 
     public function coach(Request $request): Response
     {
-        return $this->module('Huan luyen vien', 'Quan ly doi bong, thanh vien, dang ky giai va doi hinh.');
+        return $this->module('Huấn luyện viên', 'Quản lý đội bóng, thành viên, đăng ký giải và đội hình.', $request);
     }
 
     public function athlete(Request $request): Response
     {
-        return $this->module('Van dong vien', 'Theo doi ho so, lich thi dau, loi moi va don nghi phep.');
+        return $this->module('Vận động viên', 'Theo dõi hồ sơ, lịch thi đấu, lời mời và đơn nghỉ phép.', $request);
     }
 
     public function spectator(Request $request): Response
     {
-        return $this->module('Khan gia', 'Theo doi doi bong, lich thi dau, ket qua va bang xep hang.');
+        return $this->module('Khán giả', 'Theo dõi đội bóng, lịch thi đấu, kết quả và bảng xếp hạng.', $request);
     }
 
-    private function module(string $title, string $description): Response
+    private function module(string $title, string $description, ?Request $request = null): Response
     {
+        $user = Auth::user();
+        $dashboard = $user !== null ? (new DashboardSummaryService())->forUser($user, $request?->ip()) : [];
+
         return $this->view('dashboard.index', [
-            'user' => Auth::user(),
-            'moduleTitle' => $title,
-            'moduleDescription' => $description,
+            'user' => $user,
+            'dashboardData' => $dashboard,
+            'moduleTitle' => $dashboard['top_title'] ?? $title,
+            'moduleDescription' => $dashboard['top_subtitle'] ?? $description,
         ]);
     }
 }

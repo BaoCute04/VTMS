@@ -268,7 +268,7 @@ final class RefereeIncidentReportService
     private function reportFromPayload(array $payload, int $refereeId, ?int $routeMatchId): array
     {
         $errors = [];
-        $matchId = $routeMatchId ?? $this->optionalPositiveInt($payload['match_id'] ?? $payload['idtrandau'] ?? null);
+        $matchId = $routeMatchId ?? $this->optionalPositiveInt($payload['match_id'] ?? $payload['idtrandau'] ?? $payload['matchId'] ?? null);
 
         if ($matchId === null) {
             $errors['match_id'] = 'Ma tran dau la bat buoc.';
