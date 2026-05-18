@@ -1,7 +1,7 @@
 <section class="coach-page coach-team-schedule" data-teams-api="<?= e(url('/api/coach/teams')) ?>">
     <header class="coach-topbar">
         <div>
-            <p class="eyebrow">HUAN LUYEN VIEN</p>
+            <p class="eyebrow">HUẤN LUYỆN VIÊN</p>
             <h1>Lịch thi đấu đội bóng</h1>
             <p class="sub">Xem các trận đấu của đội theo giải, trạng thái và khoảng ngày.</p>
         </div>

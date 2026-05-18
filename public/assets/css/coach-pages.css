@@ -102,6 +102,44 @@ textarea {
     resize: vertical;
 }
 
+.readonly-block {
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #f8fafc;
+    color: var(--text);
+    white-space: pre-wrap;
+}
+
+.readonly-block.rule-block {
+    min-height: 96px;
+}
+
+.team-registration-state {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #f8fafc;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.team-registration-state strong {
+    color: var(--text);
+}
+
+.team-registration-state .badge {
+    margin-left: 6px;
+}
+
+.team-registration-state .state-detail {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+}
+
 .btn {
     display: inline-flex;
     align-items: center;

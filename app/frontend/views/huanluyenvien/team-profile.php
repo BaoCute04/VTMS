@@ -1,7 +1,7 @@
 <section class="coach-page coach-team-profile" data-teams-api="<?= e(url('/api/coach/teams')) ?>">
     <header class="coach-topbar">
         <div>
-            <p class="eyebrow">HUAN LUYEN VIEN</p>
+            <p class="eyebrow">HUẤN LUYỆN VIÊN</p>
             <h1>Đội bóng của tôi</h1>
             <p class="sub">Tạo mới hoặc cập nhật thông tin đội bóng do HLV quản lý.</p>
         </div>

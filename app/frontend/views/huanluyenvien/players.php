@@ -5,7 +5,7 @@
 >
     <header class="coach-topbar">
         <div>
-            <p class="eyebrow">HUAN LUYEN VIEN</p>
+            <p class="eyebrow">HUẤN LUYỆN VIÊN</p>
             <h1>Tài khoản Vận động viên</h1>
             <p class="sub">Tạo tài khoản VĐV và gửi yêu cầu xác nhận tư cách thi đấu đến Ban tổ chức.</p>
         </div>

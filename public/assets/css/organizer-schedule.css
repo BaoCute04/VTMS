@@ -78,8 +78,41 @@
 
 .schedule-split {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    grid-template-columns: 1fr;
     gap: 12px;
+}
+
+.schedule-pane {
+    min-width: 0;
+}
+
+.round-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.round-card {
+    border: 1px solid var(--schedule-line);
+    border-radius: 12px;
+    background: #fff;
+    padding: 10px;
+}
+
+.round-card.is-active {
+    border-color: rgba(79, 70, 229, .48);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .08);
+}
+
+.round-card .round-title {
+    font-weight: 800;
+}
+
+.round-card .round-meta {
+    color: var(--schedule-muted);
+    font-size: 12px;
+    margin-top: 4px;
 }
 
 .pane-head {
@@ -277,6 +310,31 @@
     margin-top: 6px;
 }
 
+.inline-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.inline-head label {
+    margin-bottom: 0;
+}
+
+.referee-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.referee-row {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) minmax(180px, 220px) auto;
+    gap: 8px;
+    align-items: center;
+}
+
 .schedule-message {
     margin: 10px 0 0;
     color: var(--schedule-muted);
@@ -386,6 +444,36 @@
     flex-wrap: wrap;
 }
 
+.selected-team-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 34px;
+    margin-top: 8px;
+}
+
+.selected-team-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    padding: 5px 10px;
+    font-size: 13px;
+}
+
+.selected-team-chip button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0;
+}
+
 @media (max-width: 1100px) {
     .schedule-layout,
     .schedule-split {
@@ -406,6 +494,10 @@
     }
 
     .schedule-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .referee-row {
         grid-template-columns: 1fr;
     }
 }

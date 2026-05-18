@@ -1,7 +1,7 @@
 <section class="coach-page coach-members" data-teams-api="<?= e(url('/api/coach/teams')) ?>">
     <header class="coach-topbar">
         <div>
-            <p class="eyebrow">HUAN LUYEN VIEN</p>
+            <p class="eyebrow">HUẤN LUYỆN VIÊN</p>
             <h1>Thành viên đội bóng</h1>
             <p class="sub">Thêm, xóa và chuyển đổi thành viên giữa các đội bóng của HLV.</p>
         </div>

@@ -222,7 +222,7 @@
     justify-content: center;
     padding: 16px;
     position: fixed;
-    z-index: 30;
+    z-index: 80;
 }
 
 .tournament-modal.hidden {
@@ -284,6 +284,15 @@
     grid-column: 1 / -1;
 }
 
+.form-section-title {
+    border-top: 1px solid var(--line);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 800;
+    margin-top: 4px;
+    padding-top: 12px;
+}
+
 .tournament-modal label {
     color: var(--muted);
     display: block;
@@ -294,6 +303,64 @@
 .tournament-modal textarea {
     resize: vertical;
     width: 100%;
+}
+
+.field-hint {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+    margin: 6px 0 0;
+}
+
+.participation-flags,
+.achievement-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.checkbox-field {
+    align-items: center;
+    color: var(--text);
+    display: inline-flex;
+    gap: 8px;
+    margin: 0;
+}
+
+.checkbox-field input {
+    min-height: 0;
+    width: auto;
+}
+
+.image-mode {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.image-mode label {
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--text);
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 13px;
+    gap: 6px;
+    margin: 0;
+    min-height: 34px;
+    padding: 0 12px;
+}
+
+.image-mode input {
+    min-height: 0;
+    padding: 0;
+    width: auto;
+}
+
+.hidden {
+    display: none !important;
 }
 
 .tournament-alert {

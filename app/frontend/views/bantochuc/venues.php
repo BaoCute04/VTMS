@@ -1,10 +1,11 @@
 <section
     class="organizer-venues"
     data-venues-api="<?= e(url('/api/organizer/venues')) ?>"
+    data-locations-api="<?= e(url('/api/organizer/competition-locations')) ?>"
 >
     <header class="venues-topbar">
         <div>
-            <p class="eyebrow">BAN TO CHUC</p>
+            <p class="eyebrow">BAN TỔ CHỨC</p>
             <h1>Quản lý sân đấu</h1>
             <p class="sub">Bổ sung, cập nhật và loại bỏ sân đấu bằng cách chuyển sang trạng thái ngưng sử dụng.</p>
         </div>
@@ -30,6 +31,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Tên sân</th>
+                    <th>Vị trí thi đấu</th>
                     <th>Địa chỉ</th>
                     <th>Sức chứa</th>
                     <th>Trạng thái</th>
@@ -39,7 +41,7 @@
             </thead>
             <tbody id="tbody">
                 <tr>
-                    <td colspan="7" class="empty">Đang tải dữ liệu...</td>
+                    <td colspan="8" class="empty">Đang tải dữ liệu...</td>
                 </tr>
             </tbody>
         </table>
@@ -62,8 +64,8 @@
             </div>
 
             <div class="colspan">
-                <label for="m_address">Địa chỉ</label>
-                <input id="m_address" placeholder="VD: 12 Nguyễn Văn Bảo, Gò Vấp, TP.HCM" />
+                <label for="m_location">Vị trí thi đấu</label>
+                <select id="m_location"></select>
             </div>
 
             <div>

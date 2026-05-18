@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Backend\Models;
 
 use App\Backend\Core\Model;
+use App\Backend\Services\Shared\VolleyballCompetitionRules;
 use Throwable;
 
 final class Bangxephang extends Model
@@ -18,11 +19,13 @@ final class Bangxephang extends Model
         $bindings = ['organizer_id' => $organizerId];
 
         if (($filters['q'] ?? '') !== '') {
-            $where[] = '(gd.tengiaidau LIKE :keyword_tournament OR gd.diadiem LIKE :keyword_place)';
+            $where[] = '(gd.tengiaidau LIKE :keyword_tournament OR gd.ghichu_diadiem LIKE :keyword_place)';
             $keyword = '%' . $filters['q'] . '%';
             $bindings['keyword_tournament'] = $keyword;
             $bindings['keyword_place'] = $keyword;
         }
+
+        $preliminaryRoundCondition = $this->preliminaryRoundCondition('vd');
 
         $statement = $this->db()->prepare(
             "SELECT
@@ -30,7 +33,7 @@ final class Bangxephang extends Model
                 gd.tengiaidau,
                 gd.thoigianbatdau,
                 gd.thoigianketthuc,
-                gd.diadiem,
+                gd.ghichu_diadiem AS diadiem,
                 gd.trangthai,
                 gd.trangthaidangky,
                 COALESCE(published.published_results, 0) AS published_results,
@@ -43,17 +46,21 @@ final class Bangxephang extends Model
              LEFT JOIN (
                 SELECT td.idgiaidau, COUNT(*) AS published_results
                 FROM Trandau td
+                LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
                 JOIN Ketquatrandau kq ON kq.idtrandau = td.idtrandau
                 WHERE td.trangthai = 'DA_KET_THUC'
                   AND kq.trangthai = 'DA_CONG_BO'
+                  AND $preliminaryRoundCondition
                 GROUP BY td.idgiaidau
              ) published ON published.idgiaidau = gd.idgiaidau
              LEFT JOIN (
                 SELECT td.idgiaidau, COUNT(*) AS unresolved_results
                 FROM Trandau td
+                LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
                 LEFT JOIN Ketquatrandau kq ON kq.idtrandau = td.idtrandau
                 WHERE td.trangthai = 'DA_KET_THUC'
                   AND (kq.idketqua IS NULL OR kq.trangthai <> 'DA_CONG_BO')
+                  AND $preliminaryRoundCondition
                 GROUP BY td.idgiaidau
              ) unresolved ON unresolved.idgiaidau = gd.idgiaidau
              LEFT JOIN (
@@ -222,7 +229,7 @@ final class Bangxephang extends Model
                 gd.tengiaidau,
                 gd.thoigianbatdau,
                 gd.thoigianketthuc,
-                gd.diadiem,
+                gd.ghichu_diadiem AS diadiem,
                 gd.trangthai,
                 gd.trangthaidangky,
                 gd.idbantochuc
@@ -239,13 +246,16 @@ final class Bangxephang extends Model
 
     public function publishedResultCount(int $tournamentId): int
     {
+        $preliminaryRoundCondition = $this->preliminaryRoundCondition('vd');
         $row = $this->first(
             "SELECT COUNT(*) AS total
              FROM Trandau td
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
              JOIN Ketquatrandau kq ON kq.idtrandau = td.idtrandau
              WHERE td.idgiaidau = :tournament_id
                AND td.trangthai = 'DA_KET_THUC'
-               AND kq.trangthai = 'DA_CONG_BO'",
+               AND kq.trangthai = 'DA_CONG_BO'
+               AND $preliminaryRoundCondition",
             ['tournament_id' => $tournamentId]
         );
 
@@ -254,13 +264,16 @@ final class Bangxephang extends Model
 
     public function unresolvedEndedResultCount(int $tournamentId): int
     {
+        $preliminaryRoundCondition = $this->preliminaryRoundCondition('vd');
         $row = $this->first(
             "SELECT COUNT(*) AS total
              FROM Trandau td
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
              LEFT JOIN Ketquatrandau kq ON kq.idtrandau = td.idtrandau
              WHERE td.idgiaidau = :tournament_id
                AND td.trangthai = 'DA_KET_THUC'
-               AND (kq.idketqua IS NULL OR kq.trangthai <> 'DA_CONG_BO')",
+               AND (kq.idketqua IS NULL OR kq.trangthai <> 'DA_CONG_BO')
+               AND $preliminaryRoundCondition",
             ['tournament_id' => $tournamentId]
         );
 
@@ -269,6 +282,7 @@ final class Bangxephang extends Model
 
     public function rankingTeams(int $tournamentId): array
     {
+        $preliminaryRoundCondition = $this->preliminaryRoundCondition('vd');
         $statement = $this->db()->prepare(
             "SELECT
                 db.iddoibong,
@@ -285,17 +299,21 @@ final class Bangxephang extends Model
                 UNION
                 SELECT td.iddoibong1 AS iddoibong
                 FROM Trandau td
+                LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
                 JOIN Ketquatrandau kq ON kq.idtrandau = td.idtrandau
                 WHERE td.idgiaidau = :tournament_id_team_one
                   AND td.trangthai = 'DA_KET_THUC'
                   AND kq.trangthai = 'DA_CONG_BO'
+                  AND $preliminaryRoundCondition
                 UNION
                 SELECT td.iddoibong2 AS iddoibong
                 FROM Trandau td
+                LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
                 JOIN Ketquatrandau kq ON kq.idtrandau = td.idtrandau
                 WHERE td.idgiaidau = :tournament_id_team_two
                   AND td.trangthai = 'DA_KET_THUC'
                   AND kq.trangthai = 'DA_CONG_BO'
+                  AND $preliminaryRoundCondition
              ) teams ON teams.iddoibong = db.iddoibong
              ORDER BY db.tendoibong, db.iddoibong"
         );
@@ -310,6 +328,7 @@ final class Bangxephang extends Model
 
     public function computedStatsFromPublishedResults(int $tournamentId): array
     {
+        $preliminaryRoundCondition = $this->preliminaryRoundCondition('vd');
         $statement = $this->db()->prepare(
             "SELECT
                 stats.iddoibong,
@@ -327,12 +346,19 @@ final class Bangxephang extends Model
                     CASE WHEN kq.iddoithang = td.iddoibong1 THEN 0 ELSE 1 END AS thua,
                     kq.sosetdoi1 AS sosetthang,
                     kq.sosetdoi2 AS sosetthua,
-                    CASE WHEN kq.iddoithang = td.iddoibong1 THEN 3 ELSE 0 END AS diem
+                    CASE
+                        WHEN kq.iddoithang = td.iddoibong1 AND kq.sosetdoi1 = 3 AND kq.sosetdoi2 = 2 THEN 2
+                        WHEN kq.iddoithang = td.iddoibong1 AND kq.sosetdoi1 = 3 AND kq.sosetdoi2 IN (0, 1) THEN 3
+                        WHEN kq.iddoithang = td.iddoibong2 AND kq.sosetdoi2 = 3 AND kq.sosetdoi1 = 2 THEN 1
+                        ELSE 0
+                    END AS diem
                 FROM Trandau td
+                LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
                 JOIN Ketquatrandau kq ON kq.idtrandau = td.idtrandau
                 WHERE td.idgiaidau = :tournament_id_team_one
                   AND td.trangthai = 'DA_KET_THUC'
                   AND kq.trangthai = 'DA_CONG_BO'
+                  AND $preliminaryRoundCondition
                 UNION ALL
                 SELECT
                     td.iddoibong2 AS iddoibong,
@@ -341,12 +367,19 @@ final class Bangxephang extends Model
                     CASE WHEN kq.iddoithang = td.iddoibong2 THEN 0 ELSE 1 END AS thua,
                     kq.sosetdoi2 AS sosetthang,
                     kq.sosetdoi1 AS sosetthua,
-                    CASE WHEN kq.iddoithang = td.iddoibong2 THEN 3 ELSE 0 END AS diem
+                    CASE
+                        WHEN kq.iddoithang = td.iddoibong2 AND kq.sosetdoi2 = 3 AND kq.sosetdoi1 = 2 THEN 2
+                        WHEN kq.iddoithang = td.iddoibong2 AND kq.sosetdoi2 = 3 AND kq.sosetdoi1 IN (0, 1) THEN 3
+                        WHEN kq.iddoithang = td.iddoibong1 AND kq.sosetdoi1 = 3 AND kq.sosetdoi2 = 2 THEN 1
+                        ELSE 0
+                    END AS diem
                 FROM Trandau td
+                LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
                 JOIN Ketquatrandau kq ON kq.idtrandau = td.idtrandau
                 WHERE td.idgiaidau = :tournament_id_team_two
                   AND td.trangthai = 'DA_KET_THUC'
                   AND kq.trangthai = 'DA_CONG_BO'
+                  AND $preliminaryRoundCondition
              ) stats
              GROUP BY stats.iddoibong"
         );
@@ -509,6 +542,19 @@ final class Bangxephang extends Model
         }
 
         return [$where, $bindings];
+    }
+
+    private function preliminaryRoundCondition(string $alias): string
+    {
+        $values = array_map(
+            fn (string $value): string => $this->db()->quote($value),
+            VolleyballCompetitionRules::preliminaryRoundAliases()
+        );
+
+        return '('
+            . $alias . ".loaivongdau = 'VONG_DIEM'"
+            . ' OR ' . $alias . '.tenvongdau IN (' . implode(', ', $values) . ')'
+            . ')';
     }
 
     private function baseSelect(): string

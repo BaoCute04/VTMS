@@ -5,8 +5,8 @@
         return;
     }
 
-    const standingsApi = root.dataset.standingsApi || "/api/btc/standings";
-    const tournamentsApi = root.dataset.tournamentsApi || "/api/btc/standings/tournaments";
+    const standingsApi = root.dataset.standingsApi || "/api/organizer/standings";
+    const tournamentsApi = root.dataset.tournamentsApi || "/api/organizer/standings/tournaments";
 
     const tournamentSelect = document.getElementById("tournamentSelect");
     const rankName = document.getElementById("rankName");
@@ -19,6 +19,7 @@
     const bxhPublished = document.getElementById("bxhPublished");
     const pageAlert = document.getElementById("pageAlert");
     const tbody = document.getElementById("tbody");
+    const knockoutPlan = document.getElementById("knockoutPlan");
 
     const statusMap = {
         BAN_NHAP: "Bản nháp",
@@ -106,6 +107,33 @@
             && Number(tournament?.unresolved_results || 0) === 0;
     }
 
+    function tournamentCanBeOpened(tournament) {
+        return tournamentIsEligible(tournament) || Boolean(tournament?.latest_ranking_id);
+    }
+
+    function tournamentOptionSuffix(tournament) {
+        const published = Number(tournament.published_results || 0);
+        const unresolved = Number(tournament.unresolved_results || 0);
+
+        if (tournament.latest_ranking_id) {
+            return ` - BXH hiện tại: ${statusLabel(tournament.latest_ranking_status)}`;
+        }
+
+        if (tournamentIsEligible(tournament)) {
+            return ` - ${published} KQ đã công bố`;
+        }
+
+        if (published <= 0) {
+            return " - chưa có KQ đã công bố";
+        }
+
+        if (unresolved > 0) {
+            return ` - còn ${unresolved} KQ chưa công bố`;
+        }
+
+        return " - chưa đủ điều kiện";
+    }
+
     function defaultRankingName(tournament) {
         return tournament?.latest_ranking_name || `Bảng xếp hạng ${tournament?.tengiaidau || ""}`.trim();
     }
@@ -123,6 +151,7 @@
 
         btnPublish.disabled = !(ranking && ranking.trangthai !== "DA_CONG_BO");
         renderTable(ranking?.details || []);
+        renderKnockoutPlan(ranking?.knockout_plan || null);
         updateGenerateState();
     }
 
@@ -157,14 +186,46 @@
         `).join("");
     }
 
+    function teamLabel(team) {
+        if (!team) {
+            return "Chưa xác định";
+        }
+
+        return `#${escapeHtml(team.rank)} ${escapeHtml(team.team_name || ("Đội " + team.team_id))}`;
+    }
+
+    function renderKnockoutPlan(plan) {
+        if (!knockoutPlan) {
+            return;
+        }
+
+        if (!plan || !Array.isArray(plan.quarterfinals)) {
+            knockoutPlan.innerHTML = '<div class="empty">Chưa có dữ liệu nhánh đấu.</div>';
+            return;
+        }
+
+        const eliminated = Array.isArray(plan.eliminated) && plan.eliminated.length > 0
+            ? plan.eliminated.map(teamLabel).join(", ")
+            : "Chưa xác định";
+
+        const quarterfinals = plan.quarterfinals.map((match) => `
+            <div class="bracket-card">
+                <span>${escapeHtml(match.label)}</span>
+                <strong>${teamLabel(match.teams?.[0])} vs ${teamLabel(match.teams?.[1])}</strong>
+            </div>
+        `).join("");
+
+        knockoutPlan.innerHTML = `
+            <div class="bracket-note">Bị loại sau vòng sơ bộ: ${eliminated}</div>
+            <div class="bracket-grid">${quarterfinals}</div>
+            <div class="bracket-note">Bán kết: Tứ kết 1 vs Tứ kết 4; Tứ kết 2 vs Tứ kết 3. Chung kết: thắng hai bán kết. Tranh hạng 3: thua hai bán kết.</div>
+        `;
+    }
+
     function renderTournamentOptions() {
         tournamentSelect.innerHTML = '<option value="">Chọn giải đấu...</option>' + tournaments.map((tournament) => {
-            const published = Number(tournament.published_results || 0);
-            const unresolved = Number(tournament.unresolved_results || 0);
-            const suffix = tournamentIsEligible(tournament)
-                ? ` - ${published} KQ đã công bố`
-                : " - chưa đủ điều kiện";
-            const disabled = tournamentIsEligible(tournament) ? "" : " disabled";
+            const suffix = tournamentOptionSuffix(tournament);
+            const disabled = tournamentCanBeOpened(tournament) ? "" : " disabled";
 
             return `<option value="${escapeHtml(tournament.idgiaidau)}"${disabled}>${escapeHtml(tournament.tengiaidau + suffix)}</option>`;
         }).join("");
@@ -181,8 +242,19 @@
             tournaments = Array.isArray(data) ? data : [];
             renderTournamentOptions();
 
-            if (selectedId && tournaments.some((item) => String(item.idgiaidau) === String(selectedId) && tournamentIsEligible(item))) {
+            let hasSelectedTournament = false;
+
+            if (selectedId && tournaments.some((item) => String(item.idgiaidau) === String(selectedId) && tournamentCanBeOpened(item))) {
                 tournamentSelect.value = selectedId;
+                hasSelectedTournament = true;
+            }
+
+            if (!hasSelectedTournament) {
+                const firstOpenable = tournaments.find(tournamentCanBeOpened);
+
+                if (firstOpenable) {
+                    tournamentSelect.value = firstOpenable.idgiaidau;
+                }
             }
 
             clearAlert();
@@ -216,18 +288,18 @@
 
         rankName.value = defaultRankingName(currentTournament);
 
-        if (!tournamentIsEligible(currentTournament)) {
-            showAlert("Giải đấu chưa đủ điều kiện tạo BXH: cần có kết quả đã công bố và không còn trận đã kết thúc chưa công bố kết quả.", true);
-            updateGenerateState();
-            return;
-        }
-
         if (currentTournament.latest_ranking_id) {
             try {
                 setCurrentRanking(await loadRanking(currentTournament.latest_ranking_id));
             } catch (error) {
                 showAlert(error.message || "Không thể tải bảng xếp hạng hiện tại.", true);
             }
+            return;
+        }
+
+        if (!tournamentIsEligible(currentTournament)) {
+            showAlert("Giải đấu chưa đủ điều kiện tạo BXH: cần có kết quả đã công bố và không còn trận đã kết thúc chưa công bố kết quả.", true);
+            updateGenerateState();
             return;
         }
 

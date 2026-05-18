@@ -414,11 +414,12 @@ final class Vandongvien extends Model
                 tkcn.solanghidiem,
                 tkcn.ghichu,
                 gd.tengiaidau,
-                td.vongdau,
+                vd.tenvongdau AS vongdau,
                 td.thoigianbatdau
              FROM Thongkecanhan tkcn
              JOIN Giaidau gd ON gd.idgiaidau = tkcn.idgiaidau
              JOIN Trandau td ON td.idtrandau = tkcn.idtrandau
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
              WHERE gd.idbantochuc = :organizer_id
                AND tkcn.idvandongvien = :athlete_id
              ORDER BY td.thoigianbatdau DESC, tkcn.idthongkecanhan DESC"
@@ -862,6 +863,7 @@ final class Vandongvien extends Model
              FROM Thongkecanhan tkcn
              JOIN Giaidau gd ON gd.idgiaidau = tkcn.idgiaidau
              JOIN Trandau td ON td.idtrandau = tkcn.idtrandau
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
              JOIN Doibong db1 ON db1.iddoibong = td.iddoibong1
              JOIN Doibong db2 ON db2.iddoibong = td.iddoibong2
              WHERE " . implode(' AND ', $where)
@@ -1711,14 +1713,14 @@ final class Vandongvien extends Model
                 td.idsandau,
                 td.thoigianbatdau,
                 td.thoigianketthuc,
-                td.vongdau,
+                vd.tenvongdau AS vongdau,
                 td.trangthai,
                 gd.tengiaidau,
                 bd.tenbang,
                 d1.tendoibong AS doi1,
                 d2.tendoibong AS doi2,
                 sd.tensandau,
-                sd.diachi AS sandau_diachi,
+                vt.diachi AS sandau_diachi,
                 tv.iddoibong AS iddoibong_vdv,
                 CASE WHEN td.iddoibong1 = tv.iddoibong THEN 1 ELSE 2 END AS ben_vdv,
                 kq.idketqua,
@@ -1730,9 +1732,11 @@ final class Vandongvien extends Model
              FROM Trandau td
              JOIN Giaidau gd ON gd.idgiaidau = td.idgiaidau
              LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
              JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
              JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
-             JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Vitrithidau vt ON vt.idvitrithidau = sd.idvitrithidau
              JOIN Thanhviendoibong tv ON tv.iddoibong IN (td.iddoibong1, td.iddoibong2)
              LEFT JOIN Ketquatrandau kq ON kq.idtrandau = td.idtrandau
              LEFT JOIN Doibong dt ON dt.iddoibong = kq.iddoithang";
@@ -1797,7 +1801,7 @@ final class Vandongvien extends Model
                 tkcn.solanghidiem,
                 tkcn.ghichu,
                 gd.tengiaidau,
-                td.vongdau,
+                vd.tenvongdau AS vongdau,
                 td.thoigianbatdau,
                 td.trangthai AS trangthaitrandau,
                 db1.tendoibong AS doi1,
@@ -1805,6 +1809,7 @@ final class Vandongvien extends Model
              FROM Thongkecanhan tkcn
              JOIN Giaidau gd ON gd.idgiaidau = tkcn.idgiaidau
              JOIN Trandau td ON td.idtrandau = tkcn.idtrandau
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
              JOIN Doibong db1 ON db1.iddoibong = td.iddoibong1
              JOIN Doibong db2 ON db2.iddoibong = td.iddoibong2";
     }
@@ -1815,7 +1820,7 @@ final class Vandongvien extends Model
         $bindings = ['athlete_id' => $athleteId];
 
         if (($filters['q'] ?? '') !== '') {
-            $where[] = '(gd.tengiaidau LIKE :keyword OR db1.tendoibong LIKE :keyword OR db2.tendoibong LIKE :keyword OR td.vongdau LIKE :keyword OR tkcn.ghichu LIKE :keyword)';
+            $where[] = '(gd.tengiaidau LIKE :keyword OR db1.tendoibong LIKE :keyword OR db2.tendoibong LIKE :keyword OR vd.tenvongdau LIKE :keyword OR tkcn.ghichu LIKE :keyword)';
             $bindings['keyword'] = '%' . $filters['q'] . '%';
         }
 
@@ -1926,7 +1931,7 @@ final class Vandongvien extends Model
                 dnv.idnguoixuly,
                 gd.idgiaidau,
                 gd.tengiaidau,
-                td.vongdau,
+                vd.tenvongdau AS vongdau,
                 td.thoigianbatdau,
                 td.thoigianketthuc,
                 td.trangthai AS trangthaitrandau,
@@ -1934,6 +1939,7 @@ final class Vandongvien extends Model
                 db2.tendoibong AS doi2
              FROM Donnghivandongvien dnv
              LEFT JOIN Trandau td ON td.idtrandau = dnv.idtrandau
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
              LEFT JOIN Giaidau gd ON gd.idgiaidau = td.idgiaidau
              LEFT JOIN Doibong db1 ON db1.iddoibong = td.iddoibong1
              LEFT JOIN Doibong db2 ON db2.iddoibong = td.iddoibong2";

@@ -187,7 +187,7 @@ final class Khieunai extends Model
                 gd.tengiaidau,
                 gd.idbantochuc,
                 kn.idtrandau,
-                td.vongdau AS trandau_vong,
+                vd.tenvongdau AS trandau_vong,
                 d1.tendoibong AS trandau_doi1,
                 d2.tendoibong AS trandau_doi2,
                 kn.tieude,
@@ -203,7 +203,8 @@ final class Khieunai extends Model
              JOIN Giaidau gd ON gd.idgiaidau = kn.idgiaidau
              JOIN Taikhoan sender ON sender.idtaikhoan = kn.idnguoigui
              LEFT JOIN Nguoidung sender_nd ON sender_nd.idtaikhoan = sender.idtaikhoan
-             LEFT JOIN Trandau td ON td.idtrandau = kn.idtrandau
+              LEFT JOIN Trandau td ON td.idtrandau = kn.idtrandau
+              LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
              LEFT JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
              LEFT JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
              LEFT JOIN Taikhoan handler ON handler.idtaikhoan = kn.idnguoixuly

@@ -5,7 +5,7 @@
 >
     <header class="incidents-topbar">
         <div>
-            <p class="eyebrow">TRONG TAI</p>
+            <p class="eyebrow">TRỌNG TÀI</p>
             <h1>Báo cáo sự cố</h1>
             <p class="sub">Tạo và theo dõi báo cáo sự cố của trọng tài theo trận đấu và trạng thái xử lý.</p>
         </div>

@@ -56,6 +56,10 @@
         teams = payload.data || [];
         ui.fillSelect(teamSelect, teams, "iddoibong", "tendoibong", "Chọn đội bóng");
         ui.fillSelect(sTeam, teams, "iddoibong", "tendoibong", "Chọn đội đích");
+
+        if (!teamSelect.value && teams.length > 0) {
+            teamSelect.value = teams[0].iddoibong;
+        }
     }
 
     async function loadMembers() {

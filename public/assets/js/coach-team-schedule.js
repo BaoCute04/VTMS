@@ -16,6 +16,10 @@
         const payload = await ui.requestJson(teamsApi);
         teams = payload.data || [];
         ui.fillSelect(teamSelect, teams, "iddoibong", "tendoibong", "Chọn đội bóng");
+
+        if (!teamSelect.value && teams.length > 0) {
+            teamSelect.value = teams[0].iddoibong;
+        }
     }
 
     async function loadSchedule() {

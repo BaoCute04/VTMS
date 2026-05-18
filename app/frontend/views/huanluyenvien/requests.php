@@ -1,7 +1,7 @@
 <section class="coach-page coach-requests" data-requests-api="<?= e(url('/api/coach/athlete-change-requests')) ?>">
     <header class="coach-topbar">
         <div>
-            <p class="eyebrow">HUAN LUYEN VIEN</p>
+            <p class="eyebrow">HUẤN LUYỆN VIÊN</p>
             <h1>Yêu cầu xác nhận thay đổi thông tin</h1>
             <p class="sub">Các yêu cầu thay đổi thông tin từ vận động viên thuộc đội bóng của HLV.</p>
         </div>

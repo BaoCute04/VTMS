@@ -1,10 +1,10 @@
 <section
     class="organizer-profile-approvals"
-    data-approvals-api="<?= e(url('/api/btc/profile-change-requests')) ?>"
+    data-approvals-api="<?= e(url('/api/organizer/profile-change-requests')) ?>"
 >
     <header class="profile-approvals-topbar">
         <div>
-            <p class="eyebrow">BAN TO CHUC</p>
+            <p class="eyebrow">BAN TỔ CHỨC</p>
             <h1>Xác nhận thay đổi thông tin cá nhân</h1>
             <p class="sub">Dành cho BTC: xác nhận hoặc hủy yêu cầu cập nhật thông tin của ADMIN, Trọng tài, HLV.</p>
         </div>

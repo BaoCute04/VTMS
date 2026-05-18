@@ -27,6 +27,10 @@
 
     function refreshTournamentSelect() {
         ui.fillSelect(tournamentSelect, tournamentOptionsForTeam(teamSelect.value), "idgiaidau", "tengiaidau", "Chọn giải đấu");
+
+        if (!tournamentSelect.value && tournamentSelect.options.length > 1) {
+            tournamentSelect.selectedIndex = 1;
+        }
     }
 
     async function loadBase() {
@@ -37,6 +41,11 @@
         teams = teamsPayload.data || [];
         registrations = registrationsPayload.data || [];
         ui.fillSelect(teamSelect, teams, "iddoibong", "tendoibong", "Chọn đội bóng");
+
+        if (!teamSelect.value && teams.length > 0) {
+            teamSelect.value = teams[0].iddoibong;
+        }
+
         refreshTournamentSelect();
     }
 

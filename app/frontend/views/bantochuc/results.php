@@ -5,7 +5,7 @@
 >
     <header class="results-topbar">
         <div>
-            <p class="eyebrow">BAN TO CHUC</p>
+            <p class="eyebrow">BAN TỔ CHỨC</p>
             <h1>Quản lý kết quả trận đấu</h1>
             <p class="sub">Danh sách trận đã kết thúc, điều chỉnh kết quả và công bố kết quả.</p>
         </div>
@@ -23,6 +23,7 @@
             <option value="CHO_CONG_BO">Chờ công bố</option>
             <option value="DA_DIEU_CHINH">Đã điều chỉnh</option>
             <option value="DA_CONG_BO">Đã công bố</option>
+            <option value="BI_HUY">Bị hủy</option>
         </select>
 
         <input type="date" id="fromDate" />
@@ -95,7 +96,7 @@
         <hr />
 
         <h3>Điểm theo set</h3>
-        <p class="hint">Nhập điểm từng set. Hệ thống sẽ tự tính tỷ số set thắng và đội thắng.</p>
+        <p class="hint">Nhập điểm từng set theo Bo5. Kết quả hợp lệ là 3-0, 3-1 hoặc 3-2; điểm mỗi set không được hòa.</p>
 
         <div class="sets" id="sets"></div>
 

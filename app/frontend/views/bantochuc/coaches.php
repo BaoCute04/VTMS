@@ -4,7 +4,7 @@
 >
     <header class="coaches-topbar">
         <div>
-            <p class="eyebrow">BAN TO CHUC</p>
+            <p class="eyebrow">BAN TỔ CHỨC</p>
             <h1>Quản lý tư cách Huấn luyện viên</h1>
             <p class="sub">Xác nhận hoặc hủy tư cách HLV dựa trên hồ sơ và yêu cầu xác nhận.</p>
         </div>

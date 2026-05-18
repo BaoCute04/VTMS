@@ -5,7 +5,7 @@
 >
     <header class="teams-topbar">
         <div>
-            <p class="eyebrow">BAN TO CHUC</p>
+            <p class="eyebrow">BAN TỔ CHỨC</p>
             <h1>Quản lý hồ sơ đội bóng tham gia</h1>
             <p class="sub">Xem hồ sơ đội, cập nhật trạng thái đội và xem danh sách thành viên.</p>
         </div>

@@ -5,7 +5,7 @@
 >
     <header class="coach-topbar">
         <div>
-            <p class="eyebrow">HUAN LUYEN VIEN</p>
+            <p class="eyebrow">HUẤN LUYỆN VIÊN</p>
             <h1>Tạo / Cập nhật đội hình</h1>
             <p class="sub">Chọn đội bóng, giải đấu và danh sách VĐV trong đội hình.</p>
         </div>

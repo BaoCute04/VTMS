@@ -6,7 +6,7 @@
 >
     <header class="supervise-topbar">
         <div>
-            <p class="eyebrow">TRONG TAI</p>
+            <p class="eyebrow">TRỌNG TÀI</p>
             <h1>Giám sát trận đấu</h1>
             <p class="sub">Xác nhận tham gia, xác nhận tổ trọng tài, bắt đầu, tạm dừng, tiếp tục, kết thúc và ghi kết quả.</p>
         </div>
@@ -65,7 +65,7 @@
         <div class="card-head">
             <div>
                 <h2>Ghi nhận kết quả</h2>
-                <p class="sub">Nhập điểm theo set. Hệ thống tự tính set thắng và đội thắng.</p>
+                <p class="sub">Nhập điểm theo Bo5. Kết quả hợp lệ là 3-0, 3-1 hoặc 3-2; điểm mỗi set không được hòa.</p>
             </div>
             <div class="pill" id="resultState">Kết quả: —</div>
         </div>

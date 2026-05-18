@@ -48,6 +48,7 @@ $navByRole = [
             ['icon' => 'DB', 'label' => 'Đội bóng', 'href' => '/ban-to-chuc/doi-bong'],
             ['icon' => 'SD', 'label' => 'Sân đấu', 'href' => '/ban-to-chuc/san-dau'],
             ['icon' => 'TT', 'label' => 'Trọng tài', 'href' => '/ban-to-chuc/trong-tai'],
+            ['icon' => 'TK', 'label' => 'Tài khoản HLV', 'href' => '/ban-to-chuc/tai-khoan-hlv'],
             ['icon' => 'HL', 'label' => 'Huấn luyện viên', 'href' => '/ban-to-chuc/huan-luyen-vien'],
             ['icon' => 'VD', 'label' => 'Vận động viên', 'href' => '/ban-to-chuc/van-dong-vien'],
         ],
@@ -119,6 +120,12 @@ $roleInitial = $role !== null ? ($roleInitials[$role] ?? 'VT') : 'VT';
 $appTitle = trim((string)($pageTitle ?? $moduleTitle ?? 'Trang chủ quản lý bóng chuyền'));
 $appTitle = preg_replace('/^VTMS\s*[-|]\s*/i', '', $appTitle) ?: $appTitle;
 $appSubtitle = trim((string)($moduleDescription ?? $roleLabel));
+$isDashboardPage = $authUser && rtrim($currentPath, '/') === '/dashboard';
+
+if ($isDashboardPage && preg_match('/^Trang\s+ch(?:ủ|u)\b/iu', $appTitle)) {
+    $appTitle = 'Trang chủ';
+    $appSubtitle = '';
+}
 
 $isActive = static function (string $href) use ($currentPath): bool {
     return $currentPath === $href || ($href !== '/' && strncmp($currentPath, $href . '/', strlen($href) + 1) === 0);
@@ -172,6 +179,11 @@ $isAuthPage = in_array($currentPath, ['/login', '/forgot-password'], true);
                     <span data-i18n-text>Cài đặt</span>
                 </button>
                 <div class="app-settings__panel" data-settings-panel>
+                    <p data-i18n-text>Tài khoản</p>
+                    <a class="app-settings__link" href="<?= e(url('/tai-khoan/doi-mat-khau')) ?>">
+                        <span class="app-settings__icon" aria-hidden="true">MK</span>
+                        <span data-i18n-text>Đổi mật khẩu</span>
+                    </a>
                     <p data-i18n-text>Ngôn ngữ</p>
                     <div class="app-language" role="group" aria-label="Chọn ngôn ngữ">
                         <button type="button" data-lang-option="vi">Tiếng Việt</button>
@@ -181,19 +193,28 @@ $isAuthPage = in_array($currentPath, ['/login', '/forgot-password'], true);
             </section>
         </aside>
 
+        <button class="app-sidebar-toggle" type="button" data-sidebar-toggle aria-label="Thu gọn thanh menu" aria-expanded="true" title="Thu gọn thanh menu">
+            <span data-sidebar-toggle-icon>&lt;</span>
+        </button>
+
         <div class="app-main">
             <header class="app-topbar">
                 <button class="app-menu-btn" type="button" data-app-menu aria-label="Mở menu">☰</button>
 
                 <div class="app-topbar__title">
                     <h1><?= e($appTitle) ?></h1>
-                    <p><?= e($appSubtitle) ?></p>
+                    <?php if ($appSubtitle !== ''): ?>
+                        <p><?= e($appSubtitle) ?></p>
+                    <?php endif; ?>
                 </div>
 
-                <label class="app-search">
-                    <span class="app-search__icon" aria-hidden="true"></span>
-                    <input type="search" data-app-search data-i18n-placeholder placeholder="Tìm trận đấu, đội bóng...">
-                </label>
+                <div class="app-search-group">
+                    <label class="app-search">
+                        <span class="app-search__icon" aria-hidden="true"></span>
+                        <input type="search" data-app-search data-i18n-placeholder placeholder="Tìm trận đấu, đội bóng...">
+                    </label>
+                    <button class="app-search-submit" type="button" data-app-search-button data-i18n-text>Tìm kiếm</button>
+                </div>
 
                 <div class="app-user">
                     <div class="app-user__text">

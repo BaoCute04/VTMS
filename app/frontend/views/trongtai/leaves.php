@@ -4,7 +4,7 @@
 >
     <header class="leaves-topbar">
         <div>
-            <p class="eyebrow">TRONG TAI</p>
+            <p class="eyebrow">TRỌNG TÀI</p>
             <h1>Xin nghỉ phép</h1>
             <p class="sub">Theo dõi số ngày nghỉ, danh sách đơn, tạo đơn xin nghỉ và hủy đơn khi còn chờ duyệt.</p>
         </div>

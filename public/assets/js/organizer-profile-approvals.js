@@ -5,7 +5,7 @@
         return;
     }
 
-    const approvalsApi = root.dataset.approvalsApi || "/api/btc/profile-change-requests";
+    const approvalsApi = root.dataset.approvalsApi || "/api/organizer/profile-change-requests";
 
     const tbody = document.getElementById("tbody");
     const q = document.getElementById("q");

@@ -34,8 +34,9 @@ final class Ketquatrandau extends Model
              JOIN Giaidau gd ON gd.idgiaidau = td.idgiaidau
              JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
              JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
-             LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
-             LEFT JOIN Sandau sd ON sd.idsandau = td.idsandau
+              LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
+              LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
+              LEFT JOIN Sandau sd ON sd.idsandau = td.idsandau
              WHERE ' . implode(' AND ', $where) . '
              GROUP BY kq.trangthai'
         );
@@ -256,7 +257,7 @@ final class Ketquatrandau extends Model
                 OR d2.tendoibong LIKE :keyword_team_two
                 OR bd.tenbang LIKE :keyword_group
                 OR sd.tensandau LIKE :keyword_venue
-                OR td.vongdau LIKE :keyword_round)";
+                OR vd.tenvongdau LIKE :keyword_round)";
             $keyword = '%' . $filters['q'] . '%';
             $bindings['keyword_tournament'] = $keyword;
             $bindings['keyword_team_one'] = $keyword;
@@ -308,7 +309,7 @@ final class Ketquatrandau extends Model
                 OR d2.tendoibong LIKE :keyword_team_two
                 OR bd.tenbang LIKE :keyword_group
                 OR sd.tensandau LIKE :keyword_venue
-                OR td.vongdau LIKE :keyword_round)";
+                OR vd.tenvongdau LIKE :keyword_round)";
             $keyword = '%' . $filters['q'] . '%';
             $bindings['keyword_tournament'] = $keyword;
             $bindings['keyword_team_one'] = $keyword;
@@ -364,7 +365,7 @@ final class Ketquatrandau extends Model
                 sd.tensandau,
                 td.thoigianbatdau,
                 td.thoigianketthuc,
-                td.vongdau,
+                vd.tenvongdau AS vongdau,
                 td.trangthai AS trandau_trangthai,
                 kq.iddoithang,
                 winner.tendoibong AS doithang,
@@ -381,10 +382,11 @@ final class Ketquatrandau extends Model
              FROM Ketquatrandau kq
              JOIN Trandau td ON td.idtrandau = kq.idtrandau
              JOIN Giaidau gd ON gd.idgiaidau = td.idgiaidau
-             LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
+              LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
+              LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
              JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
              JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
-             JOIN Sandau sd ON sd.idsandau = td.idsandau
+              LEFT JOIN Sandau sd ON sd.idsandau = td.idsandau
              LEFT JOIN Doibong winner ON winner.iddoibong = kq.iddoithang
              LEFT JOIN Taikhoan recorder ON recorder.idtaikhoan = kq.idnguoighinhan
              LEFT JOIN Nguoidung recorder_nd ON recorder_nd.idtaikhoan = recorder.idtaikhoan";

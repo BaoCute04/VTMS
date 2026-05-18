@@ -695,7 +695,7 @@ final class Doibong extends Model
                 gd.mota,
                 gd.thoigianbatdau,
                 gd.thoigianketthuc,
-                gd.diadiem,
+                gd.ghichu_diadiem AS diadiem,
                 gd.quymo,
                 gd.hinhanh,
                 gd.trangthai AS trangthaigiaidau,
@@ -802,16 +802,18 @@ final class Doibong extends Model
                 td.idsandau,
                 td.thoigianbatdau,
                 td.thoigianketthuc,
-                td.vongdau,
+                vd.tenvongdau AS vongdau,
                 td.trangthai,
                 d1.tendoibong AS doi1,
                 d2.tendoibong AS doi2,
                 sd.tensandau,
-                sd.diachi AS sandau_diachi
+                vt.diachi AS sandau_diachi
              FROM Trandau td
              JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
              JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
-             JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
+             LEFT JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Vitrithidau vt ON vt.idvitrithidau = sd.idvitrithidau
              WHERE td.idgiaidau = :tournament_id
                AND (td.iddoibong1 = :team_id_one OR td.iddoibong2 = :team_id_two)
              ORDER BY td.thoigianbatdau, td.idtrandau"
@@ -1450,7 +1452,7 @@ final class Doibong extends Model
                 OR d1.tendoibong LIKE :keyword
                 OR d2.tendoibong LIKE :keyword
                 OR sd.tensandau LIKE :keyword
-                OR td.vongdau LIKE :keyword
+                OR vd.tenvongdau LIKE :keyword
                 OR bd.tenbang LIKE :keyword)";
             $bindings['keyword'] = '%' . $filters['q'] . '%';
         }
@@ -1468,10 +1470,10 @@ final class Doibong extends Model
                 d2.tendoibong AS doi2,
                 td.idsandau,
                 sd.tensandau,
-                sd.diachi AS sandau_diachi,
+                vt.diachi AS sandau_diachi,
                 td.thoigianbatdau,
                 td.thoigianketthuc,
-                td.vongdau,
+                vd.tenvongdau AS vongdau,
                 td.trangthai,
                 CASE WHEN td.iddoibong1 = :team_id_side THEN 'DOI_1' ELSE 'DOI_2' END AS phia_doi_bong
              FROM Trandau td
@@ -1479,7 +1481,9 @@ final class Doibong extends Model
              JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
              JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
              JOIN Doibong db ON db.iddoibong = :team_id_owner
-             JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
+             LEFT JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Vitrithidau vt ON vt.idvitrithidau = sd.idvitrithidau
              LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
              WHERE " . implode(' AND ', $where) . "
              ORDER BY td.thoigianbatdau, td.idtrandau"

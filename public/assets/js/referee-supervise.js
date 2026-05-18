@@ -271,8 +271,8 @@
     }
 
     function validateResult() {
-        if (sets.length < 1 || sets.length > 5) {
-            return "Danh sách điểm set phải có từ 1 đến 5 set.";
+        if (sets.length < 3 || sets.length > 5) {
+            return "Một trận Bo5 phải có từ 3 đến 5 set.";
         }
 
         for (const [index, item] of sets.entries()) {
@@ -290,8 +290,11 @@
 
         const score = computeSetWins();
 
-        if (score.a === score.b) {
-            return "Tỷ số set đang hòa. Vui lòng kiểm tra lại điểm từng set.";
+        const winnerSets = Math.max(score.a, score.b);
+        const loserSets = Math.min(score.a, score.b);
+
+        if (winnerSets !== 3 || loserSets > 2 || score.a === score.b) {
+            return "Kết quả Bo5 hợp lệ chỉ có thể là 3-0, 3-1 hoặc 3-2.";
         }
 
         return null;
@@ -523,7 +526,7 @@
     });
 
     btnRemoveSet.addEventListener("click", () => {
-        if (sets.length <= 1) {
+        if (sets.length <= 3) {
             return;
         }
 

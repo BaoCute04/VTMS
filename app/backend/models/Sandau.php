@@ -15,23 +15,34 @@ final class Sandau extends Model
         $bindings = [];
 
         if (($filters['q'] ?? '') !== '') {
-            $where[] = '(tensandau LIKE :keyword OR diachi LIKE :keyword OR mota LIKE :keyword)';
+            $where[] = '(sd.tensandau LIKE :keyword OR vt.tenvitrithidau LIKE :keyword OR vt.diachi LIKE :keyword OR sd.mota LIKE :keyword)';
             $bindings['keyword'] = '%' . $filters['q'] . '%';
         }
 
         if (($filters['status'] ?? '') !== '') {
-            $where[] = 'trangthai = :status';
+            $where[] = 'sd.trangthai = :status';
             $bindings['status'] = $filters['status'];
         }
 
-        $sql = "SELECT idsandau, tensandau, diachi, succhua, mota, trangthai, ngaytao, ngaycapnhat
-                FROM Sandau";
+        $sql = "SELECT
+                    sd.idsandau,
+                    sd.idvitrithidau,
+                    sd.tensandau,
+                    sd.succhua,
+                    sd.mota,
+                    sd.trangthai,
+                    sd.ngaytao,
+                    sd.ngaycapnhat,
+                    vt.tenvitrithidau,
+                    vt.diachi
+                FROM Sandau sd
+                JOIN Vitrithidau vt ON vt.idvitrithidau = sd.idvitrithidau";
 
         if ($where !== []) {
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
 
-        $sql .= ' ORDER BY ngaytao DESC, idsandau DESC';
+        $sql .= ' ORDER BY sd.ngaytao DESC, sd.idsandau DESC';
 
         $statement = $this->db()->prepare($sql);
         $statement->execute($bindings);
@@ -42,25 +53,36 @@ final class Sandau extends Model
     public function findById(int $venueId): ?array
     {
         return $this->first(
-            "SELECT idsandau, tensandau, diachi, succhua, mota, trangthai, ngaytao, ngaycapnhat
-             FROM Sandau
-             WHERE idsandau = :venue_id
+            "SELECT
+                sd.idsandau,
+                sd.idvitrithidau,
+                sd.tensandau,
+                sd.succhua,
+                sd.mota,
+                sd.trangthai,
+                sd.ngaytao,
+                sd.ngaycapnhat,
+                vt.tenvitrithidau,
+                vt.diachi
+             FROM Sandau sd
+             JOIN Vitrithidau vt ON vt.idvitrithidau = sd.idvitrithidau
+             WHERE sd.idsandau = :venue_id
              LIMIT 1",
             ['venue_id' => $venueId]
         );
     }
 
-    public function existsByNameAndAddress(string $name, string $address, ?int $excludeVenueId = null): bool
+    public function existsByNameAndLocation(string $name, int $locationId, ?int $excludeVenueId = null): bool
     {
         $bindings = [
             'name' => $name,
-            'address' => $address,
+            'location_id' => $locationId,
         ];
 
         $sql = "SELECT 1
                 FROM Sandau
                 WHERE tensandau = :name
-                  AND diachi = :address";
+                  AND idvitrithidau = :location_id";
 
         if ($excludeVenueId !== null) {
             $sql .= ' AND idsandau <> :exclude_venue_id';
@@ -84,13 +106,13 @@ final class Sandau extends Model
             $db->beginTransaction();
 
             $statement = $db->prepare(
-                "INSERT INTO Sandau (tensandau, diachi, succhua, mota, trangthai)
-                 VALUES (:name, :address, :capacity, :description, :status)"
+                "INSERT INTO Sandau (idvitrithidau, tensandau, succhua, mota, trangthai)
+                 VALUES (:location_id, :name, :capacity, :description, :status)"
             );
 
             $statement->execute([
+                'location_id' => $venue['idvitrithidau'],
                 'name' => $venue['tensandau'],
-                'address' => $venue['diachi'],
                 'capacity' => $venue['succhua'],
                 'description' => $venue['mota'],
                 'status' => $venue['trangthai'],
@@ -130,7 +152,7 @@ final class Sandau extends Model
             $sets = [];
             $bindings = ['venue_id' => $venueId];
 
-            foreach (['tensandau', 'diachi', 'succhua', 'mota', 'trangthai'] as $field) {
+            foreach (['idvitrithidau', 'tensandau', 'succhua', 'mota', 'trangthai'] as $field) {
                 if (!array_key_exists($field, $changes)) {
                     continue;
                 }

@@ -1,0 +1,1553 @@
+Ứng dụng quản lý hệ thống giải đấu bóng chuyền
+MỤC LỤC
+ TOC \h \u \z \t "Heading 1,1,Heading 2,2,Heading 3,3,Heading 4,4,Heading 5,5,Heading 6,6,"
+I) ACTOR
+ PAGEREF _7kzhnqcv9nex \h 
+1
+II) USE CASE
+ PAGEREF _n90w6taquknf \h 
+2
+1. Nhóm 1: actor chung
+ PAGEREF _8lher18k8ve5 \h 
+2
+2. Nhóm 1: actor riêng
+ PAGEREF _pymqk7s0ojpf \h 
+2
+2.1. Quản trị viên
+ PAGEREF _pjnvpy6wnll1 \h 
+2
+2.2. Ban tổ chức
+ PAGEREF _hk3tzqerco93 \h 
+2
+2.3. Trọng tài
+ PAGEREF _wc0rjqt95h2n \h 
+3
+2.4. Huấn luyện viên
+ PAGEREF _t468blzhlvgb \h 
+3
+2.5. Vận động viên
+ PAGEREF _6bbp4afa42ga \h 
+3
+3. Nhóm 2: khán giả
+ PAGEREF _f8bj4686iflo \h 
+4
+III) SƠ ĐỒ USE CASE TỔNG QUÁT
+ PAGEREF _mnajh8g2i6fc \h 
+4
+IV) ĐẶC TẢ USE CASE
+ PAGEREF _pmq67ass6njq \h 
+4
+1. Nhóm 1: actor chung
+ PAGEREF _xicgeo7x0m21 \h 
+4
+2. Nhóm 1: actor riêng
+ PAGEREF _uv5g9t3tqp0w \h 
+9
+2.1. Quản trị viên
+ PAGEREF _4je6o5mg2l0q \h 
+9
+2.2. Ban tổ chức
+ PAGEREF _w0iw8pfogvrm \h 
+13
+2.3. Trọng tài
+ PAGEREF _bezo06q1xfzd \h 
+28
+2.4. Huấn luyện viên
+ PAGEREF _nbz6y1940ygd \h 
+33
+2.5. Vận động viên
+ PAGEREF _5mtpflwdbu88 \h 
+42
+3. Nhóm 2: khán giả
+ PAGEREF _6244b08o9m41 \h 
+49
+I) ACTOR
+Nhóm 1: Các actor cần tài khoản
+1. Quản trị viên
+2. Ban tổ chức
+3. Trọng tài
+4. Huấn luyện viên
+5. Vận động viên
+Nhóm 2: Các actor không cần tài khoản
+6. Khán giả
+II) USE CASE
+1. Nhóm 1: actor chung
+Đăng nhập
+ - không phân hóa - OK
+Đăng xuất
+ - không phân hóa - OK
+Xem thông tin hồ sơ cá nhân 
+- có phân hóa
+Sửa thông tin hồ sơ cá nhân 
+- có phân hóa
+Đổi mật khẩu 
+- không phân hóa 
+Xem thống kê kết quả
+ (ban tổ chức, biên tập, huấn luyện viên, vận động viên)
+2. Nhóm 1: actor riêng
+2.1. Quản trị viên
+Quản lý tài khoản
+ (thêm tài khoản, xóa tài khoản, sửa tài khoản) -
+Quản lý trạng thái người dùng -
+Theo dõi nhật ký hệ thống -
+Xác nhận thay đổi thông tin ban tổ chức -
+2.2. Ban tổ chức
+Quản lý giải đấu: -
+Tạo giải đấu 
+Cập nhật giải đấu chưa công bố:
+ xóa giải đấu, sửa giải đấu
+Công bố giải đấu
+Quản lý đăng ký giải đấu:
+ ( tách thành chức năng riêng)
+đóng giải đấu 
+mở giải đấu 
+duyệt đăng ký
+Quản lý hồ sơ đội bóng tham gia
+ -
+Quản lý Trọng tài: -
+Thêm trọng tài
+Phân công trọng tài
+Cho nghỉ trọng tài
+Quản lý tư cách Huấn luyện viên
+: -
+Xác nhận tư cách huấn luyện viên
+hủy bỏ tư cách huấn luyện viên
+Quản lý tư cách thi đấu Vận động viên
+: -
+Xác nhận tư cách thi đấu
+Hủy bỏ tư cách thi đấu
+Quản lý sân đấu
+: -
+bổ sung sân đấu
+cập nhật sân đấu
+Quản lý lịch thi đấu: -
+Quản lý bảng đấu: 
+thêm bảng đấu, xóa bảng đấu, sửa bảng đấu
+Quản lý trận đấu:
+  Thêm 
+trận đấu, xóa trận đấu, 
+sửa 
+trận đấu
+- cài đặt thời gian, thiết lập sân đấu
+Xem lịch thi đấu (thêm)
+Tiếp nhận và quản lý khiếu nại -
+Quản lý kết quả trận đấu: -
+Điều chỉnh kết quả trận đấu
+Công bố kết quả
+Quản lý xếp hạng: -
+Tạo bảng xếp hạng
+Công bố bảng xếp hạng
+Xác nhận thông tin cá nhân của admin, trọng tài, huấn luyện viên -
+Duyệt tài khoản HLV (Thêm)
+2.3. Trọng tài
+Xem lịch phân công trận đấu - 
+Xem thông tin chi tiết trận đấu -
+Giám sát trận đấu: -
+Xác nhận tham gia trận đấu
+Xác nhận trận đấu: bắt đầu & kết thúc
+Ghi nhận kết quả trận đấu
+Báo cáo sự cố -
+Xin nghỉ phép -
+2.4. Huấn luyện viên
+Đăng ký tài khoản huấn luyện viên
+Tạo tài khoản Vận động viên
+Đăng ký giải đấu
+Tạo & cập nhật thông tin đội bóng
+Quản lý thành viên đội bóng
+Thêm thành viên
+Xóa thành viên
+Chuyển đổi thành viên
+Quản lý đội hình
+Tạo đội hình
+Cập nhập đội hình
+Xem lịch thi đấu đội bóng
+Xác nhận thay đổi thông tin của vận động viên
+2.5. Vận động viên
+Xác nhận tham gia đội bóng
+Xem thông tin 
+chi tiết
+ đội bóng
+Xem đội hình 
+Xem lịch thi đấu cá nhân
+Xem thống kê cá nhân
+Sửa id cá nhân
+Xin nghỉ phép thi đấu
+3. Nhóm 2: khán giả
+Xem danh sách đội bóng
+Xem thông tin câu lạc bộ
+Xem lịch thi đấu
+Xem kết quả trận đấu
+Xem bảng xếp hạng
+III) SƠ ĐỒ USE CASE TỔNG QUÁT
+IV) ĐẶC TẢ USE CASE
+1. Nhóm 1: actor chung
+Đăng nhập
+ - không phân hóa
+(1 trang đăng nhập, 6 trang chủ cho 6 actor có tài khoản)
+Tên use case
+Đăng nhập
+Tiền điều kiện
+Đã có tài khoản
+Hậu điều kiện
+Đăng nhập thành công;
+Thông tin người dùng được lưu lại trong suốt quá trình truy cập hệ thống;
+Chuyển hướng đến trang chủ tùy theo vai trò;
+Actor chính
+Người dùng có tài khoản
+Actor phụ
+Không có
+Luồng sự kiện chính
+Người dùng có tài khoản
+Hệ thống
+1, Người dùng nhập tài khoản mật khẩu và nhấn “Đăng nhập”
+2, Xác thực tài khoản và mật khẩu
+khớp
+3, Lưu lại thông tin người dùng
+4, Kiểm tra vai trò, chuyển hướng đến trang chủ theo vai trò
+Luồng sự kiện thay thế
+2.1. Tài khoản mật khẩu rỗng
+Thông báo vui lòng nhập đầy đủ tài khoản mật khẩu
+Quay lại bước 1
+2.2. Xác thực tài khoản không khớp
+    1. Thông báo Tài khoản hoặc mật khẩu không khớp
+    2. Quay lại bước 1
+Luồng sự kiện ngoại lệ
+Đăng xuất 
+- không phân hóa
+(Dành cho 6 actor có tài khoản)
+Tên use case
+Đăng xuất
+Tiền điều kiện
+Đã đăng nhập thành công và đang ở trang chủ 
+Hậu điều kiện
+Đăng xuất thành công;
+Quay lại trang đăng nhập
+Actor chính
+Người dùng có tài khoản
+Actor phụ
+Không có
+Luồng sự kiện chính
+Người dùng có tài khoản
+Hệ thống
+1, Người dùng nhấn nút “Đăng xuất”
+2, Hệ thống tiến hành xóa vai trò
+3, Hệ thống chuyển hướng đến trang đăng nhập
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Xem thông tin hồ sơ cá nhân
+ - có phân hóa
+(6 trang hồ sơ cá nhân cho 6 actor dùng tài khoản)
+Tên use case
+Xem thông tin hồ sơ cá nhân
+Tiền điều kiện
+Người dùng đã đăng nhập thành công
+Hậu điều kiện
+Người dùng xem được thông tin hồ sơ cá nhân
+Actor chính
+Người dùng có tài khoản
+Actor phụ
+Không có
+Luồng sự kiện chính
+Người dùng có tài khoản
+Hệ thống
+1, Người dùng nhấn chọn “Hồ sơ cá nhân”
+2, Hệ thống chuyển hướng đến trang thông tin hồ sơ cá nhân
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Sửa thông tin hồ sơ cá nhân 
+(model sửa thông tin cá nhân trong chính trang hồ sơ cá nhân - cần có sự xác nhận qua lại qua chức năng xác nhận thông tin)
+Tên use case
+Sửa thông tin hồ sơ cá nhân 
+Tiền điều kiện
+Đang ở trong trang hồ sơ cá nhân
+Hậu điều kiện
+Thông tin cá nhân mới được lưu vào DB
+Actor chính
+Người dùng có tài khoản
+Actor phụ
+Không có
+Luồng sự kiện chính
+Người dùng có tài khoản
+Hệ thống
+1, Người dùng nhấn nút Sửa
+2, Hệ thống hiển thị model chứa các thông tin đã công khai và có thể sửa
+3, Người dùng nhập thông tin cần thay
+4, Người dùng xác nhận “Lưu”
+5, Hệ thống cập nhật thông tin mới vào Database
+6, Hệ thống thông báo “Chờ cập nhật thông tin mới”
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Đổi MK
+ - không phân hóa (model)
+(Model đổi mật khẩu trong chính trang hồ sơ cá nhân)
+Tên use case
+Sửa thông tin hồ sơ cá nhân 
+Tiền điều kiện
+Đang ở trong trang hồ sơ cá nhân
+Hậu điều kiện
+Thông tin cá nhân được lưu vào DB
+Thông tin mới được hiển thị lên màn hình
+Actor chính
+Người dùng có tài khoản
+Actor phụ
+Không có
+Luồng sự kiện chính
+Người dùng có tài khoản
+Hệ thống
+1, Người dùng nhấn nút “Đổi mật khẩu”
+2, Hệ thống hiển thị model đổi mật khẩu
+3, Người dùng nhập mật khẩu hiện tại, mật khẩu mới, xác thực mật khẩu mới
+4, Người dùng nhấn nút “Đổi mật khẩu”
+5, Hệ thống kiểm tra mật khẩu hiện tại khớp
+6, Hệ thống kiểm tra mật khẩu mới khớp
+7, Hệ thống cập nhật mật khẩu mới vào DB
+8, Hệ thống thông báo “đổi mật khẩu thành công”
+Luồng sự kiện thay thế
+5.1. Hệ thống kiểm tra mật khẩu hiện tại trống
+Hệ thống thông báo mật khẩu trống
+Quay lại bước 3
+5.2. Hệ thống kiểm tra mật khẩu hiện tại không khớp
+Hệ thống thông báo “sai mật khẩu”
+Quay lại bước 3
+6.1. Hệ thống kiểm tra mật khẩu mới trống
+Hệ thống thông báo vui lòng nhập mật khẩu mới
+Quay lại bước 3
+6.2. Hệ thống kiểm tra mật khẩu mới không khớp
+Hệ thống thông báo mật khẩu mới không khớp
+Quay lại bước 3
+Luồng sự kiện ngoại lệ
+Xem thống kê kết quả 
+(ban tổ chức, biên tập, huấn luyện viên, vận động viên)
+2. Nhóm 1: actor riêng
+ 2.1. Quản trị viên
+Quản lý tài khoản 
+(thêm tài khoản, xóa tài khoản, sửa tài khoản)
+(Trang quản lý tài khoản của admin, model tạo tài khoản trong trang quản lý tài khoản, model sửa tài khoản trong trang quản lý tài khoản)
+Tên use case
+Quản lý tài khoản
+Tiền điều kiện
+Admin đăng nhập thành công
+Hậu điều kiện
+Thêm tài khoản thành công
+Tài khoản được lưu vào CSDL
+Actor chính
+Admin
+Actor phụ
+Không có
+Luồng sự kiện chính
+Admin
+Hệ thống
+1, Admin truy cập quản lý tài khoản
+2, Hệ thống chuyển hướng đến trang quản lý tài khoản
+3, Admin chọn “Tạo tài khoản”
+4, Hệ thống hiển thị model tạo tài khoản
+5, Admin nhập thông tin tài khoản (tài khoản, mật khẩu, vai trò, hoten, … )
+6, Admin nhấn nút “Thêm tài khoản”
+7, Hệ thống lưu thông tin tài khoản vào CSDL
+8, Hệ thống thông báo thêm tài khoản thành công
+Luồng sự kiện thay thế
+7.1. Thiếu thông tin
+Hệ thống thông báo vui lòng nhập đầy đủ thông tin
+Quay lại bước 5
+3.1. Admin chọn “Sửa tài khoản”
+Hệ thống hiển thị model sửa tài khoản
+Admin sửa thông tin tài khoản
+Admin xác nhận sửa thông tin
+Hệ thống ghi nhận dữ liệu được sửa vào CSDL
+3.1.4.1. Thiếu thông tin
+Hệ thống thông báo vui lòng nhập đầy đủ thông tin
+Quay lại bước 3.1.2
+3.2. Admin chọn “Xóa tài khoản”
+Hệ thống cập nhật trạng thái tài khoản “đã hủy”
+Hệ thống thông báo “Xóa tài khoản thành công”
+Luồng sự kiện ngoại lệ
+Quản lý người dùng (Xem, sửa)
+(1 trang quản lý trạng thái người dùng, 1 model sửa thông tin người dùng, 1 model thay đổi trạng thái của ban tổ chức)
+Tên use case
+Quản lý người dùng
+Tiền điều kiện
+Admin đăng nhập thành công
+Hậu điều kiện
+Xem được thông tin người dùng
+Actor chính
+Admin
+Actor phụ
+Không có
+Luồng sự kiện chính
+Admin
+Hệ thống
+1, Admin truy cập quản lý người dùng
+2, Hệ thống chuyển hướng đến trang quản lý người dùng
+3, Admin xem thông tin người dùng
+Luồng sự kiện thay thế
+3.1. Admin sửa thông tin người dùng
+Admin nhấn nút sửa
+Hệ thống hiển thị model thông tin người dùng
+Admin nhập thông tin mới
+Admin xác nhận sửa
+Hệ thống lưu thông tin mới vào CSDL
+3.1.5.1. Dữ liệu thiếu
+Hệ thống thông báo dữ liệu trống, vui lòng nhập đầy đủ dữ liệu
+Quay lại bước 3.1.3
+Luồng sự kiện ngoại lệ
+Theo dõi nhật ký hệ thống
+ ⇔ trang chủ của admin
+(1 trang chủ admin)
+Tên use case
+Theo dõi nhật ký hệ thống
+Tiền điều kiện
+Admin đăng nhập thành công
+Hậu điều kiện
+Admin theo dõi được nhật ký hệ thống
+Actor chính
+Admin
+Actor phụ
+Không có
+Luồng sự kiện chính
+Admin
+Hệ thống
+1, Hệ thống chuyển hướng tới trang chủ admin
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Xác nhận thay đổi thông tin ban tổ chức
+(1 trang thông báo xác nhận, 1 model xem thông tin chi tiết các yêu cầu xác nhận)
+Tên use case
+Xác nhận thay đổi thông tin ban tổ chức
+Tiền điều kiện
+Admin đăng nhập thành công
+Hậu điều kiện
+Thông tin mới của ban tổ chức được thay đổi
+Actor chính
+Admin
+Actor phụ
+Không có
+Luồng sự kiện chính
+Admin
+Hệ thống
+1, Admin truy cập thông báo xác nhận
+2, Hệ thống hiển thị các thông báo đang cần xác nhận thông tin
+3, Admin nhấn xem 
+4, Hệ thống hiển thị model chứa thông tin chi tiết
+5, Admin nhấn “Xác nhận”
+6, Hệ thống ghi nhận dữ liệu được xác nhận
+7, Cập nhật dữ liệu mới vào CSDL
+8, Thông báo xác nhận dữ liệu thành công
+Luồng sự kiện thay thế
+2.1. Không có thông báo xác nhận
+Hệ thống hiển thị “Hiện tại không có thông báo xác nhận”
+5.1. Admin nhấn nút “Từ chối”
+Hệ thống ghi nhận dữ liệu bị từ chối
+Luồng sự kiện ngoại lệ
+2.2. Ban tổ chức
+Quản lý giải đấu: 
+Tạo giải đấu
+(1 trang quản lý giải đấu, 1 model form tạo giải đấu)
+Tên use case
+Tạo giải đấu
+Tiền điều kiện
+Ban tổ chức đã đăng nhập thành công
+Hậu điều kiện
+Giải đấu mới được lưu ở trạng thái Chưa công bố
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1. Truy cập chức năng “Quản lý giải đấu”
+2. Hệ thống chuyển hướng đến trang quản lý giải đấu
+3. Nhấn “Tạo giải đấu”
+4. Hiển thị form tạo giải đấu
+5. Nhập thông tin giải đấu (tên, thời gian, quy mô, điều lệ, …)
+6. Nhấn “Lưu”
+7. Kiểm tra dữ liệu hợp lệ
+8. Lưu giải đấu vào CSDL & Thông báo “Tạo giải đấu thành công”
+Luồng sự kiện thay thế
+7.1. Thiếu hoặc sai dữ liệu 
+Thông báo lỗi 
+Quay lại bước 4
+Luồng sự kiện ngoại lệ
+Cập nhật giải đấu chưa công bố
+: xóa giải đấu, sửa giải đấu
+(1 model form chỉnh sửa thông tin giải đấu)
+Tên use case
+Cập nhật giải đấu
+Tiền điều kiện
+Giải đấu tồn tại và chưa công bố
+Ban tổ chức đang ở trang quản lý giải đấu
+Hậu điều kiện
+Thông tin giải đấu được cập nhật
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1. Nhấn “Sửa”
+2. Hiển thị model form chỉnh sửa
+3. Cập nhật thông tin
+4. Nhấn “Lưu”
+5. Kiểm tra hợp lệ
+6. Cập nhật dữ liệu vào CSDL & Thông báo “Cập nhật thành công”
+Luồng sự kiện thay thế
+1.1. Nhấn “Xóa”
+Hệ thống xóa dữ liệu giải đấu khỏi CSDL & thông báo “Xóa thành công”
+Luồng sự kiện ngoại lệ
+Công bố giải đấu
+Tên use case
+Công bố giải đấu
+Tiền điều kiện
+Giải đấu tồn tại và đã tạo đầy đủ thông tin
+Ban tổ chức đang ở trang quản lý giải đấu
+Hậu điều kiện
+Giải đấu được công bố
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1, Nhấn công bố 
+2, Hệ thống cập nhật trạng thái giải đấu vào CSDL và thông báo thành công 
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Quản lý đăng ký giải đấu
+: đóng đăng ký giải đấu / mở đăng ký giải đấu / duyệt đăng ký
+(1 trang quản lý giải đấu, 1 model danh sách đội bóng đăng ký)
+Tên use case
+Quản lý đăng ký giải đấu
+Tiền điều kiện
+Ban tổ chức đăng nhập thành công
+Giải đấu đã được công bố
+Hậu điều kiện
+Trạng thái đăng ký giải đấu được cập nhật
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có 
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1, Truy cập chức năng quản lý giải đấu
+2, Chuyển hướng đến trang quản lý giải đấu
+3, chọn đóng/mở đăng ký giải đấu
+4, hệ thống ghi nhận trạng thái giải đấu vào CSDL
+Luồng sự kiện thay thế
+3.1. Chọn danh sách đăng ký
+Hệ thống hiển thị model danh sách đội bóng đăng ký
+Chọn duyệt
+Hệ thống ghi nhận trạng thái đăng ký của đội bóng vào CSDL
+3.1.1.1 Không cho phép tham gia thi đấu
+Chọn “từ chối”
+Hệ thống ghi nhận trạng thái đăng ký của đội bóng vào CSDL
+Luồng sự kiện ngoại lệ
+Quản lý Trọng tài: 
+Thêm trọng tài
+(1 trang quản lý trọng tài, 1 model thêm trọng tài)
+Tên use case
+Thêm trọng tài
+Tiền điều kiện
+Ban tổ chức đăng nhập thành công
+Trọng tài chưa có trong CSDL
+Quản trị viên đã đăng nhập vào quản lý tài khoản
+Hậu điều kiện
+Trọng tài được thêm vào CSDL
+Actor chính
+Ban tổ chức
+Actor phụ
+Quản trị viên
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+Quản trị viên
+1, Truy cập chức năng quản lý trọng tài
+2, chuyển hướng đến giao diện quản lý trọng tài
+3, chọn thêm trọng tài
+4, hiển thị model thêm trọng tài
+5, nhập thông tin trọng tài & nhấn xác nhận
+6, Hệ thống lưu thông tin trọng tài vào CSDL với trạng thái tài khoản là chưa hoạt động & thông báo “Thêm trọng tài thành công, chờ duyệt”
+7, Quản trị viên duyệt trạng thái tài khoản
+8, hệ thống cập nhật trạng thái tài khoản vào csdl & thông báo “Cập nhật thành công”
+Luồng sự kiện thay thế
+6.1. Dữ liệu thiếu hoặc không đủ tiêu chuẩn
+Hệ thống thông báo dữ liệu không hợp lệ
+Quay lại bước 5
+7.1. Quản trị viên không duyệt tài khoản
+Quay lại bước 8
+Luồng sự kiện ngoại lệ
+Phân công trọng tài
+(1 model danh sách trận đấu đã tạo)
+Tên use case
+Phân công trọng tài
+Tiền điều kiện
+Ban tổ chức đang ở trang quản lý trọng tài
+Trọng tài đã được xác nhận
+Hậu điều kiện
+Phân công trọng tài thành công
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1, Truy cập chức năng quản lý trọng tài
+2, chuyển hướng đến giao diện quản lý trọng tài
+3, chọn phân công trọng tài
+4, hiển thị model chứa danh sách trận đấu đã tạo
+5, chọn vai trò trong trận & chọn phân công
+6, Hệ thống lưu thông tin trọng tài trận đấu vào CSDL
+Luồng sự kiện thay thế
+4.1. Không có trận đấu nào
+Hệ thống hiển thị không có trận đấu cần phân công
+5.1. Trận đấu đã có trọng tài được phân công
+Chọn thay đổi trọng tài
+Quay lại bước 5
+Luồng sự kiện ngoại lệ
+Cho trọng tài nghỉ
+(1 modal cho trọng tài nghỉ)
+Tên use case
+Cho nghỉ trọng tài
+Tiền điều kiện
+Ban tổ chức đăng nhập thành công vào hệ thống
+Trọng tài đang hoạt động
+Quản trị viên đã đăng nhập vào quản lý tài khoản
+Hậu điều kiện
+Trọng tài nghỉ
+Actor chính
+Ban tổ chức
+Actor phụ
+Quản trị viên
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+Quản trị viên
+1, Ban tổ chức truy cập chức năng quản lý trọng tài
+2,  Chuyển hướng đến giao diện quản lý trọng tài
+3, Chọn cho nghỉ
+4, Hệ thống hiển thị model cho trọng tài nghỉ
+5, Nhập lí do & xác nhận
+6, Hệ thống lưu thông tin cho nghỉ vào CSDL, cập nhật trạng thái trọng tài và trạng thái tài khoản trọng tài
+7, Hệ thống thông báo “chờ duyệt”
+7, Quản trị viên cập nhật trạng thái tài khoản đóng
+9, thông báo “cập nhật trạng thái thành công” & cập nhật trạng thái tài khoản trọng tài vào csdl
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Quản lý tư cách Huấn luyện viên
+: 
+Xác nhận tư cách huấn luyện viên
+hủy bỏ tư cách huấn luyện viên
+( 1 trang quản lý HLV, 1 model thông tin chi tiết HLV)
+Tên use case
+Quản lý tư cách huấn luyện viên
+Tiền điều kiện
+Ban tổ chức đăng nhập thành công vào hệ thống
+Huấn luyện viên đã gửi yêu cầu tạo tài khoản
+Hậu điều kiện
+Tư cách huấn luyện viên được xác nhận
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1, Ban tổ chức truy cập chức năng quản lý HLV
+2, Hệ thống hiển thị giao diện quản lý HLV
+3, Ban tổ chức nhấn vào huấn luyện viên
+4, Hệ thống hiển thị model thông tin chi tiết huấn luyện viên
+5, Chọn xác nhận
+6, Hệ thống ghi nhận tư cách HLV
+Luồng sự kiện thay thế
+5.1. Chọn hủy
+Hệ thống hủy bỏ tư cách HLV
+Luồng sự kiện ngoại lệ
+Quản lý tư cách thi đấu Vận động viên:
+ 
+(1 trang quản lý VĐV, 1 model thông tin chi tiết VĐV)
+Tên use case
+Quản lý tư cách thi đấu Vận động viên
+Tiền điều kiện
+Ban tổ chức đăng nhập thành công vào hệ thống
+Vận động viên đang ở trạng thái thi đấu
+Hậu điều kiện
+Hủy bỏ thành công tư cách thi đấu của vận động viên
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1, Ban tổ chức truy cập chức năng quản lý VDV
+2, Hệ thống hiển thị giao diện quản lý VDV
+3, Ban tổ chức nhấn vào Vận động viên
+4, Hệ thống hiển thị model thông tin chi tiết Vận động viên
+5, Chọn Hủy tư cách thi đấu
+6, Hủy bỏ tư cách thi đấu VDV
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Quản lý sân đấu:
+ 
+bổ sung sân đấu
+cập nhật sân đấu
+(1 trang quản lý sân đấu, 1 model thêm thông tin sân đấu)
+Tên use case
+Quản lý sân đấu
+Tiền điều kiện
+Ban tổ chức đăng nhập thành công
+Sân đấu đã được kiểm tra
+Hậu điều kiện
+Thông tin sân đấu được cập nhật
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1, Truy cập chức năng quản lý sân đấu
+2, Hiển thị giao diện danh sách sân đấu
+3, Chọn bổ sung sân đấu
+4, hiển thị model thêm thông tin sân đấu
+5, điền thông tin sân đấu & nhấn bổ sung
+6, Lưu thông tin sân đấu vào CSDL và thông báo “bổ sung sân đấu thành công”
+Luồng sự kiện thay thế
+3.1. Người dùng chọn cập nhật sân đấu
+Hệ thống hiển thị model cập nhật sân đấu
+Ban tổ chức chỉnh sửa thông tin sân đấu & nhấn “Cập nhật”
+Hệ thống cập nhật thông tin sân đấu vào CSDL và thông báo thành công
+3.1.2.1. Người dùng chọn “loại bỏ”
+Hệ thống cập nhật trạng thái của sân đấu thành “ngưng sử dụng”
+Luồng sự kiện ngoại lệ
+Quản lý lịch thi đấu: 
+Quản lý bảng đấu
+: thêm xóa sửa bảng đấu
+(1 trang quản lý lịch thi đấu, 1 trang danh sách giải đấu, 1 model thêm bảng đấu, 1 model sửa bảng đấu)
+Tên use case
+Quản lý bảng đấu
+Tiền điều kiện
+Ban tổ chức đăng nhập thành công
+Hậu điều kiện
+Bảng đấu được cập nhật trong CSDL
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1, truy cập chức năng quản lý lịch thi đấu
+2, hiển thị giao diện danh sách giải đấu đã công bố có trạng thái là đã đóng
+3, Chọn 1 giải đấu
+4, hiển thị giao diện danh sách bảng đấu
+5, Chọn thêm bảng đấu
+6, hiển thị model thêm bảng đấu
+7, Nhập thông tin bảng đấu & nhấn thêm
+8, Hệ thống lưu thông tin bảng đấu
+Luồng sự kiện thay thế
+5.1. Chọn sửa bảng đấu
+Hiển thị model sửa bảng đấu
+Người dùng sửa thông tin & nhấn “cập nhật”
+Hệ thống cập nhật thông tin bảng đấu
+5.2. Chọn xóa bảng đấu
+Hệ thống thông báo xác nhận xóa bảng đấu
+Người dùng xác nhân
+Hệ thống cập nhật trạng thái bảng đấu
+Luồng sự kiện ngoại lệ
+Quản lý trận đấu
+: thời gian, sân đấu
+(1 model thêm trận đấu, 1 model sửa trận đấu)
+Tên use case
+Tạo trận đấu
+Tiền điều kiện
+Ban tổ chức đã truy cập vào giao diện quản lý bảng đấu
+Hậu điều kiện
+Trận đấu được cập nhật vào CSDL
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1, Chọn thêm trận đấu tại 1 bảng đấu
+2, hiển thị model thêm trận đấu
+3, nhập thông tin trận đấu & nhấn lưu (đội đấu, thời gian, địa điểm, …)
+4, Hệ thống lưu thông tin trận đấu vào csdl và thông báo “thêm trận đấu thành công”
+Luồng sự kiện thay thế
+1.1. Người dùng chọn sửa trận đấu
+    1. Hệ thống hiển thị model sửa trận đấu
+    2. Người dùng sửa thông tin và nhấn lưu
+    3. Hệ thống cập nhật thông tin trận đấu và thông báo “cập nhật trận đấu thành công”
+1.2. Người dùng chọn xóa trận đấu
+    1. Hệ thống xóa trận đấu và thông báo “xóa trận đấu thành công” 
+Luồng sự kiện ngoại lệ
+Tiếp nhận và quản lý khiếu nại
+(1 trang danh sách khiếu nại, 1 model thông tin chi tiết khiếu nại)
+Tên use case
+Tiếp nhận và quản lý khiếu nại
+Tiền điều kiện
+Ban tổ chức đã đăng nhập thành công
+Hậu điều kiện
+Khiếu nại được tiếp nhận và xử lý
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1, Truy cập chức năng quản lý khiếu nại
+2, Hiển thị giao diện danh sách các khiếu nại
+3, Chọn 1 khiếu nại đang chờ
+4, hiển thị model chứa thông tin chi tiết khiếu nại
+5, Nhấn “tiếp nhận khiếu nại”
+6, hệ thống ghi nhận trạng thái khiếu nại chờ xử lý
+7, Nhấn “đã xử lý”
+7, Hệ thống ghi nhận trạng thái khiếu nại đã xử lý
+Luồng sự kiện thay thế
+5.1. Người dùng nhấn “từ chối tiếp nhận”
+Hệ thống ghi nhận trạng thái khiếu nại bị từ chối
+7.1. Nhấn “không xử lý”
+Hệ thống ghi nhận trạng thái không xử lý
+Luồng sự kiện ngoại lệ
+Quản lý kết quả trận đấu:
+Điều chỉnh kết quả trận đấu
+Công bố kết quả
+(1 giao diện danh sách trận đấu đã kết thúc)
+Tên use case
+Quản lý kết quả trận đấu
+Tiền điều kiện
+Trận đấu đã kết thúc, kết quả trận đấu được ghi nhận
+Ban tổ chức đăng nhập thành công
+Hậu điều kiện
+Kết quả được công bố
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1, truy cập chức năng quản lý kết quả trận đấu
+2, hiển thị giao diện danh sách trận đấu đã kết thúc
+3, nhấn nút công bố kết quả
+4, hệ thống ghi nhận trạng thái kết quả trận đấu
+Luồng sự kiện thay thế
+3.1. Chọn chỉnh sửa kết quả
+Hiển thị model kết quả trận đấu
+Điền thông tin lí do minh chứng và sửa kết quả trận đấu
+Nhấn cập nhật
+Hệ thống ghi nhận kết quả mới và thông báo thành công
+Quay lại bước 3
+Luồng sự kiện ngoại lệ
+Quản lý xếp hạng
+Tạo bảng xếp hạng
+Công bố bảng xếp hạng
+(1 trang quản lý xếp hạng)
+Tên use case
+Quản lý xếp hạng
+Tiền điều kiện
+Ban tổ chức đăng nhập thành công
+Kết quả trận đấu đã được công bố
+Hậu điều kiện
+Bảng xếp hạng được công bố
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1, truy cập chức năng quản lý xếp hàng
+2, hiển thị giao diện quản lý xếp hạng
+3, chọn giải đấu & nhấn nút tạo xếp hạng
+4, hệ thống lấy kết quả từ CSDL và tiến hành tạo xếp hạng
+5, nhấn nút công bố bảng xếp hạng
+6, hệ thống lưu thông tin bảng xếp hạng vào CSDL và thông báo “công bố bảng xếp hạng thành công”
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Xác nhận thông tin cá nhân của admin, trọng tài, huấn luyện viên
+(1 trang danh sách thông báo cần được xác nhận, 1 model xem thông tin chi tiết nội dung cần xác nhận)
+Tên use case
+Xác nhận thay đổi thông tin 
+Tiền điều kiện
+Ban tổ chức đăng nhập thành công
+Có yêu cầu xác nhận thay đổi thông tin
+Hậu điều kiện
+Thông tin được xác nhận
+Actor chính
+Ban tổ chức
+Actor phụ
+Không có
+Luồng sự kiện chính
+Ban tổ chức
+Hệ thống
+1, truy cập chức năng thông báo xác nhận
+2, hiển thị giao diện danh sách thông báo xác nhận
+3, nhấn vào thông báo
+4, hiển thị model xem chi tiết nội dung thông báo
+5, nhấn xác nhận
+6, hệ thống cập nhật thông tin vào CSDL & thông báo “xác nhận thành công”
+Luồng sự kiện thay thế
+5.1. Nhấn hủy
+Hệ thống cập nhật thông tin vào CSDL & thông báo “hủy thành công”
+Luồng sự kiện ngoại lệ
+2.3. Trọng tài
+Xem lịch phân công trận đấu
+(1 trang xem lịch phân công trận đấu)
+Tên use case
+Xem lịch phân công trận đấu
+Tiền điều kiện
+Trọng tài đăng nhập thành công vào hệ thống
+Hậu điều kiện
+Trọng tài xem được lịch phân công trận đấu
+Actor chính
+Trọng tài
+Actor phụ
+Không có
+Luồng sự kiện chính
+Trọng tài
+Hệ thống
+1, Trọng tài truy cập lịch phân công trận đấu
+2, Hệ thống hiển thị danh sách các trận đấu được phân công theo lịch
+Luồng sự kiện thay thế
+2.1. Trọng tài không có lịch
+Hệ thống hiển thị Hiện tại không có lịch phân công
+Luồng sự kiện ngoại lệ
+Xem thông tin chi tiết trận đấu
+(1 model xem thông tin chi tiết trận đấu)
+Tên use case
+Xem thông tin chi tiết trận đấu
+Tiền điều kiện
+Trọng tài đang ở trang xem lịch phân công trận đấu
+Hậu điều kiện
+Trọng tài xem được thông tin chi tiết trận đấu
+Actor chính
+Trọng tài
+Actor phụ
+Không có
+Luồng sự kiện chính
+Trọng tài
+Hệ thống
+1, Trọng tài nhấn nút “Xem chi tiết”
+2, Hệ thống hiển thị model thông tin chi tiết trận đấu
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Giám sát trận đấu
+Xác nhận tham gia trận đấu
+Xác nhận trận đấu: bắt đầu & kết thúc
+Ghi nhận kết quả trận đấu
+(1 giao diện giám sát trận đấu, 1 model danh sách trọng tài tham gia)
+Tên use case
+Giám sát trận đấu
+Tiền điều kiện
+Trọng tài đang ở trang xem lịch phân công trận đấu
+Trọng tài đã được phân công giám sát tối thiểu 1 trận đấu
+Trận đấu đã đến thời gian
+Hậu điều kiện
+Trọng tài kết thúc giám sát trận đấu
+Actor chính
+Trọng tài
+Actor phụ
+Không có
+Luồng sự kiện chính
+Trọng tài
+Hệ thống
+1, Trọng tài nhấn nút xác nhận tham gia trận đấu
+2, Hệ thống chuyển hướng đến giao diện giám sát trận đấu
+3, Hệ thống hiển thị form xác nhận trọng tài tham gia
+4, Trọng tài chọn các trọng tài tham gia trận đấu & nhấn nút “Xác nhận”
+5, Hệ thống hiển thị giao diện giám sát trận đấu
+6, Trọng nhấn nút “Bắt đầu”
+7, Hệ thống ghi nhận thời gian bắt đầu trận đấu vào CSDL
+8, Trọng tài ghi nhận kết quả trận đấu vào hệ thống
+9, Trọng tài nhấn nút “Kết thúc”
+10, Hệ thống ghi nhận kết quả trận đấu & thời gian kết thúc trận đấu vào CSDL
+Luồng sự kiện thay thế
+6.1. Trọng tài muốn thay đổi danh sách các trọng tài tham gia
+Trọng tài nhấn nút “thay đổi” tại danh sách trọng tài tham gia
+Quay lại bước 3
+9.1. Trọng tài nhấn nút “Tạm dừng trận đấu”
+Hệ thống ghi nhận thời gian nghỉ
+Trọng tài nhấn nút “tiếp tục trận đấu”
+Quay lại bước 8
+Luồng sự kiện ngoại lệ
+Báo cáo sự cố 
+(1 trang báo cáo sự cố, 1 model form báo cáo)
+Tên use case
+Báo cáo sự cố
+Tiền điều kiện
+Trọng tài đăng nhập thành công vào hệ thống
+Hậu điều kiện
+Trọng tài gửi được báo cáo sự cố
+Actor chính
+Trọng tài
+Actor phụ
+Không có
+Luồng sự kiện chính
+Trọng tài
+Hệ thống
+1, Truy cập chức năng báo cáo sự cố
+2, Hệ thống chuyển hướng đến trang báo cáo sự cố
+3, Trọng tài nhấn nút Tạo báo cáo
+4, Hệ thống hiển thị model form báo cáo sự cố
+5, Trọng tài nhập nội dung báo cáo
+6, Trọng tài nhấn nút “Báo cáo”
+7, Hệ thống lưu báo cáo vào CSDL và thông báo “Báo cáo sự cố thành công”
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Xin nghỉ phép
+(1 trang xin nghỉ phép, 1 model xin nghỉ phép)
+Tên use case
+Xin nghỉ phép
+Tiền điều kiện
+Trọng tài đăng nhập thành công vào hệ thống
+Hậu điều kiện
+Trọng tài gửi yêu cầu xin nghỉ phép thành công
+Actor chính
+Trọng tài
+Actor phụ
+Không có
+Luồng sự kiện chính
+Trọng tài
+Hệ thống
+1, Trọng tài truy cập chức năng xin nghỉ phép
+2, Hệ thống hiển thị giao diện xin nghỉ phép (số lượng ngày nghỉ, đơn đã xin)
+3, Trọng tài nhấn nút “Tạo đơn xin nghỉ phép”
+4, Hệ thống hiển thị model xin nghỉ phép
+5, Trọng tài nhập thông tin xin nghỉ phép
+6, Trọng tài nhấn nút “Xin nghỉ phép”
+7, Hệ thống xác nhận thông tin nghỉ phép
+8, Hệ thống ghi nhận thông tin nghỉ phép vào CSDL và thông báo xin nghỉ phép thành công
+Luồng sự kiện thay thế
+3.1. Trọng tài nhấn nút “Hủy xin nghỉ”
+Hệ thống cập nhật trạng thái yêu cầu xin nghỉ phép
+Hệ thống thông báo Hủy nghỉ phép thành công
+7.1. Thông tin xin nghỉ phép thiếu
+Hệ thống thông báo vui lòng nhập đầy đủ thông tin
+Quay lại bước 5
+Luồng sự kiện ngoại lệ
+2.4. Huấn luyện viên
+Đăng ký tài khoản huấn luyện viên
+(1 trang đăng ký tài khoản)
+Tên use case
+Đăng ký tài khoản
+Tiền điều kiện
+Người dùng chưa có tài khoản Huấn luyện viên
+Hậu điều kiện
+Tạo yêu cầu đăng ký tài khoản Huấn luyện viên thành công
+Yêu cầu chờ Ban tổ chức xác nhận
+Actor chính
+Huấn luyện viên
+Actor phụ
+Ban tổ chức
+Luồng sự kiện chính
+Huấn luyện viên
+Hệ thống
+Ban tổ chức
+1. Truy cập trang đăng ký tài khoản HLV
+2. Nhập thông tin đăng ký
+3. Kiểm tra dữ liệu
+4. Nhấn “Đăng ký”
+5. Lưu yêu cầu đăng ký vào CSDL
+6. Thông báo “Chờ xác nhận”
+7, truy cập vào trang Thông báo xác nhận 
+8, nhấn nút “Xác nhận” cho tài khoản đăng ký của huấn luyện viên
+9, Hệ thống lưu trạng thái tài khoản vào CSDL
+Luồng sự kiện thay thế
+3.1. Dữ liệu thiếu 
+Thông báo nhập đầy đủ thông tin 
+quay lại bước 2
+8.1. Không đủ tư cách làm hlv
+Nhấn nút hủy bỏ
+Quay lại bước 9
+Luồng sự kiện ngoại lệ
+Tạo tài khoản Vận động viên
+(1 trang quản lý đội bóng, 1 trang quản lý tài khoản cho VDV, 1 model form tạo tài khoản)
+Tên use case
+Tạo tài khoản Vận động viên
+Tiền điều kiện
+Huấn luyện viên đăng nhập thành công
+Hậu điều kiện
+Tài khoản VĐV được tạo thành công
+Actor chính
+Huấn luyện viên
+Actor phụ
+Không có 
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Vào “Quản lý đội bóng” → “Tài khoản VĐV”
+2. Nhấn “Tạo tài khoản VĐV”
+3. Hiển thị form tạo tài khoản
+4. Nhập thông tin VĐV (tên, ngày sinh, vị trí, email/SĐT, …)
+5. Nhấn “Tạo”
+6. Kiểm tra hợp lệ & trùng dữ liệu
+7. Lưu tài khoản VĐV vào CSDL
+8. Thông báo “Tạo tài khoản thành công”
+Luồng sự kiện thay thế
+6.1 Dữ liệu trống/không hợp lệ 
+Thông báo lỗi 
+quay lại bước 4
+6.2 Email/SĐT trùng 
+Thông báo trùng 
+quay lại bước 4
+Luồng sự kiện ngoại lệ
+Đăng ký giải đấu
+(1 trang xem danh sách giải đấu, 1 model chi tiết giải đấu)
+Tên use case
+Đăng ký giải đấu
+Tiền điều kiện
+Giải đấu đang 
+mở đăng ký
+; đội bóng đã có hồ sơ cơ bản
+Hậu điều kiện
+Tạo yêu cầu đăng ký giải đấu (trạng thái: 
+Chờ duyệt
+)
+Actor chính
+Huấn luyện viên
+Actor phụ
+Ban tổ chức
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+Actor phụ
+1. Truy cập danh sách giải đấu
+2. Chọn 1 giải đấu đang mở
+3. Hiển thị chi tiết giải đấu
+4. Nhấn “Đăng ký giải”
+5. Kiểm tra điều kiện đăng ký (thời hạn, đội hợp lệ, …)
+6. Tạo yêu cầu đăng ký (Chờ duyệt) & lưu CSDL
+7. Thông báo “Đã gửi đăng ký – chờ duyệt”
+8. Nhận yêu cầu duyệt đăng ký
+Luồng sự kiện thay thế
+5.1 Giải đấu đã đóng đăng ký 
+Thông báo “Giải đã đóng đăng ký”  
+kết thúc
+5.2 Đội chưa đủ điều kiện 
+Thông báo lý do 
+kết thúc
+Luồng sự kiện ngoại lệ
+Tạo & cập nhật thông tin đội bóng
+(1 trang quản lý đội bóng, 1 model thông tin đội bóng)
+Tên use case
+Quản lý thông tin đội bóng (Tạo/Cập nhật)
+Tiền điều kiện
+HLV đăng nhập; (Tạo mới) chưa có đội hoặc (Cập nhật) đã có đội
+Hậu điều kiện
+Thông tin đội bóng được lưu vào CSDL
+Actor chính
+Huấn luyện viên
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Vào “Đội bóng của tôi”
+2. Hiển thị thông tin đội (nếu có)
+3. Nhấn “Tạo đội” hoặc “Chỉnh sửa”
+4. Hiển thị form thông tin đội
+5. Nhập/sửa thông tin (tên đội, logo, địa phương, …)
+6. Nhấn “Lưu”
+7. Kiểm tra hợp lệ
+8. Lưu cập nhật vào CSDL
+9. Thông báo “Lưu thành công”
+Luồng sự kiện thay thế
+7.1 Thiếu dữ liệu 
+Thông báo lỗi
+quay lại bước 5
+Luồng sự kiện ngoại lệ
+Quản lý thành viên đội bóng
+Thêm thành viên
+Xóa thành viên
+Chuyển đổi thành viên
+(1 trang quản lý đội bóng, 1 trang thành viên đội bóng, 1 form thêm, 1 form chuyển)
+Tên use case
+Quản lý thành viên đội bóng
+Tiền điều kiện
+Đội bóng đã được tạo; HLV đăng nhập
+Hậu điều kiện
+Danh sách thành viên đội bóng được cập nhật
+Actor chính
+Huấn luyện viên
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Vào “Thành viên đội”
+2. Hiển thị danh sách thành viên
+3. Chọn thao tác: Thêm/Xóa/Chuyển đổi
+4. Hiển thị form/xác nhận tương ứng
+5. Nhập thông tin hoặc xác nhận thao tác
+6. Kiểm tra điều kiện/hợp lệ
+7. Cập nhật CSDL
+8. Thông báo “Cập nhật thành công”
+Luồng sự kiện thay thế
+6.1 Trùng VĐV / VĐV không tồn tại 
+Thông báo 
+quay lại bước 5
+Luồng sự kiện ngoại lệ
+Quản lý đội hình
+Tạo đội hình
+Cập nhập đội hình
+(1 trang quản lý đội hình, 1 trang thông tin đội hình)
+Tên use case
+Quản lý đội hình
+Tiền điều kiện
+Có danh sách VĐV hợp lệ trong đội
+Hậu điều kiện
+Đội hình được lưu vào CSDL
+Actor chính
+Huấn luyện viên
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Vào “Đội hình”
+2. Hiển thị đội hình hiện tại (nếu có)
+3. Nhấn “Tạo/Cập nhật đội hình”
+4. Hiển thị giao diện chọn VĐV theo vị trí
+5. Chọn VĐV, sắp xếp vị trí
+6. Nhấn “Lưu đội hình”
+7. Kiểm tra đủ số lượng/quy tắc
+8. Lưu đội hình vào CSDL
+9. Thông báo “Lưu thành công”
+Luồng sự kiện thay thế
+7.1 Không đủ VĐV/vi phạm quy tắc 
+Thông báo lỗi 
+     2.quay lại bước 5
+Luồng sự kiện ngoại lệ
+Xem lịch thi đấu đội bóng
+(1 trang xem lịch thi đấu của đội bóng)
+Tên use case
+Xem lịch thi đấu đội bóng
+Tiền điều kiện
+Giải đấu đã lập lịch
+Hậu điều kiện
+HLV xem được lịch thi đấu của đội
+Actor chính
+Huấn luyện viên
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Vào “Lịch thi đấu”
+2. Truy vấn lịch theo đội
+3. Hiển thị các trận theo thời gian/sân/đối thủ
+Luồng sự kiện thay thế
+2.1Không có lịch 
+Hiển thị “Chưa có lịch thi đấu”
+Luồng sự kiện ngoại lệ
+Xác nhận thay đổi thông tin của vận động viên
+(1 trang thông báo xác nhận chứa danh sách yêu cầu xác nhận, 1  model chi tiết thông tin cũ mới của VĐV)
+Tên use case
+Xác nhận thay đổi thông tin VĐV
+Tiền điều kiện
+Có yêu cầu thay đổi thông tin từ VĐV
+Hậu điều kiện
+Yêu cầu được 
+Duyệt
+ hoặc 
+Từ chối
+; dữ liệu cập nhật vào CSDL
+Actor chính
+Huấn luyện viên
+Actor phụ
+Vận động viên
+Luồng sự kiện chính
+Huấn luyện viên
+Hệ thống
+Vận động viên 
+1. Vào “Yêu cầu xác nhận”
+2. Hiển thị danh sách yêu cầu
+3. Chọn 1 yêu cầu → “Xem chi tiết”
+4. Hiển thị chi tiết dữ liệu cũ/mới
+5. Nhấn “Duyệt” hoặc “Từ chối”
+6. Cập nhật trạng thái yêu cầu
+7. Nếu duyệt → cập nhật thông tin VĐV vào CSDL
+8. Thông báo kết quả
+9. Nhận thông báo kết quả
+Luồng sự kiện thay thế
+6.1Không có yêu cầu 
+Hiển thị “Hiện tại không có yêu cầu”
+Luồng sự kiện ngoại lệ
+2.5. Vận động viên
+Xác nhận tham gia đội bóng
+(1 trang thông báo, 1 trang lời mời, 1 trang xem chi tiết lời mời)
+Tên use case
+Xác nhận tham gia đội bóng
+Tiền điều kiện
+VĐV có lời mời/đề nghị tham gia đội
+Hậu điều kiện
+Trạng thái tham gia đội được cập nhật (Đồng ý/Từ chối)
+Actor chính
+Vận động viên
+Actor phụ
+Huấn luyện viên
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+Actor phụ
+1. Vào “Thông báo/Lời mời đội bóng”
+2. Hiển thị danh sách lời mời
+3. Chọn lời mời → “Xem chi tiết”
+4. Hiển thị thông tin đội & vai trò
+5. Nhấn “Đồng ý” hoặc “Từ chối”
+6. Cập nhật trạng thái lời mời vào CSDL
+7. Thông báo kết quả
+8. Nhận thông báo VĐV đã phản hồi
+Luồng sự kiện thay thế
+4.1. Lời mời hết hạn 
+Thông báo “Lời mời không còn hiệu lực”
+Luồng sự kiện ngoại lệ
+Xem thông tin chi tiết đội bóng
+(1 trang đội bóng)
+Tên use case
+Xem thông tin đội bóng
+Tiền điều kiện
+VĐV đã thuộc 1 đội bóng
+Hậu điều kiện
+Xem được thông tin đội
+Actor chính
+Vận động viên
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Vào “Đội bóng”
+2. Truy vấn thông tin đội theo VĐV
+3. Hiển thị thông tin đội bóng
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Xem đội hình
+(1 trang đội hình)
+Tên use case
+Xem đội hình
+Tiền điều kiện
+Đội đã có đội hình
+Hậu điều kiện
+Xem được đội hình
+Actor chính
+Vận động viên
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Vào “Đội bóng”
+2. Hiển thị thông tin đội bóng
+3. Chọn “Đội hình”
+4. Hiển thị thông tin đội hình
+Luồng sự kiện thay thế
+4.1Chưa có đội hình 
+ “Đội hình chưa được thiết lập”
+Luồng sự kiện ngoại lệ
+Xem lịch thi đấu cá nhân
+(1 trang lịch thi đấu cá nhân)
+Tên use case
+Xem lịch thi đấu cá nhân
+Tiền điều kiện
+Có lịch thi đấu của đội/giải
+Hậu điều kiện
+VĐV xem được lịch liên quan
+Actor chính
+Vận động viên
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Vào “Lịch thi đấu cá nhân”
+2. Truy vấn trận theo đội & VĐV
+3. Hiển thị danh sách trận
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Xem thống kê cá nhân
+(1 trang xem thống kê cá nhân)
+Tên use case
+Xem thống kê cá nhân
+Tiền điều kiện
+Có dữ liệu trận đấu/kết quả được ghi nhận
+Hậu điều kiện
+VĐV xem được thống kê
+Actor chính
+Vận động viên
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Vào “Thống kê cá nhân”
+2. Tổng hợp dữ liệu theo VĐV
+3. Hiển thị thống kê
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Sửa id cá nhân
+(1 trang xem thông tin hồ sơ cá nhân, 1 model form sửa id)
+Tên use case
+Sửa ID cá nhân
+Tiền điều kiện
+VĐV đăng nhập; đang ở hồ sơ cá nhân
+Hậu điều kiện
+Tạo yêu cầu sửa ID (Chờ HLV xác nhận)
+Actor chính
+Vận động viên
+Actor phụ
+Huấn luyện viên
+Luồng sự kiện chính
+Vận động viên
+Hệ thống
+Huấn luyện viên
+1. Vào “Hồ sơ cá nhân”
+2. Nhấn “Sửa ID cá nhân”
+3. Hiển thị form yêu cầu sửa ID
+4. Nhập ID mới + lý do
+5. Nhấn “Gửi yêu cầu”
+ 6. Kiểm tra hợp lệ $&trùng ID
+7. Lưu yêu cầu (Chờ xác nhận) vào CSDL
+8. Thông báo “Đã gửi – chờ HLV duyệt”
+9. Nhận thông báo yêu cầu xác nhận
+Luồng sự kiện thay thế
+6.1 Trùng ID / sai định dạng 
+Thông báo lỗi 
+quay lại bước 4
+Luồng sự kiện ngoại lệ
+Xin nghỉ phép thi đấu
+(1 trang xin nghỉ phép, 1 model form xin nghỉ phép)
+Tên use case
+Xin nghỉ phép thi đấu
+Tiền điều kiện
+VĐV có lịch thi đấu; VĐV đăng nhập
+Hậu điều kiện
+Yêu cầu xin nghỉ được tạo (Chờ HLV xác nhận)
+Actor chính
+Vận động viên
+Actor phụ
+Huấn luyện viên
+Luồng sự kiện chính
+Vận động viên
+Hệ thống
+Huấn luyện viên
+1. Vào “Xin nghỉ phép thi đấu”
+2. Hiển thị form xin nghỉ + lịch liên quan
+3. Chọn trận/ khoảng thời gian xin nghỉ
+4. Nhập lý do
+5. Nhấn “Gửi yêu cầu”
+6. Kiểm tra điều kiện (đã gần ngày trận, dữ liệu hợp lệ)
+7. Lưu yêu cầu (Chờ duyệt) vào CSDL
+8. Thông báo “Đã gửi yêu cầu”
+9. Nhận thông báo yêu cầu xin nghỉ
+Luồng sự kiện thay thế
+6.1 Dữ liệu thiếu 
+Thông báo lỗi 
+quay lại bước 3/4
+2.1 Xin nghỉ sau thời hạn cho phép
+Thông báo lý do 
+kết thúc
+Luồng sự kiện ngoại lệ
+3. Nhóm 2: khán giả
+Xem danh sách đội bóng
+Tên use case
+Xem danh sách đội bóng
+Tiền điều kiện
+Không có
+Hậu điều kiện
+Danh sách đội được hiển thị
+Actor chính
+Khán giả
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1.Truy cập vào mục “Đội bóng”
+2. Truy vấn danh sách đội công khai
+3. Hiển thị danh sách đội bóng
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Xem thông tin đội bóng
+Tên use case
+Xem thông tin đội bóng
+Tiền điều kiện
+Đội bóng tồn tại & công khai
+Hậu điều kiện
+Hiển thị thông tin đội
+Actor chính
+Khán giả
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Chọn 1 đội bóng
+2. Truy vấn thông tin đội
+3. Hiển thị chi tiết đội
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Xem lịch thi đấu
+Tên use case
+Xem lịch thi đấu
+Tiền điều kiện
+Có lịch thi đấu được công bố
+Hậu điều kiện
+Lịch thi đấu hiển thị
+Actor chính
+Khán giả
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Vào “Lịch thi đấu”
+2. Truy vấn lịch công khai
+3. Hiển thị lịch
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Xem kết quả trận đấu
+Tên use case
+Xem kết quả trận đấu
+Tiền điều kiện
+Kết quả được công bố
+Hậu điều kiện
+Kết quả hiển thị
+Actor chính
+Khán giả
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Vào “Kết quả”
+2. Truy vấn kết quả công khai
+3. Hiển thị kết quả theo giải/vòng
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ
+Xem bảng xếp hạng
+Tên use case
+Xem bảng xếp hạng
+Tiền điều kiện
+Bảng xếp hạng được công bố
+Hậu điều kiện
+BXH hiển thị
+Actor chính
+Khán giả
+Actor phụ
+Không có
+Luồng sự kiện chính
+Actor chính
+Hệ thống
+1. Vào “Bảng xếp hạng”
+2. Truy vấn BXH công khai
+3. Hiển thị BXH
+Luồng sự kiện thay thế
+Luồng sự kiện ngoại lệ

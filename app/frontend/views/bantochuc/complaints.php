@@ -5,7 +5,7 @@
 >
     <header class="complaints-topbar">
         <div>
-            <p class="eyebrow">BAN TO CHUC</p>
+            <p class="eyebrow">BAN TỔ CHỨC</p>
             <h1>Tiếp nhận &amp; Quản lý khiếu nại</h1>
             <p class="sub">Xem danh sách khiếu nại, tiếp nhận, từ chối, đánh dấu đã xử lý hoặc không xử lý.</p>
         </div>

@@ -5,9 +5,9 @@
 >
     <header class="schedule-topbar">
         <div>
-            <p class="eyebrow">BAN TO CHUC</p>
+            <p class="eyebrow">BAN TỔ CHỨC</p>
             <h1>Quản lý lịch thi đấu</h1>
-            <p class="sub">Chọn giải đấu đã công bố và đã đóng đăng ký để quản lý bảng đấu, trận đấu, thời gian và sân.</p>
+            <p class="sub">Xem cấu trúc vòng đấu của giải đã công bố; sau khi đóng đăng ký có thể tạo bảng, sinh trận và xếp lịch.</p>
         </div>
     </header>
 
@@ -15,7 +15,7 @@
         <aside class="schedule-sidebar">
             <div class="sidebar-head">
                 <h2>Giải đấu</h2>
-                <p class="sub">Chỉ hiển thị giải đã công bố và đã đóng đăng ký.</p>
+                <p class="sub">Hiển thị các giải đã công bố do ban tổ chức quản lý.</p>
             </div>
 
             <div class="sidebar-tools">
@@ -36,15 +36,31 @@
                         <p class="sub" id="tour_sub">Chọn một giải đấu ở cột bên trái.</p>
                     </div>
                     <div class="card-actions">
-                        <button id="btnAddGroup" class="btn primary" type="button" disabled>Thêm bảng đấu</button>
+                        <button id="btnGenerateStandard" class="btn" type="button" disabled>Tạo trận tự động</button>
                     </div>
                 </div>
 
                 <div class="schedule-split">
                     <section class="schedule-pane">
                         <div class="pane-head">
+                            <h3>Vòng đấu</h3>
+                            <div class="pane-tools">
+                                <select id="v_round">
+                                    <option value="">Tất cả vòng đấu</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="v_rounds" class="round-strip">
+                            <div class="empty">Chưa chọn giải đấu.</div>
+                        </div>
+                    </section>
+
+                    <section class="schedule-pane">
+                        <div class="pane-head">
                             <h3>Bảng đấu</h3>
                             <div class="pane-tools">
+                                <button id="btnAddGroup" class="btn primary" type="button" disabled>Thêm bảng đấu</button>
                                 <input id="g_q" type="text" placeholder="Tìm bảng..." />
                             </div>
                         </div>
@@ -55,15 +71,13 @@
                                     <tr>
                                         <th>ID</th>
                                         <th>Tên bảng</th>
-                                        <th>Mô tả</th>
-                                        <th>Đội</th>
                                         <th>Trạng thái</th>
                                         <th></th>
                                     </tr>
                                 </thead>
                                 <tbody id="g_tbody">
                                     <tr>
-                                        <td colspan="6" class="empty">Chưa chọn giải đấu.</td>
+                                        <td colspan="4" class="empty">Chưa chọn giải đấu.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -92,13 +106,14 @@
                                         <th>Bắt đầu</th>
                                         <th>Kết thúc</th>
                                         <th>Vòng</th>
+                                        <th>Bảng</th>
                                         <th>Trạng thái</th>
                                         <th></th>
                                     </tr>
                                 </thead>
                                 <tbody id="m_tbody">
                                     <tr>
-                                        <td colspan="9" class="empty">Chưa chọn giải đấu.</td>
+                                        <td colspan="10" class="empty">Chưa chọn giải đấu.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -123,6 +138,11 @@
 
         <div class="schedule-grid">
             <div>
+                <label for="gm_round">Vòng đấu</label>
+                <select id="gm_round"></select>
+            </div>
+
+            <div>
                 <label for="gm_name">Tên bảng</label>
                 <input id="gm_name" placeholder="VD: Bảng A" />
             </div>
@@ -136,10 +156,23 @@
                 </select>
             </div>
 
+            <div>
+                <label for="gm_start">Thời gian bắt đầu</label>
+                <input id="gm_start" type="date" disabled />
+            </div>
+
+            <div>
+                <label for="gm_end">Thời gian kết thúc</label>
+                <input id="gm_end" type="date" />
+            </div>
+
             <div class="colspan">
-                <label for="gm_teams">Đội trong bảng</label>
-                <select id="gm_teams" multiple size="6"></select>
-                <small class="field-hint">Giữ Ctrl để chọn nhiều đội. Backend chỉ cho tạo trận trong bảng khi cả 2 đội thuộc bảng đó.</small>
+                <label for="gm_team_picker">Đội trong bảng</label>
+                <select id="gm_team_picker">
+                    <option value="">Chọn đội tham gia bảng</option>
+                </select>
+                <div id="gm_selected_teams" class="selected-team-list"></div>
+                <small class="field-hint">Có thể chọn nhiều đội. Các đội đã chọn sẽ hiển thị bên dưới; bấm × để loại khỏi bảng.</small>
             </div>
 
             <div class="colspan">
@@ -174,8 +207,9 @@
             </div>
 
             <div>
-                <label for="mm_round">Vòng đấu</label>
-                <input id="mm_round" placeholder="VD: Vòng bảng" />
+                <label for="mm_round_select">Vòng đấu</label>
+                <select id="mm_round_select"></select>
+                <input id="mm_round" type="hidden" />
             </div>
 
             <div>
@@ -189,6 +223,48 @@
             </div>
 
             <div>
+                <label for="mm_slot1_source">Nguồn đội 1</label>
+                <select id="mm_slot1_source">
+                    <option value="TEAM">Đội cụ thể</option>
+                    <option value="WINNER">Đội thắng trận trước</option>
+                    <option value="LOSER">Đội thua trận trước</option>
+                    <option value="SEED">Hạt giống</option>
+                    <option value="BYE">Miễn đấu</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="mm_slot2_source">Nguồn đội 2</label>
+                <select id="mm_slot2_source">
+                    <option value="TEAM">Đội cụ thể</option>
+                    <option value="WINNER">Đội thắng trận trước</option>
+                    <option value="LOSER">Đội thua trận trước</option>
+                    <option value="SEED">Hạt giống</option>
+                    <option value="BYE">Miễn đấu</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="mm_slot1_match">Trận nguồn đội 1</label>
+                <select id="mm_slot1_match"></select>
+            </div>
+
+            <div>
+                <label for="mm_slot2_match">Trận nguồn đội 2</label>
+                <select id="mm_slot2_match"></select>
+            </div>
+
+            <div>
+                <label for="mm_slot1_seed">Hạt giống đội 1</label>
+                <input id="mm_slot1_seed" type="number" min="1" />
+            </div>
+
+            <div>
+                <label for="mm_slot2_seed">Hạt giống đội 2</label>
+                <input id="mm_slot2_seed" type="number" min="1" />
+            </div>
+
+            <div>
                 <label for="mm_venue">Sân đấu</label>
                 <select id="mm_venue"></select>
             </div>
@@ -196,6 +272,9 @@
             <div>
                 <label for="mm_status">Trạng thái</label>
                 <select id="mm_status">
+                    <option value="CHO_DOI_DOI">Chờ đội</option>
+                    <option value="CHO_XEP_LICH">Chờ xếp lịch</option>
+                    <option value="DA_XEP_LICH">Đã xếp lịch</option>
                     <option value="CHUA_DIEN_RA">Chưa diễn ra</option>
                     <option value="SAP_DIEN_RA">Sắp diễn ra</option>
                     <option value="DANG_DIEN_RA">Đang diễn ra</option>
@@ -214,6 +293,16 @@
                 <label for="mm_end">Thời gian kết thúc tùy chọn</label>
                 <input id="mm_end" type="datetime-local" />
             </div>
+
+            <div class="colspan">
+                <div class="inline-head">
+                    <label>Trọng tài được phân công</label>
+                    <button id="mm_add_referee" class="btn" type="button">+ Thêm trọng tài</button>
+                </div>
+                <div id="mm_referees" class="referee-list"></div>
+                <small class="field-hint">Một trận có thể có nhiều trọng tài, mỗi trọng tài gắn với đúng một vai trò.</small>
+            </div>
+
         </div>
 
         <div id="mm_alert" class="schedule-alert hidden"></div>

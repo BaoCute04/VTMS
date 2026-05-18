@@ -8,7 +8,7 @@
 >
     <header class="assignments-topbar">
         <div>
-            <p class="eyebrow">TRONG TAI</p>
+            <p class="eyebrow">TRỌNG TÀI</p>
             <h1>Lịch phân công trận đấu</h1>
             <p class="sub">Xem các trận được phân công, lọc theo ngày, giải, sân, vai trò và trạng thái.</p>
         </div>

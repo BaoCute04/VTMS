@@ -1,7 +1,7 @@
 <section class="coach-page coach-register" data-register-api="<?= e(url('/api/coach/register')) ?>">
     <header class="coach-topbar">
         <div>
-            <p class="eyebrow">HUAN LUYEN VIEN</p>
+            <p class="eyebrow">HUẤN LUYỆN VIÊN</p>
             <h1>Đăng ký tài khoản Huấn luyện viên</h1>
             <p class="sub">Điền đầy đủ thông tin để gửi yêu cầu đăng ký tài khoản HLV.</p>
         </div>

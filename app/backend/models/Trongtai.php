@@ -293,7 +293,7 @@ final class Trongtai extends Model
                 OR d1.tendoibong LIKE :keyword
                 OR d2.tendoibong LIKE :keyword
                 OR sd.tensandau LIKE :keyword
-                OR td.vongdau LIKE :keyword)";
+                OR vd.tenvongdau LIKE :keyword)";
             $bindings['keyword'] = '%' . $filters['q'] . '%';
         }
 
@@ -310,10 +310,10 @@ final class Trongtai extends Model
                 d2.tendoibong AS doi2,
                 td.idsandau,
                 sd.tensandau,
-                sd.diachi AS sandau_diachi,
+                vt.diachi AS sandau_diachi,
                 td.thoigianbatdau,
                 td.thoigianketthuc,
-                td.vongdau,
+                vd.tenvongdau AS vongdau,
                 td.trangthai,
                 GROUP_CONCAT(
                     CONCAT(pctt.idphancong, ':', pctt.idtrongtai, ':', pctt.vaitro, ':', pctt.trangthai, ':', COALESCE(tk.username, ''))
@@ -322,9 +322,11 @@ final class Trongtai extends Model
              FROM Trandau td
              JOIN Giaidau gd ON gd.idgiaidau = td.idgiaidau
              LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
              JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
              JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
-             JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Vitrithidau vt ON vt.idvitrithidau = sd.idvitrithidau
              LEFT JOIN Phancongtrongtai pctt
                 ON pctt.idtrandau = td.idtrandau
                AND pctt.trangthai IN ('CHO_XAC_NHAN','DA_XAC_NHAN')
@@ -344,10 +346,10 @@ final class Trongtai extends Model
                 d2.tendoibong,
                 td.idsandau,
                 sd.tensandau,
-                sd.diachi,
+                vt.diachi,
                 td.thoigianbatdau,
                 td.thoigianketthuc,
-                td.vongdau,
+                vd.tenvongdau,
                 td.trangthai
              ORDER BY td.thoigianbatdau, td.idtrandau"
         );
@@ -366,14 +368,15 @@ final class Trongtai extends Model
                 gd.tengiaidau,
                 td.thoigianbatdau,
                 td.thoigianketthuc,
-                td.vongdau,
+                vd.tenvongdau AS vongdau,
                 td.trangthai,
                 d1.tendoibong AS doi1,
                 d2.tendoibong AS doi2
              FROM Trandau td
              JOIN Giaidau gd ON gd.idgiaidau = td.idgiaidau
              JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
-             JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
+              JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
+              LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
              WHERE td.idtrandau = :match_id
                AND gd.idbantochuc = :organizer_id
              LIMIT 1",
@@ -947,14 +950,15 @@ final class Trongtai extends Model
             "SELECT
                 sd.idsandau,
                 sd.tensandau,
-                sd.diachi,
+                vt.diachi AS diachi,
                 sd.trangthai,
                 COUNT(DISTINCT pctt.idphancong) AS total_assignments
              FROM Phancongtrongtai pctt
              JOIN Trandau td ON td.idtrandau = pctt.idtrandau
-             JOIN Sandau sd ON sd.idsandau = td.idsandau
+              LEFT JOIN Sandau sd ON sd.idsandau = td.idsandau
+              LEFT JOIN Vitrithidau vt ON vt.idvitrithidau = sd.idvitrithidau
              WHERE pctt.idtrongtai = :referee_id
-             GROUP BY sd.idsandau, sd.tensandau, sd.diachi, sd.trangthai
+             GROUP BY sd.idsandau, sd.tensandau, vt.diachi, sd.trangthai
              ORDER BY sd.tensandau"
         );
         $statement->execute(['referee_id' => $refereeId]);
@@ -995,7 +999,9 @@ final class Trongtai extends Model
              LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
              JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
              JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
-             JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
+             LEFT JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Vitrithidau vt ON vt.idvitrithidau = sd.idvitrithidau
              WHERE " . implode(' AND ', $where)
         );
         $statement->execute($bindings);
@@ -1459,11 +1465,11 @@ final class Trongtai extends Model
                 d2.tendoibong AS doi2,
                 td.idsandau,
                 sd.tensandau,
-                sd.diachi AS sandau_diachi,
+                vt.diachi AS sandau_diachi,
                 sd.trangthai AS sandau_trangthai,
                 td.thoigianbatdau,
                 td.thoigianketthuc,
-                td.vongdau,
+                vd.tenvongdau AS vongdau,
                 td.trangthai AS trandau_trangthai,
                 kq.idketqua,
                 kq.trangthai AS ketqua_trangthai,
@@ -1475,10 +1481,12 @@ final class Trongtai extends Model
              FROM Phancongtrongtai pctt
              JOIN Trandau td ON td.idtrandau = pctt.idtrandau
              JOIN Giaidau gd ON gd.idgiaidau = td.idgiaidau
-             LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
+              LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
+              LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
              JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
              JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
-             JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Vitrithidau vt ON vt.idvitrithidau = sd.idvitrithidau
              LEFT JOIN Trongtaitrandau tttd
                 ON tttd.idtrandau = pctt.idtrandau
                AND tttd.idtrongtai = pctt.idtrongtai
@@ -1496,8 +1504,8 @@ final class Trongtai extends Model
                 OR d1.tendoibong LIKE :keyword
                 OR d2.tendoibong LIKE :keyword
                 OR sd.tensandau LIKE :keyword
-                OR sd.diachi LIKE :keyword
-                OR td.vongdau LIKE :keyword)";
+                OR vt.diachi LIKE :keyword
+                OR vd.tenvongdau LIKE :keyword)";
             $bindings['keyword'] = '%' . $filters['q'] . '%';
         }
 

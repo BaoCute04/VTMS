@@ -6,6 +6,7 @@
     }
 
     const venuesApi = root.dataset.venuesApi || "/api/organizer/venues";
+    const locationsApi = root.dataset.locationsApi || "/api/organizer/competition-locations";
     const tbody = document.getElementById("tbody");
     const q = document.getElementById("q");
     const statusFilter = document.getElementById("statusFilter");
@@ -22,12 +23,13 @@
     const mAlert = document.getElementById("m_alert");
 
     const mName = document.getElementById("m_name");
-    const mAddress = document.getElementById("m_address");
+    const mLocation = document.getElementById("m_location");
     const mCapacity = document.getElementById("m_capacity");
     const mStatus = document.getElementById("m_status");
     const mNote = document.getElementById("m_note");
 
     let venues = [];
+    let locations = [];
     let editingId = null;
 
     function escapeHtml(value) {
@@ -102,7 +104,7 @@
 
     function renderRows() {
         if (venues.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="empty">Không có sân đấu phù hợp.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="empty">Không có sân đấu phù hợp.</td></tr>';
             return;
         }
 
@@ -112,6 +114,7 @@
                 <tr>
                     <td>${escapeHtml(venue.idsandau)}</td>
                     <td>${escapeHtml(venue.tensandau)}</td>
+                    <td>${escapeHtml(venue.tenvitrithidau || "")}</td>
                     <td>${escapeHtml(venue.diachi)}</td>
                     <td>${escapeHtml(venue.succhua)}</td>
                     <td><span class="badge ${className}">${escapeHtml(label)}</span></td>
@@ -137,9 +140,26 @@
             showPageMessage("");
         } catch (error) {
             venues = [];
-            tbody.innerHTML = '<tr><td colspan="7" class="empty">Không thể tải dữ liệu sân đấu.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="empty">Không thể tải dữ liệu sân đấu.</td></tr>';
             showPageMessage(error.message || "Không thể tải dữ liệu sân đấu.", true);
         }
+    }
+
+    async function loadLocations() {
+        try {
+            const payload = await requestJson(new URL(locationsApi, window.location.origin).toString());
+            locations = Array.isArray(payload.data) ? payload.data : [];
+        } catch (error) {
+            locations = [];
+        }
+
+        const currentValue = mLocation.value;
+        mLocation.innerHTML = '<option value="">Chọn vị trí thi đấu</option>' + locations.map((location) => `
+            <option value="${escapeHtml(location.idvitrithidau)}">
+                ${escapeHtml(location.tenvitrithidau)}${location.diachi ? ` - ${escapeHtml(location.diachi)}` : ""}
+            </option>
+        `).join("");
+        mLocation.value = currentValue;
     }
 
     function currentVenue() {
@@ -151,7 +171,7 @@
         hideModalError();
         modalTitle.textContent = "Bổ sung sân đấu";
         mName.value = "";
-        mAddress.value = "";
+        mLocation.value = "";
         mCapacity.value = "0";
         mStatus.value = "HOAT_DONG";
         mNote.value = "";
@@ -170,7 +190,7 @@
         hideModalError();
         modalTitle.textContent = "Cập nhật sân đấu";
         mName.value = venue.tensandau || "";
-        mAddress.value = venue.diachi || "";
+        mLocation.value = String(venue.idvitrithidau || "");
         mCapacity.value = venue.succhua ?? 0;
         mStatus.value = venue.trangthai || "HOAT_DONG";
         mNote.value = venue.mota || "";
@@ -186,7 +206,7 @@
     function formPayload() {
         return {
             tensandau: mName.value.trim(),
-            diachi: mAddress.value.trim(),
+            idvitrithidau: Number(mLocation.value || 0),
             succhua: Number(mCapacity.value || 0),
             trangthai: mStatus.value,
             mota: mNote.value.trim() || null,
@@ -194,8 +214,8 @@
     }
 
     function validate(payload) {
-        if (!payload.tensandau || !payload.diachi) {
-            return "Vui lòng nhập đầy đủ: Tên sân, Địa chỉ.";
+        if (!payload.tensandau || !payload.idvitrithidau) {
+            return "Vui lòng nhập đầy đủ: Tên sân, Vị trí thi đấu.";
         }
 
         if (!Number.isInteger(payload.succhua) || payload.succhua < 0) {
@@ -218,8 +238,8 @@
             changes.tensandau = payload.tensandau;
         }
 
-        if (payload.diachi !== String(venue.diachi || "")) {
-            changes.diachi = payload.diachi;
+        if (payload.idvitrithidau !== Number(venue.idvitrithidau || 0)) {
+            changes.idvitrithidau = payload.idvitrithidau;
         }
 
         if (payload.succhua !== Number(venue.succhua || 0)) {
@@ -329,5 +349,5 @@
         openEdit(button.dataset.id);
     });
 
-    loadVenues();
+    Promise.all([loadLocations(), loadVenues()]);
 })();

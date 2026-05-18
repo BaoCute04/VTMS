@@ -7,7 +7,7 @@
 >
     <header class="refs-topbar">
         <div>
-            <p class="eyebrow">BAN TO CHUC</p>
+            <p class="eyebrow">BAN TỔ CHỨC</p>
             <h1>Quản lý Trọng tài</h1>
             <p class="sub">Thêm trọng tài, phân công trận đấu và tạo đơn nghỉ trọng tài.</p>
         </div>

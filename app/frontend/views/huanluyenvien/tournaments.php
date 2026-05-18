@@ -6,7 +6,7 @@
 >
     <header class="coach-topbar">
         <div>
-            <p class="eyebrow">HUAN LUYEN VIEN</p>
+            <p class="eyebrow">HUẤN LUYỆN VIÊN</p>
             <h1>Danh sách giải đấu</h1>
             <p class="sub">Chọn giải đấu đang mở để đăng ký tham gia.</p>
         </div>
@@ -55,14 +55,19 @@
             <div>
                 <label for="d_team">Đội đăng ký *</label>
                 <select id="d_team"></select>
+                <div id="d_teamRegistration" class="team-registration-state hidden"></div>
             </div>
             <div>
                 <label for="d_status">Trạng thái</label>
                 <input id="d_status" disabled />
             </div>
             <div class="colspan">
-                <label for="d_desc">Mô tả / Điều lệ</label>
-                <textarea id="d_desc" rows="4" disabled></textarea>
+                <label>Mô tả giải đấu</label>
+                <div id="d_desc" class="readonly-block"></div>
+            </div>
+            <div class="colspan">
+                <label id="d_ruleTitle">Điều lệ giải đấu do Ban tổ chức công bố</label>
+                <div id="d_ruleContent" class="readonly-block rule-block"></div>
             </div>
         </div>
 
@@ -73,6 +78,6 @@
             <button class="btn primary" id="btnRegister" type="button">Đăng ký giải</button>
         </div>
 
-        <p class="hint">Khi đăng ký, hệ thống sẽ tạo yêu cầu tham gia với trạng thái Chờ duyệt.</p>
+        <p class="hint">Huấn luyện viên chỉ xem điều lệ giải đấu. Khi đăng ký, hệ thống sẽ tạo yêu cầu tham gia với trạng thái Chờ duyệt.</p>
     </div>
 </div>

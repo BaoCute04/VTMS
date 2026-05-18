@@ -75,11 +75,11 @@ final class Baocaosuco extends Model
 
         if (($filters['q'] ?? '') !== '') {
             $where[] = "(gd.tengiaidau LIKE :keyword
-                OR td.vongdau LIKE :keyword
+                OR vd.tenvongdau LIKE :keyword
                 OR d1.tendoibong LIKE :keyword
                 OR d2.tendoibong LIKE :keyword
                 OR sd.tensandau LIKE :keyword
-                OR sd.diachi LIKE :keyword)";
+                OR vt.diachi LIKE :keyword)";
             $bindings['keyword'] = '%' . $filters['q'] . '%';
         }
 
@@ -106,10 +106,10 @@ final class Baocaosuco extends Model
                 d2.tendoibong AS doi2,
                 td.idsandau,
                 sd.tensandau,
-                sd.diachi AS sandau_diachi,
+                vt.diachi AS sandau_diachi,
                 td.thoigianbatdau,
                 td.thoigianketthuc,
-                td.vongdau,
+                vd.tenvongdau AS vongdau,
                 td.trangthai AS trandau_trangthai,
                 pctt.idphancong,
                 pctt.vaitro,
@@ -120,7 +120,9 @@ final class Baocaosuco extends Model
              LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
              JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
              JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
-             JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
+             LEFT JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Vitrithidau vt ON vt.idvitrithidau = sd.idvitrithidau
              WHERE " . implode(' AND ', $where) . '
              ORDER BY td.thoigianbatdau DESC, td.idtrandau DESC'
         );
@@ -215,7 +217,7 @@ final class Baocaosuco extends Model
                 OR bc.noidung LIKE :keyword
                 OR bc.minhchung LIKE :keyword
                 OR gd.tengiaidau LIKE :keyword
-                OR td.vongdau LIKE :keyword
+                OR vd.tenvongdau LIKE :keyword
                 OR d1.tendoibong LIKE :keyword
                 OR d2.tendoibong LIKE :keyword
                 OR sd.tensandau LIKE :keyword)";
@@ -271,10 +273,10 @@ final class Baocaosuco extends Model
                 d2.tendoibong AS doi2,
                 td.idsandau,
                 sd.tensandau,
-                sd.diachi AS sandau_diachi,
+                vt.diachi AS sandau_diachi,
                 td.thoigianbatdau,
                 td.thoigianketthuc,
-                td.vongdau,
+                vd.tenvongdau AS vongdau,
                 td.trangthai AS trandau_trangthai
              FROM Baocaosuco bc
              JOIN Trandau td ON td.idtrandau = bc.idtrandau
@@ -282,7 +284,9 @@ final class Baocaosuco extends Model
              LEFT JOIN Bangdau bd ON bd.idbangdau = td.idbangdau
              JOIN Doibong d1 ON d1.iddoibong = td.iddoibong1
              JOIN Doibong d2 ON d2.iddoibong = td.iddoibong2
-             JOIN Sandau sd ON sd.idsandau = td.idsandau";
+             LEFT JOIN Vongdau vd ON vd.idvongdau = td.idvongdau
+             LEFT JOIN Sandau sd ON sd.idsandau = td.idsandau
+             LEFT JOIN Vitrithidau vt ON vt.idvitrithidau = sd.idvitrithidau";
     }
 
     private function recordSystemLog(?int $accountId, string $action, string $targetTable, ?int $targetId, ?string $ipAddress, ?string $note = null): void

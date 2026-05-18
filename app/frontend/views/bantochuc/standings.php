@@ -1,11 +1,11 @@
 <section
     class="organizer-standings"
-    data-standings-api="<?= e(url('/api/btc/standings')) ?>"
-    data-tournaments-api="<?= e(url('/api/btc/standings/tournaments')) ?>"
+    data-standings-api="<?= e(url('/api/organizer/standings')) ?>"
+    data-tournaments-api="<?= e(url('/api/organizer/standings/tournaments')) ?>"
 >
     <header class="standings-topbar">
         <div>
-            <p class="eyebrow">BAN TO CHUC</p>
+            <p class="eyebrow">BAN TỔ CHỨC</p>
             <h1>Quản lý xếp hạng</h1>
             <p class="sub">Chọn giải đấu, tạo bảng xếp hạng từ kết quả đã công bố và công bố BXH.</p>
         </div>
@@ -75,5 +75,18 @@
         </div>
 
         <p class="hint">Chỉ tạo BXH khi có kết quả đã công bố và không còn trận đã kết thúc chưa công bố kết quả.</p>
+    </section>
+
+    <section class="standings-panel">
+        <div class="panel-head">
+            <div>
+                <h2>Nhánh loại trực tiếp</h2>
+                <p class="sub">Hệ thống chọn top 8 sau vòng sơ bộ; hạng 9 và 10 bị loại theo điều lệ.</p>
+            </div>
+        </div>
+
+        <div id="knockoutPlan" class="knockout-plan">
+            Chưa có dữ liệu nhánh đấu.
+        </div>
     </section>
 </section>
