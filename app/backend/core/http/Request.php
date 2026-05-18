@@ -13,7 +13,8 @@ final class Request
         private string $path,
         private array $query,
         private array $body,
-        private array $server
+        private array $server,
+        private array $files = []
     ) {
     }
 
@@ -25,15 +26,16 @@ final class Request
 
         if ($method !== 'GET' && empty($body)) {
             $raw = file_get_contents('php://input') ?: '';
-            $contentType = (string) ($_SERVER['CONTENT_TYPE'] ?? '');
+            $contentType = (string) ($_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '');
+            $looksLikeJson = str_starts_with(ltrim($raw), '{') || str_starts_with(ltrim($raw), '[');
 
-            if (str_contains($contentType, 'application/json')) {
+            if (str_contains($contentType, 'application/json') || $looksLikeJson) {
                 $decoded = json_decode($raw, true);
                 $body = is_array($decoded) ? $decoded : [];
             }
         }
 
-        return new self($method, $path, $_GET, $body, $_SERVER);
+        return new self($method, $path, $_GET, $body, $_SERVER, $_FILES);
     }
 
     public function method(): string
@@ -54,6 +56,18 @@ final class Request
     public function all(): array
     {
         return $this->body;
+    }
+
+    public function file(string $key): ?array
+    {
+        $file = $this->files[$key] ?? null;
+
+        return is_array($file) ? $file : null;
+    }
+
+    public function files(): array
+    {
+        return $this->files;
     }
 
     public function header(string $key, mixed $default = null): mixed

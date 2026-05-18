@@ -1,6 +1,6 @@
 <section class="error-page">
     <h1>403</h1>
-    <p>Ban khong co quyen truy cap chuc nang nay.</p>
+    <p>Bạn không có quyền truy cập chức năng này.</p>
     <?php if (!empty($requiredRoles)): ?>
         <p class="hint">Vai tro yeu cau: <?= e(implode(', ', $requiredRoles)) ?></p>
     <?php endif; ?>

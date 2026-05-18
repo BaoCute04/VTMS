@@ -1,0 +1,45 @@
+admin         hashed_admin
+btc_quocgia   hashed_btc
+btc_hcm       hashed_btc
+btc_govap     hashed_btc
+btc_iuh       hashed_btc
+ref_01        hashed_ref
+ref_02        hashed_ref
+hlv_hcm       hashed_hlv
+hlv_hn        hashed_hlv
+hlv_dn        hashed_hlv
+hlv_ct        hashed_hlv
+vdv_01        hashed_vdv
+vdv_02        hashed_vdv
+vdv_03        hashed_vdv
+vdv_04        hashed_vdv
+vdv_05        hashed_vdv
+vdv_06        hashed_vdv
+vdv_07        hashed_vdv
+vdv_08        hashed_vdv
+
+
+START TRANSACTION;
+
+UPDATE taikhoan SET password = '$2y$10$2MxeQIee/Vf7B6R3DDbkge3lKjLm2sNjVLmW5HD28dUIgDSrAMjFm' WHERE idtaikhoan = 1;  -- admin / hashed_admin
+UPDATE taikhoan SET password = '$2y$10$OBXJKXgj9/3ht4mUK4rQb.SuXMd6rbqObYTDGMGpVzuYSgNT5DSY.' WHERE idtaikhoan = 2;  -- btc_quocgia / hashed_btc
+UPDATE taikhoan SET password = '$2y$10$m5vRzWBL/Qg29A4Fysndh.yck4Z4H4ia9AWwRG5D58xzeJYayahKG' WHERE idtaikhoan = 3;  -- btc_hcm / hashed_btc
+UPDATE taikhoan SET password = '$2y$10$zwD2YFXE.BNHCe7wbRQB4e269EqgN/s7gcpYJmzrvAjbb0CmDhzP.' WHERE idtaikhoan = 4;  -- btc_govap / hashed_btc
+UPDATE taikhoan SET password = '$2y$10$LbcnGxDL1zlKUuq1yPsdw.ihAx9OEywBMxvcMQtJGlwFV8R6GYuG6' WHERE idtaikhoan = 5;  -- btc_iuh / hashed_btc
+UPDATE taikhoan SET password = '$2y$10$/mb1U9yUqgxW3MUVp51/PObdmHJIi252.RRsvKeGhzqq2xpeTbGyu' WHERE idtaikhoan = 6;  -- ref_01 / hashed_ref
+UPDATE taikhoan SET password = '$2y$10$anjKVowmkQYK.TjZ35la0eQQAPhutkOvfpRc8VJL7Yb9E26pS2S8y' WHERE idtaikhoan = 7;  -- ref_02 / hashed_ref
+UPDATE taikhoan SET password = '$2y$10$.Ca7DM1fbv0rwVoFMrMIteK1NnwD58sWAm7/KPz23riYeFTRaAzri' WHERE idtaikhoan = 8;  -- hlv_hcm / hashed_hlv
+UPDATE taikhoan SET password = '$2y$10$kl/CO.sa7Lf6P79/CKO2HOHNTArTa6mvehMISb.CpkjcPpckv0ila' WHERE idtaikhoan = 9;  -- hlv_hn / hashed_hlv
+UPDATE taikhoan SET password = '$2y$10$qkM5X4gdud7IwcGU9iHZLOotYXnNqu2EEAXHN28X/lVe/114SM62e' WHERE idtaikhoan = 10; -- hlv_dn / hashed_hlv
+UPDATE taikhoan SET password = '$2y$10$CftvRaET2BctRI/mvucoF.GXZM5r.dbRftZEFY1ykU.NtUyLx.JWi' WHERE idtaikhoan = 11; -- hlv_ct / hashed_hlv
+UPDATE taikhoan SET password = '$2y$10$lhie2aWTc.wTcNfXCgIWJOWHajLAj/IsjZwMNKrZMZl0Nsk6VeIf.' WHERE idtaikhoan = 12; -- vdv_01 / hashed_vdv
+UPDATE taikhoan SET password = '$2y$10$Pa.U/A1gK8liFdpm1ysR5.VnxUv9mV7vuchBEg2wfYX6HI.fqq5Ze' WHERE idtaikhoan = 13; -- vdv_02 / hashed_vdv
+UPDATE taikhoan SET password = '$2y$10$snv78agISE3X6AbETkCHQ.9WtAddXU8awYDnoAO1VcPDxYFbbsOFG' WHERE idtaikhoan = 14; -- vdv_03 / hashed_vdv
+UPDATE taikhoan SET password = '$2y$10$ukHxJ4quGbM7y4QXTzLSa.5u9i5W3DvCK0MZ7b6CdOSmJdiG0x5nO' WHERE idtaikhoan = 15; -- vdv_04 / hashed_vdv
+UPDATE taikhoan SET password = '$2y$10$YbfYRTDsfBMzVCYWNWeWTOkLzztiAml5FpqG6HakL58IBiIalg6j2' WHERE idtaikhoan = 16; -- vdv_05 / hashed_vdv
+UPDATE taikhoan SET password = '$2y$10$/ULY3uPx.k3kjSuAn/TvaeQQ.tDDYcKX4A/7gp8wk2PFtKMHmDfbi' WHERE idtaikhoan = 17; -- vdv_06 / hashed_vdv
+UPDATE taikhoan SET password = '$2y$10$lafc4O90H.mrRLcdMFmTg.BfDfMMO/3ZQ9icUbddGC0nULMIoq3ta' WHERE idtaikhoan = 18; -- vdv_07 / hashed_vdv
+UPDATE taikhoan SET password = '$2y$10$Fme7tUfR2wTQFpBz2RsO7.3LQthIpvdLjX2kNkZr0UmBjq8p0YIye' WHERE idtaikhoan = 19; -- vdv_08 / hashed_vdv
+
+COMMIT;
+

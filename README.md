@@ -21,6 +21,8 @@ Can PHP 8.1+ va MySQL neu muon ket noi CSDL thuc.
 ```powershell
 cd d:\Tai_Lieu_IUH\Tailieu_Nam4_HK2\CongNgheMoi\VTMS\VTMS
 php -S localhost:8000 -t public public/server.php
+OR
+C:\xampp\php\php.exe -S localhost:8000 -t public public/server.php
 ```
 
 Mo trinh duyet tai:
