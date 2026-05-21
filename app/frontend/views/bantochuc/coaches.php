@@ -46,6 +46,7 @@
                     <th>ID HLV</th>
                     <th>Họ tên</th>
                     <th>Liên hệ</th>
+                    <th>Đơn vị / khu vực</th>
                     <th>Bằng cấp</th>
                     <th>Kinh nghiệm</th>
                     <th>Trạng thái</th>
@@ -55,7 +56,7 @@
             </thead>
             <tbody id="tbody">
                 <tr>
-                    <td colspan="8" class="empty">Đang tải dữ liệu...</td>
+                    <td colspan="9" class="empty">Đang tải dữ liệu...</td>
                 </tr>
             </tbody>
         </table>
@@ -114,6 +115,15 @@
             <div class="colspan">
                 <label for="m_address">Địa chỉ</label>
                 <input id="m_address" disabled />
+            </div>
+
+            <div>
+                <label for="m_workUnit">Đơn vị công tác</label>
+                <input id="m_workUnit" disabled />
+            </div>
+            <div>
+                <label for="m_workRegion">Khu vực công tác</label>
+                <input id="m_workRegion" disabled />
             </div>
 
             <div>

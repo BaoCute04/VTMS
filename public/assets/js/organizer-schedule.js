@@ -85,6 +85,25 @@
         DA_HUY: ["lock", "Đã hủy"],
     };
 
+    const REFEREE_ASSIGNMENT_STATUSES = {
+        CHO_XAC_NHAN: ["wait", "Chờ xác nhận"],
+        DA_XAC_NHAN: ["ok", "Đã xác nhận"],
+        TU_CHOI: ["lock", "Đã hủy xác nhận"],
+        DA_HUY: ["lock", "Đã hủy"],
+    };
+
+    const REFEREE_ASSIGNMENT_NOTES = {
+        CHO_XAC_NHAN: "Trọng tài chưa xác nhận, chưa tính là đủ điều kiện bắt đầu trận.",
+        TU_CHOI: "Trọng tài đã hủy xác nhận, cần phân công lại hoặc chọn trọng tài khác.",
+        DA_HUY: "Phân công đã bị hủy, cần phân công lại nếu vai trò này là bắt buộc.",
+    };
+
+    const REFEREE_ROLE_LABELS = {
+        TRONG_TAI_CHINH: "trọng tài chính",
+        TRONG_TAI_PHU: "trọng tài phụ",
+        GIAM_SAT: "giám sát",
+    };
+
     let tournaments = [];
     let selectedTournament = null;
     let groups = [];
@@ -96,7 +115,13 @@
     let selectedRoundKey = "";
     let editingGroupId = null;
     let editingMatchId = null;
+    let editingMatchRefereeKey = "";
     let selectedGroupTeamIds = [];
+
+    const mmRefereeNotice = document.createElement("div");
+    mmRefereeNotice.className = "referee-assignment-notice hidden";
+    mmRefereeNotice.setAttribute("role", "status");
+    mmReferees.before(mmRefereeNotice);
 
     function escapeHtml(value) {
         return String(value ?? "")
@@ -166,6 +191,29 @@
         return map[status] || ["gray", status || "-"];
     }
 
+    function matchNeedsRefereeAssignment(match) {
+        const isScheduled = Number(match.iddoibong1 || 0) > 0
+            && Number(match.iddoibong2 || 0) > 0
+            && Number(match.idsandau || 0) > 0
+            && !!match.thoigianbatdau;
+
+        if (!isScheduled) {
+            return false;
+        }
+
+        return Number(match.confirmed_main_referees || 0) < 1 || Number(match.confirmed_supervisors || 0) < 1;
+    }
+
+    function matchStatusBadge(match) {
+        const status = String(match.trangthai || "");
+
+        if (["CHO_XEP_LICH", "DA_XEP_LICH", "CHUA_DIEN_RA", "SAP_DIEN_RA"].includes(status) && matchNeedsRefereeAssignment(match)) {
+            return ["wait", "Chờ phân công trọng tài"];
+        }
+
+        return badge(status, MATCH_STATUSES);
+    }
+
     function teamName(teamId) {
         return teams.find((team) => Number(team.iddoibong) === Number(teamId))?.tendoibong || `#${teamId}`;
     }
@@ -198,6 +246,35 @@
 
         const normalized = String(value).replace("T", " ");
         return normalized.length === 16 ? `${normalized}:00` : normalized;
+    }
+
+    function tournamentDateInputLimit(field, time) {
+        const date = String(selectedTournament?.[field] || "").slice(0, 10);
+        return date ? `${date}T${time}` : "";
+    }
+
+    function applyMatchDateLimits() {
+        const min = tournamentDateInputLimit("thoigianbatdau", "00:00");
+        const max = tournamentDateInputLimit("thoigianketthuc", "23:59");
+
+        [mmStart, mmEnd].forEach((input) => {
+            input.min = min;
+            input.max = max;
+        });
+    }
+
+    function dateTimeMs(value) {
+        if (!value) {
+            return null;
+        }
+
+        const timestamp = new Date(String(value).replace(" ", "T")).getTime();
+        return Number.isNaN(timestamp) ? null : timestamp;
+    }
+
+    function tournamentBoundaryMs(field, time) {
+        const date = String(selectedTournament?.[field] || "").slice(0, 10);
+        return date ? dateTimeMs(`${date}T${time}`) : null;
     }
 
     function selectedValues(selectElement) {
@@ -718,7 +795,7 @@
         }
 
         mTbody.innerHTML = data.map((match) => {
-            const [className, label] = badge(match.trangthai, MATCH_STATUSES);
+            const [className, label] = matchStatusBadge(match);
 
             return `
                 <tr>
@@ -937,8 +1014,10 @@
         }
 
         editingMatchId = null;
+        editingMatchRefereeKey = "";
         hideModalError(mmAlert);
         mmTitle.textContent = "Thêm trận đấu";
+        applyMatchDateLimits();
         refreshGroupSelects();
         refreshMatchSelects();
         mmGroup.value = mGroup.value || "";
@@ -982,6 +1061,7 @@
         editingMatchId = Number(matchId);
         hideModalError(mmAlert);
         mmTitle.textContent = "Sửa trận đấu";
+        applyMatchDateLimits();
         refreshGroupSelects();
         refreshMatchSelects();
         matchModal.classList.remove("hidden");
@@ -1004,7 +1084,9 @@
             mmEnd.value = toInputDateTime(match.thoigianketthuc);
             fillSlotControls(1, slot1);
             fillSlotControls(2, slot2);
-            renderRefereeRows(Array.isArray(match.referee_assignments) ? match.referee_assignments : []);
+            const refereeAssignments = Array.isArray(match.referee_assignments) ? match.referee_assignments : [];
+            editingMatchRefereeKey = refereeAssignmentsKey(refereeAssignments);
+            renderRefereeRows(refereeAssignments);
             syncSlotInputs();
             mmDelete.disabled = !["CHO_DOI_DOI", "CHO_XEP_LICH", "DA_XEP_LICH", "CHUA_DIEN_RA", "SAP_DIEN_RA"].includes(String(match.trangthai));
         } catch (error) {
@@ -1015,6 +1097,7 @@
     function closeMatchModal() {
         matchModal.classList.add("hidden");
         editingMatchId = null;
+        editingMatchRefereeKey = "";
     }
 
     function matchPayload() {
@@ -1059,8 +1142,41 @@
             return "Trận đã sẵn sàng cần có sân đấu và thời gian bắt đầu.";
         }
 
+        if (payload.thoigianketthuc && !payload.thoigianbatdau) {
+            return "Vui lòng nhập thời gian bắt đầu trước khi nhập thời gian kết thúc.";
+        }
+
         if (payload.thoigianketthuc && new Date(payload.thoigianketthuc) <= new Date(payload.thoigianbatdau)) {
             return "Thời gian kết thúc phải lớn hơn thời gian bắt đầu.";
+        }
+
+        const tournamentStart = tournamentBoundaryMs("thoigianbatdau", "00:00:00");
+        const tournamentEnd = tournamentBoundaryMs("thoigianketthuc", "23:59:59");
+        const matchStart = dateTimeMs(payload.thoigianbatdau);
+        const matchEnd = dateTimeMs(payload.thoigianketthuc);
+
+        if (matchStart !== null && tournamentStart !== null && matchStart < tournamentStart) {
+            return "Thời gian bắt đầu trận đấu không được trước ngày bắt đầu giải đấu.";
+        }
+
+        if (matchStart !== null && tournamentEnd !== null && matchStart > tournamentEnd) {
+            return "Thời gian bắt đầu trận đấu không được sau ngày kết thúc giải đấu.";
+        }
+
+        if (matchEnd !== null && tournamentStart !== null && matchEnd < tournamentStart) {
+            return "Thời gian kết thúc trận đấu không được trước ngày bắt đầu giải đấu.";
+        }
+
+        if (matchEnd !== null && tournamentEnd !== null && matchEnd > tournamentEnd) {
+            return "Thời gian kết thúc trận đấu không được sau ngày kết thúc giải đấu.";
+        }
+
+        if (payload.trangthai === "DANG_DIEN_RA") {
+            const readiness = refereeReadiness();
+
+            if (readiness.missing.length > 0) {
+                return `Trận muốn bắt đầu cần ${readiness.missing.map((role) => `${role} đã xác nhận`).join(" và ")}.`;
+            }
         }
 
         return null;
@@ -1086,6 +1202,10 @@
         };
 
         Object.entries(payload).forEach(([key, value]) => {
+            if (key === "referee_assignments" && refereeAssignmentsKey(value) === editingMatchRefereeKey) {
+                return;
+            }
+
             if (value !== current[key]) {
                 changes[key] = value;
             }
@@ -1253,6 +1373,7 @@
 
         if (button) {
             button.closest(".referee-row")?.remove();
+            updateRefereeNotice();
         }
     });
 
@@ -1344,15 +1465,105 @@
         };
     }
 
+    function normalizeAssignmentStatus(status) {
+        const normalized = String(status || "DA_XAC_NHAN").toUpperCase();
+
+        return REFEREE_ASSIGNMENT_STATUSES[normalized] ? normalized : "DA_XAC_NHAN";
+    }
+
+    function refereeAssignmentsKey(assignments) {
+        return (Array.isArray(assignments) ? assignments : [])
+            .map((assignment) => {
+                const refereeId = Number(assignment.idtrongtai || assignment.referee_id || 0);
+                const role = String(assignment.vaitro || assignment.role || "").toUpperCase();
+
+                return refereeId > 0 && role ? `${refereeId}:${role}` : "";
+            })
+            .filter(Boolean)
+            .sort()
+            .join("|");
+    }
+
+    function setRefereeRowStatus(row, status) {
+        const normalized = normalizeAssignmentStatus(status);
+        const [badgeClass, label] = REFEREE_ASSIGNMENT_STATUSES[normalized];
+        const badge = row.querySelector("[data-field='assignment-status']");
+        const note = row.querySelector("[data-field='assignment-note']");
+
+        row.dataset.assignmentStatus = normalized;
+        row.classList.toggle("has-assignment-warning", normalized !== "DA_XAC_NHAN");
+
+        if (badge) {
+            badge.className = `badge ${badgeClass} referee-assignment-status`;
+            badge.textContent = label;
+        }
+
+        if (note) {
+            const noteText = REFEREE_ASSIGNMENT_NOTES[normalized] || "";
+            note.textContent = noteText;
+            note.classList.toggle("is-empty", noteText === "");
+        }
+    }
+
+    function refereeRowStates() {
+        return Array.from(mmReferees.querySelectorAll(".referee-row")).map((row) => ({
+            row,
+            refereeId: Number(row.querySelector("[data-field='referee']")?.value || 0),
+            refereeName: row.querySelector("[data-field='referee']")?.selectedOptions?.[0]?.textContent?.trim() || "",
+            role: row.querySelector("[data-field='role']")?.value || "",
+            status: row.dataset.assignmentStatus || "DA_XAC_NHAN",
+        }));
+    }
+
+    function refereeReadiness() {
+        const selectedRows = refereeRowStates().filter((item) => item.refereeId > 0);
+        const confirmedRows = selectedRows.filter((item) => item.status === "DA_XAC_NHAN");
+        const missing = [];
+
+        if (!confirmedRows.some((item) => item.role === "TRONG_TAI_CHINH")) {
+            missing.push("trọng tài chính");
+        }
+
+        if (!confirmedRows.some((item) => item.role === "GIAM_SAT")) {
+            missing.push("trọng tài giám sát");
+        }
+
+        return {
+            missing,
+            canceled: selectedRows.filter((item) => ["TU_CHOI", "DA_HUY"].includes(item.status)),
+        };
+    }
+
+    function updateRefereeNotice() {
+        const readiness = refereeReadiness();
+        const messages = [];
+
+        if (readiness.canceled.length > 0) {
+            const canceledLabels = readiness.canceled
+                .map((item) => `${item.refereeName || "Trọng tài chưa chọn"} (${REFEREE_ROLE_LABELS[item.role] || "vai trò chưa rõ"})`)
+                .join(", ");
+            messages.push(`Có trọng tài đã hủy xác nhận: ${canceledLabels}.`);
+        }
+
+        if (readiness.missing.length > 0) {
+            messages.push(`Trận chưa đủ điều kiện bắt đầu: thiếu ${readiness.missing.map((role) => `${role} đã xác nhận`).join(" và ")}.`);
+        }
+
+        mmRefereeNotice.textContent = messages.join(" ");
+        mmRefereeNotice.classList.toggle("hidden", messages.length === 0);
+    }
+
     function renderRefereeRows(assignments) {
         mmReferees.innerHTML = "";
 
         assignments.forEach((assignment) => {
-            addRefereeRow(assignment.idtrongtai, assignment.vaitro);
+            addRefereeRow(assignment.idtrongtai, assignment.vaitro, assignment.trangthai || assignment.phancong_trangthai);
         });
+
+        updateRefereeNotice();
     }
 
-    function addRefereeRow(refereeId = "", role = "TRONG_TAI_CHINH") {
+    function addRefereeRow(refereeId = "", role = "TRONG_TAI_CHINH", status = "DA_XAC_NHAN") {
         const row = document.createElement("div");
         row.className = "referee-row";
         row.innerHTML = `
@@ -1362,10 +1573,15 @@
                 <option value="TRONG_TAI_PHU">Trọng tài phụ</option>
                 <option value="GIAM_SAT">Giám sát</option>
             </select>
+            <span class="badge gray referee-assignment-status" data-field="assignment-status"></span>
             <button class="btn" type="button" data-action="remove-referee">Xóa</button>
+            <small class="referee-assignment-note is-empty" data-field="assignment-note"></small>
         `;
         const refereeSelect = row.querySelector("[data-field='referee']");
         const roleSelect = row.querySelector("[data-field='role']");
+        const initialRefereeId = String(refereeId || "");
+        const initialStatus = normalizeAssignmentStatus(status);
+
         fillSelect(
             refereeSelect,
             referees,
@@ -1375,7 +1591,21 @@
             refereeId
         );
         roleSelect.value = role;
+        row.dataset.originalRefereeId = initialRefereeId;
+        row.dataset.originalAssignmentStatus = initialStatus;
+        setRefereeRowStatus(row, initialStatus);
+        refereeSelect.addEventListener("change", () => {
+            const selectedRefereeId = String(refereeSelect.value || "");
+            const nextStatus = selectedRefereeId === row.dataset.originalRefereeId
+                ? row.dataset.originalAssignmentStatus
+                : "DA_XAC_NHAN";
+
+            setRefereeRowStatus(row, nextStatus);
+            updateRefereeNotice();
+        });
+        roleSelect.addEventListener("change", updateRefereeNotice);
         mmReferees.appendChild(row);
+        updateRefereeNotice();
     }
 
     function refereeAssignmentsPayload() {
@@ -1383,6 +1613,7 @@
             .map((row) => ({
                 idtrongtai: Number(row.querySelector("[data-field='referee']").value || 0),
                 vaitro: row.querySelector("[data-field='role']").value,
+                trangthai: row.dataset.assignmentStatus || "DA_XAC_NHAN",
             }))
             .filter((assignment) => assignment.idtrongtai > 0);
     }

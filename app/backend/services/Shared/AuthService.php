@@ -62,13 +62,27 @@ final class AuthService
     {
         $name = trim((string) (($account['hodem'] ?? '') . ' ' . ($account['ten'] ?? '')));
 
-        return [
+        $user = [
             'id' => (int) $account['idtaikhoan'],
             'username' => (string) $account['username'],
             'name' => $name !== '' ? $name : (string) $account['username'],
             'email' => (string) $account['email'],
             'role' => (string) $account['role'],
         ];
+
+        if ((string) $account['role'] === 'HUAN_LUYEN_VIEN') {
+            $coachId = isset($account['idhuanluyenvien']) ? (int) $account['idhuanluyenvien'] : 0;
+            $workRegionId = isset($account['idkhuvuccongtac']) ? (int) $account['idkhuvuccongtac'] : 0;
+
+            $user['idhuanluyenvien'] = $coachId > 0 ? $coachId : null;
+            $user['idkhuvuccongtac'] = $workRegionId > 0 ? $workRegionId : null;
+            $user['coach'] = [
+                'idhuanluyenvien' => $user['idhuanluyenvien'],
+                'idkhuvuccongtac' => $user['idkhuvuccongtac'],
+            ];
+        }
+
+        return $user;
     }
 
     private function result(bool $ok, string $message, int $status, ?array $user = null): array

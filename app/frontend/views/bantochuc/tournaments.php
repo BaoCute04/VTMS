@@ -110,6 +110,15 @@
             </div>
 
             <div>
+                <label for="m_gender">Giới tính giải đấu</label>
+                <select id="m_gender">
+                    <option value="NAM">Nam</option>
+                    <option value="NU">Nữ</option>
+                </select>
+                <p class="field-hint">Giải nam và giải nữ được quản lý tách biệt.</p>
+            </div>
+
+            <div>
                 <label for="m_nature">Tính chất giải</label>
                 <select id="m_nature">
                     <option value="CHINH_THUC">Chính thức</option>
@@ -227,7 +236,7 @@
                 <textarea id="m_rule_content" rows="4" placeholder="Nhập nội dung điều lệ, quy định đăng ký, khiếu nại, bỏ cuộc..."></textarea>
             </div>
 
-            <div class="colspan form-section-title">Thể thức và quy tắc chọn đội</div>
+            <div class="colspan form-section-title">Thể thức thi đấu</div>
 
             <div>
                 <label for="m_format_type">Loại vòng thi đấu</label>
@@ -246,21 +255,13 @@
                     <option value="HYBRID">Áp dụng cả hai</option>
                 </select>
             </div>
-
-            <div>
-                <label for="m_team_selection">Quy tắc chọn đội</label>
-                <select id="m_team_selection">
-                    <option value="BTC_CHON_THU_CONG">BTC duyệt</option>
-                    <option value="DANG_KY_THU_CONG">Các đội tự đăng ký</option>
-                    <option value="KET_HOP">Áp dụng cả hai</option>
-                </select>
-            </div>
         </div>
 
         <div id="m_alert" class="tournament-alert hidden"></div>
 
         <div class="modal-actions">
             <button id="m_cancel" class="btn" type="button">Hủy</button>
+            <button id="m_cancel_tournament" class="btn danger hidden" type="button">Hủy giải</button>
             <button id="m_save" class="btn primary" type="button">Lưu</button>
         </div>
     </div>

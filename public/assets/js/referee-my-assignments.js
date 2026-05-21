@@ -43,6 +43,8 @@
     const mRole = document.getElementById("m_role");
     const mAssignedAt = document.getElementById("m_assignedAt");
     const mNote = document.getElementById("m_note");
+    const mCancelReasonWrap = document.getElementById("m_cancelReasonWrap");
+    const mCancelReason = document.getElementById("m_cancelReason");
 
     const matchDetailModal = document.getElementById("matchDetailModal");
     const mdClose = document.getElementById("md_close");
@@ -63,19 +65,30 @@
     const mdAlert = document.getElementById("md_alert");
 
     const assignmentStatusMap = {
-        CHO_XAC_NHAN: ["wait", "Chờ xác nhận"],
+        CHO_XAC_NHAN: ["ok", "Đã xác nhận"],
         DA_XAC_NHAN: ["ok", "Đã xác nhận"],
-        TU_CHOI: ["bad", "Từ chối"],
-        DA_HUY: ["gray", "Đã hủy"],
+        TU_CHOI: ["bad", "Đã hủy xác nhận"],
+        DA_HUY: ["gray", "Phân công bị hủy"],
     };
 
     const matchStatusMap = {
+        CHO_DOI_DOI: "Chờ đội",
+        CHO_XEP_LICH: "Chờ xếp lịch",
+        DA_XEP_LICH: "Đã xếp lịch",
         CHUA_DIEN_RA: "Chưa diễn ra",
         SAP_DIEN_RA: "Sắp diễn ra",
         DANG_DIEN_RA: "Đang diễn ra",
         TAM_DUNG: "Tạm dừng",
         DA_KET_THUC: "Đã kết thúc",
-        DA_HUY: "Đã hủy",
+        DA_HUY: "Trận bị hủy",
+    };
+
+    const tournamentStatusMap = {
+        NHAP: "Nháp",
+        DA_CONG_BO: "Đã công bố",
+        DANG_DIEN_RA: "Đang diễn ra",
+        DA_KET_THUC: "Đã kết thúc",
+        DA_HUY: "Giải bị hủy",
     };
 
     const roleMap = {
@@ -177,12 +190,36 @@
         return assignmentStatusMap[status] || ["gray", status || "-"];
     }
 
+    function contextualBadge(item) {
+        if (item.giaidau_trangthai === "DA_HUY") {
+            return ["gray", tournamentStatusMap.DA_HUY];
+        }
+
+        if (item.trandau_trangthai === "DA_HUY") {
+            return ["gray", matchStatusMap.DA_HUY];
+        }
+
+        if (item.trandau_trangthai === "DA_KET_THUC") {
+            return ["ok", matchStatusMap.DA_KET_THUC];
+        }
+
+        return assignmentBadge(item.phancong_trangthai || item.trangthai);
+    }
+
+    function isCancelableAssignmentStatus(status) {
+        return status === "DA_XAC_NHAN" || status === "CHO_XAC_NHAN";
+    }
+
     function roleLabel(role) {
         return roleMap[role] || role || "-";
     }
 
     function matchStatusLabel(status) {
         return matchStatusMap[status] || status || "-";
+    }
+
+    function tournamentStatusLabel(status) {
+        return tournamentStatusMap[status] || status || "-";
     }
 
     function matchDetailUrl(matchId) {
@@ -213,7 +250,7 @@
         const stats = meta?.stats || {};
         sTotal.textContent = String(Number(stats.total ?? assignments.length));
         sUpcoming.textContent = String(Number(stats.sap_toi ?? 0));
-        sNeedConfirm.textContent = String(Number(stats.CHO_XAC_NHAN ?? 0));
+        sNeedConfirm.textContent = String(Number(stats.DA_XAC_NHAN ?? 0) + Number(stats.CHO_XAC_NHAN ?? 0));
     }
 
     async function loadTournaments() {
@@ -274,9 +311,12 @@
 
         tbody.innerHTML = assignments.map((item) => {
             const status = item.phancong_trangthai || item.trangthai;
-            const [className, label] = assignmentBadge(status);
+            const [className, label] = contextualBadge(item);
             const timeText = `${formatDateTime(item.thoigianbatdau)}${item.thoigianketthuc ? ` -> ${formatDateTime(item.thoigianketthuc)}` : ""}`;
-            const canSupervise = status === "DA_XAC_NHAN" && item.trandau_trangthai !== "DA_HUY";
+            const isSupervisor = item.vaitro === "GIAM_SAT";
+            const matchLocked = ["DA_HUY", "DA_KET_THUC"].includes(item.trandau_trangthai);
+            const canSupervise = isSupervisor && isCancelableAssignmentStatus(status) && !matchLocked;
+            const canCancelConfirmation = isCancelableAssignmentStatus(status) && !matchLocked;
 
             return `
                 <tr>
@@ -284,6 +324,7 @@
                     <td>
                         <div style="font-weight:800">#${escapeHtml(item.idtrandau)} - ${escapeHtml(matchName(item))}</div>
                         <div class="sub">Trạng thái trận: ${escapeHtml(matchStatusLabel(item.trandau_trangthai))}</div>
+                        ${item.giaidau_trangthai === "DA_HUY" ? `<div class="sub">Trạng thái giải: ${escapeHtml(tournamentStatusLabel(item.giaidau_trangthai))}</div>` : ""}
                     </td>
                     <td>${escapeHtml(timeText)}</td>
                     <td>${escapeHtml(item.tensandau || "")}</td>
@@ -291,9 +332,9 @@
                     <td><span class="badge ${className}">${escapeHtml(label)}</span></td>
                     <td>
                         <div style="display:flex; gap:8px; flex-wrap:wrap">
-                            <button class="btn" type="button" data-action="detail" data-id="${escapeHtml(item.idphancong)}">Phân công</button>
                             <button class="btn primary" type="button" data-action="match-detail" data-match-id="${escapeHtml(item.idtrandau)}">Chi tiết trận</button>
-                            <button class="btn" type="button" data-action="supervise" data-match-id="${escapeHtml(item.idtrandau)}" data-assignment-id="${escapeHtml(item.idphancong)}" ${canSupervise ? "" : "disabled"}>Giám sát</button>
+                            ${canCancelConfirmation ? `<button class="btn danger" type="button" data-action="cancel-confirmation" data-id="${escapeHtml(item.idphancong)}">Hủy xác nhận</button>` : ""}
+                            ${isSupervisor ? `<button class="btn" type="button" data-action="supervise" data-match-id="${escapeHtml(item.idtrandau)}" data-assignment-id="${escapeHtml(item.idphancong)}" ${canSupervise ? "" : "disabled"}>Giám sát</button>` : ""}
                         </div>
                     </td>
                 </tr>
@@ -301,7 +342,7 @@
         }).join("");
     }
 
-    async function openDetail(assignmentId) {
+    async function openDetail(assignmentId, focusCancel = false) {
         hideAlert();
 
         try {
@@ -329,15 +370,36 @@
         mNote.value = current.ghichu || "";
         mSub.textContent = `Trận #${current.idtrandau} - ${formatDateTime(current.thoigianbatdau)} - ${current.tensandau || ""}`;
 
-        const actionable = status === "CHO_XAC_NHAN";
-        btnConfirm.disabled = !actionable;
-        btnDecline.disabled = !actionable;
+        const canCancel = isCancelableAssignmentStatus(status);
+        btnConfirm.hidden = true;
+        btnConfirm.disabled = true;
+        btnDecline.textContent = "Hủy xác nhận";
+        btnDecline.disabled = !canCancel;
+
+        if (mCancelReasonWrap) {
+            mCancelReasonWrap.classList.toggle("hidden", !canCancel);
+        }
+
+        if (mCancelReason) {
+            mCancelReason.value = "";
+            mCancelReason.disabled = !canCancel;
+        }
 
         detailModal.classList.remove("hidden");
+
+        if (focusCancel && canCancel && mCancelReason) {
+            setTimeout(() => mCancelReason.focus(), 0);
+        }
     }
 
     function closeModal() {
         detailModal.classList.add("hidden");
+        if (mCancelReasonWrap) {
+            mCancelReasonWrap.classList.add("hidden");
+        }
+        if (mCancelReason) {
+            mCancelReason.value = "";
+        }
         current = null;
     }
 
@@ -423,15 +485,22 @@
     }
 
     async function decideCurrent(action) {
-        if (!current) {
+        if (!current || action !== "decline") {
             return;
         }
 
-        if ((current.phancong_trangthai || current.trangthai) !== "CHO_XAC_NHAN") {
+        if (!isCancelableAssignmentStatus(current.phancong_trangthai || current.trangthai)) {
             return;
         }
 
-        if (action === "decline" && !window.confirm("Bạn chắc chắn muốn từ chối phân công này?")) {
+        const reason = String(mCancelReason?.value || "").trim();
+        if (!reason) {
+            showAlert("Vui lòng nhập lý do hủy xác nhận.");
+            mCancelReason?.focus();
+            return;
+        }
+
+        if (!window.confirm("Bạn chắc chắn muốn hủy xác nhận phân công này?")) {
             return;
         }
 
@@ -440,18 +509,17 @@
         hideAlert();
 
         try {
-            await requestJson(`${assignmentsApi}/${current.idphancong}/${action}`, {
+            await requestJson(`${assignmentsApi}/${current.idphancong}/decline`, {
                 method: "POST",
-                body: JSON.stringify({}),
+                body: JSON.stringify({ reason }),
             });
             closeModal();
             await loadAssignments();
-            showPageMessage(action === "confirm" ? "Đã xác nhận tham gia." : "Đã từ chối phân công.");
+            showPageMessage("Đã hủy xác nhận phân công.");
         } catch (error) {
-            showAlert(error.message || "Không thể cập nhật phản hồi phân công.");
-            const actionable = (current.phancong_trangthai || current.trangthai) === "CHO_XAC_NHAN";
-            btnConfirm.disabled = !actionable;
-            btnDecline.disabled = !actionable;
+            showAlert(error.message || "Không thể hủy xác nhận phân công.");
+            const canCancel = isCancelableAssignmentStatus(current.phancong_trangthai || current.trangthai);
+            btnDecline.disabled = !canCancel;
         }
     }
 
@@ -462,8 +530,8 @@
             return;
         }
 
-        if (button.dataset.action === "detail") {
-            openDetail(button.dataset.id);
+        if (button.dataset.action === "cancel-confirmation") {
+            openDetail(button.dataset.id, true);
         }
 
         if (button.dataset.action === "match-detail") {

@@ -31,6 +31,9 @@ final class OrganizerTournamentService
             return $organizerResult;
         }
 
+        $organizerId = (int) $organizerResult['idbantochuc'];
+        $this->tournaments->syncStartedPublishedTournaments($organizerId);
+
         $normalizedFilters = $this->tournamentFilters($filters);
 
         if (!empty($normalizedFilters['errors'])) {
@@ -41,7 +44,7 @@ final class OrganizerTournamentService
             'ok' => true,
             'status' => 200,
             'message' => 'Lay danh sach giai dau thanh cong.',
-            'tournaments' => $this->tournaments->listForOrganizer((int) $organizerResult['idbantochuc'], $normalizedFilters['filters']),
+            'tournaments' => $this->tournaments->listForOrganizer($organizerId, $normalizedFilters['filters']),
             'meta' => [
                 'filters' => $normalizedFilters['filters'],
             ],
@@ -391,6 +394,55 @@ final class OrganizerTournamentService
         }
     }
 
+    public function cancel(int $tournamentId, int $accountId, ?Request $request = null): array
+    {
+        $organizerResult = $this->activeOrganizer($accountId);
+
+        if (isset($organizerResult['ok']) && $organizerResult['ok'] === false) {
+            return $organizerResult;
+        }
+
+        $organizer = $organizerResult;
+        $current = $this->withRules($tournamentId);
+
+        if ($current === null || (int) $current['idbantochuc'] !== (int) $organizer['idbantochuc']) {
+            return $this->failure('Khong tim thay giai dau.', 404);
+        }
+
+        if ((string) $current['trangthai'] !== 'DA_CONG_BO') {
+            return $this->failure('Chỉ được hủy giải đấu đã công bố.', 409);
+        }
+
+        $reason = trim((string) ($request?->input('lydo', $request?->input('reason', 'BTC huy giai dau da cong bo')) ?? ''));
+        $reason = $reason !== '' ? $reason : 'BTC huy giai dau da cong bo';
+        $logNote = sprintf(
+            'Ban to chuc #%d huy giai dau da cong bo "%s".',
+            (int) $organizer['idbantochuc'],
+            (string) $current['tengiaidau']
+        );
+
+        try {
+            $this->tournaments->cancelPublishedTournament($tournamentId, $accountId, $request?->ip(), $logNote, $reason);
+
+            return [
+                'ok' => true,
+                'status' => 200,
+                'message' => 'Huy giai dau thanh cong.',
+                'tournament' => $this->withRules($tournamentId),
+            ];
+        } catch (RuntimeException $exception) {
+            if ($exception->getMessage() === 'TOURNAMENT_NOT_CANCELED') {
+                return $this->failure('Chỉ được hủy giải đấu đã công bố.', 409);
+            }
+
+            return $this->failure('Khong the huy giai dau.', 500);
+        } catch (Throwable) {
+            return $this->failure('Khong the huy giai dau.', 500, [
+                'database' => 'Loi cap nhat co so du lieu.',
+            ]);
+        }
+    }
+
     public function registrations(int $tournamentId, int $accountId, array $filters = []): array
     {
         $organizerResult = $this->activeOrganizer($accountId);
@@ -464,6 +516,19 @@ final class OrganizerTournamentService
         return $this->decideRegistration($tournamentId, $registrationId, $accountId, 'TU_CHOI', $reason, $request);
     }
 
+    public function removeRegistration(int $tournamentId, int $registrationId, array $payload, int $accountId, ?Request $request = null): array
+    {
+        $reason = trim((string) ($payload['lydotuchoi'] ?? $payload['ly_do'] ?? $payload['reason'] ?? $payload['note'] ?? 'BTC loai doi thi dau'));
+
+        if (strlen($reason) > 1000) {
+            return $this->failure('Ly do loai doi khong hop le.', 422, [
+                'lydotuchoi' => 'Ly do loai doi khong duoc vuot qua 1000 ky tu.',
+            ]);
+        }
+
+        return $this->decideRegistration($tournamentId, $registrationId, $accountId, 'DA_HUY', $reason, $request, 'DA_DUYET');
+    }
+
     private function validatePayload(array $payload, array $organizer): array
     {
         $errors = [];
@@ -499,6 +564,7 @@ final class OrganizerTournamentService
             'quymo' => $scale,
             'hinhanh' => $this->nullableString($payload['hinhanh'] ?? $payload['image'] ?? null, 500, 'Hình ảnh', 'hinhanh', $errors),
             'tinhchat' => $this->enumValue($payload['tinhchat'] ?? $payload['tinh_chat'] ?? 'CHINH_THUC', ['CHINH_THUC', 'GIAO_HUU', 'PHONG_TRAO', 'NOI_BO', 'MO_RONG'], 'tinhchat', $errors),
+            'gioitinh' => $this->enumValue($payload['gioitinh'] ?? $payload['gender'] ?? 'NAM', ['NAM', 'NU'], 'gioitinh', $errors),
             'ghichu_diadiem' => $this->nullableString($payload['ghichu_diadiem'] ?? $payload['location_note'] ?? null, 500, 'Ghi chú địa điểm', 'ghichu_diadiem', $errors),
         ];
 
@@ -535,6 +601,7 @@ final class OrganizerTournamentService
             'quymo',
             'hinhanh',
             'tinhchat',
+            'gioitinh',
             'ghichu_diadiem',
             'dieule',
             'thethuc',
@@ -644,8 +711,8 @@ final class OrganizerTournamentService
             $errors['dieule.so_doi_toi_thieu'] = 'Số đội tối thiểu phải từ 2 trở lên.';
         }
 
-        if ($maxTeams <= $minTeams) {
-            $errors['dieule.so_doi_toi_da'] = 'Số đội tối đa phải lớn hơn số đội tối thiểu.';
+        if ($maxTeams < $minTeams) {
+            $errors['dieule.so_doi_toi_da'] = 'Số đội tối đa phải lớn hơn hoặc bằng số đội tối thiểu.';
         }
 
         if ($scale > $maxTeams) {
@@ -738,7 +805,7 @@ final class OrganizerTournamentService
         $eligibility = $this->representativeEligibilityFromConditions($conditions);
 
         return [
-            'chedochondoi' => $this->enumValue($source['chedochondoi'] ?? $payload['chedochondoi'] ?? 'KET_HOP', ['DANG_KY_THU_CONG', 'BTC_CHON_THU_CONG', 'KET_HOP'], 'quytac.chedochondoi', $errors),
+            'chedochondoi' => $this->enumValue($source['chedochondoi'] ?? $payload['chedochondoi'] ?? 'DANG_KY_THU_CONG', ['DANG_KY_THU_CONG', 'BTC_CHON_THU_CONG', 'KET_HOP'], 'quytac.chedochondoi', $errors),
             'capdoituongthamgia' => $this->enumValue($participantLevel, ['TINH_THANH', 'QUAN_HUYEN', 'XA_PHUONG', 'DON_VI'], 'quytac.capdoituongthamgia', $errors),
             'yeu_cau_thanh_tich' => $eligibility['yeu_cau_thanh_tich'],
             'idcapgiaidau_thanh_tich_nguon' => $eligibility['idcapgiaidau_thanh_tich_nguon'],
@@ -1136,6 +1203,10 @@ final class OrganizerTournamentService
             return $this->failure('Giai dau phai duoc cong bo truoc khi quan ly dang ky.', 409);
         }
 
+        if (!$this->canUpdateTournamentBeforeStart($current)) {
+            return $this->failure('Dang ky giai dau da bi khoa sau khi giai dau bat dau.', 409);
+        }
+
         $oldStatus = (string) $current['trangthaidangky'];
 
         if ($targetStatus === 'DANG_MO' && $oldStatus === 'DANG_MO') {
@@ -1196,7 +1267,8 @@ final class OrganizerTournamentService
         int $accountId,
         string $targetStatus,
         ?string $rejectionReason,
-        ?Request $request = null
+        ?Request $request = null,
+        string $expectedStatus = 'CHO_DUYET'
     ): array {
         $organizerResult = $this->activeOrganizer($accountId);
 
@@ -1221,8 +1293,10 @@ final class OrganizerTournamentService
             return $this->failure('Khong tim thay dang ky giai dau.', 404);
         }
 
-        if ((string) $registration['trangthai'] !== 'CHO_DUYET') {
-            return $this->failure('Chi duoc xu ly dang ky dang cho duyet.', 409);
+        if ((string) $registration['trangthai'] !== $expectedStatus) {
+            return $expectedStatus === 'DA_DUYET'
+                ? $this->failure('Chi duoc loai doi bong da duoc duyet tham gia.', 409)
+                : $this->failure('Chi duoc xu ly dang ky dang cho duyet.', 409);
         }
 
         if ($targetStatus === 'DA_DUYET') {
@@ -1239,7 +1313,11 @@ final class OrganizerTournamentService
             }
         }
 
-        $action = $targetStatus === 'DA_DUYET' ? 'duyet' : 'tu choi';
+        $action = match ($targetStatus) {
+            'DA_DUYET' => 'duyet',
+            'DA_HUY' => 'loai',
+            default => 'tu choi',
+        };
         $logNote = sprintf(
             'Ban to chuc #%d %s dang ky cua doi "%s" vao giai dau "%s".',
             (int) $organizer['idbantochuc'],
@@ -1258,7 +1336,7 @@ final class OrganizerTournamentService
             $this->tournaments->decideRegistration(
                 $tournamentId,
                 $registrationId,
-                'CHO_DUYET',
+                $expectedStatus,
                 $targetStatus,
                 $rejectionReason,
                 $accountId,
@@ -1269,7 +1347,11 @@ final class OrganizerTournamentService
             return [
                 'ok' => true,
                 'status' => 200,
-                'message' => $targetStatus === 'DA_DUYET' ? 'Duyet dang ky thanh cong.' : 'Tu choi dang ky thanh cong.',
+                'message' => match ($targetStatus) {
+                    'DA_DUYET' => 'Duyet dang ky thanh cong.',
+                    'DA_HUY' => 'Loai doi thi dau thanh cong.',
+                    default => 'Tu choi dang ky thanh cong.',
+                },
                 'registration' => $this->tournaments->findRegistration($tournamentId, $registrationId),
             ];
         } catch (RuntimeException $exception) {
@@ -2016,6 +2098,8 @@ final class OrganizerTournamentService
 
     private function withRules(int $tournamentId): ?array
     {
+        $this->tournaments->syncStartedPublishedTournaments(null, $tournamentId);
+
         $tournament = $this->tournaments->findById($tournamentId);
 
         if ($tournament === null) {

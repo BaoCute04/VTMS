@@ -330,9 +330,45 @@
 
 .referee-row {
     display: grid;
-    grid-template-columns: minmax(220px, 1fr) minmax(180px, 220px) auto;
+    grid-template-columns: minmax(220px, 1fr) minmax(180px, 220px) minmax(132px, max-content) auto;
     gap: 8px;
     align-items: center;
+    padding: 6px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+}
+
+.referee-row.has-assignment-warning {
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.referee-assignment-status {
+    justify-self: start;
+}
+
+.referee-assignment-note {
+    grid-column: 1 / -1;
+    color: #9a3412;
+    font-size: 12.5px;
+}
+
+.referee-assignment-note.is-empty {
+    display: none;
+}
+
+.referee-assignment-notice {
+    margin: 0 0 8px;
+    padding: 9px 10px;
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+    background: #fff7ed;
+    color: #9a3412;
+    font-size: 13px;
+}
+
+.referee-assignment-notice.hidden {
+    display: none;
 }
 
 .schedule-message {

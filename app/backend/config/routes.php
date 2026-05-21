@@ -27,6 +27,7 @@ use App\Backend\Controllers\Organizer\OrganizerAthleteQualificationController;
 use App\Backend\Controllers\Organizer\OrganizerCoachAccountController;
 use App\Backend\Controllers\Organizer\OrganizerCoachQualificationController;
 use App\Backend\Controllers\Organizer\OrganizerComplaintController;
+use App\Backend\Controllers\Organizer\OrganizerHigherEligibilityController;
 use App\Backend\Controllers\Organizer\OrganizerMatchResultController;
 use App\Backend\Controllers\Organizer\OrganizerPersonalInfoChangeRequestController;
 use App\Backend\Controllers\Organizer\OrganizerRankingController;
@@ -62,6 +63,7 @@ return static function (Router $router): void {
     $router->get('/account/change-password', [AccountSecurityController::class, 'page'], ['auth']);
     $router->post('/api/account/password', [AccountSecurityController::class, 'changePassword'], ['auth']);
     $router->post('/api/auth/change-password', [AccountSecurityController::class, 'changePassword'], ['auth']);
+    $router->get('/api/coach/register/options', [CoachRegistrationController::class, 'options']);
     $router->post('/api/auth/register/coach', [CoachRegistrationController::class, 'store']);
     $router->post('/api/register/coach', [CoachRegistrationController::class, 'store']);
     $router->post('/api/coach/register', [CoachRegistrationController::class, 'store']);
@@ -107,6 +109,7 @@ return static function (Router $router): void {
     $router->get('/ban-to-chuc', [DashboardController::class, 'organizer'], ['auth', 'role:BAN_TO_CHUC,ADMIN']);
     $router->get('/ban-to-chuc/giai-dau', [OrganizerTournamentController::class, 'page'], ['auth', 'role:BAN_TO_CHUC']);
     $router->get('/ban-to-chuc/doi-bong', [OrganizerTeamProfileController::class, 'page'], ['auth', 'role:BAN_TO_CHUC']);
+    $router->get('/ban-to-chuc/tu-cach-cap-tren', [OrganizerHigherEligibilityController::class, 'page'], ['auth', 'role:BAN_TO_CHUC']);
     $router->get('/ban-to-chuc/trong-tai', [OrganizerRefereeController::class, 'page'], ['auth', 'role:BAN_TO_CHUC']);
     $router->get('/ban-to-chuc/tai-khoan-hlv', [OrganizerCoachAccountController::class, 'page'], ['auth', 'role:BAN_TO_CHUC']);
     $router->get('/ban-to-chuc/huan-luyen-vien', [OrganizerCoachQualificationController::class, 'page'], ['auth', 'role:BAN_TO_CHUC']);
@@ -127,11 +130,18 @@ return static function (Router $router): void {
     $router->add('PATCH', '/api/organizer/tournaments/{id}', [OrganizerTournamentController::class, 'update'], ['auth', 'role:BAN_TO_CHUC']);
     $router->post('/api/organizer/tournaments/{id}/update', [OrganizerTournamentController::class, 'update'], ['auth', 'role:BAN_TO_CHUC']);
     $router->post('/api/organizer/tournaments/{id}/publish', [OrganizerTournamentController::class, 'publish'], ['auth', 'role:BAN_TO_CHUC']);
+    $router->post('/api/organizer/tournaments/{id}/cancel', [OrganizerTournamentController::class, 'cancel'], ['auth', 'role:BAN_TO_CHUC']);
     $router->get('/api/organizer/tournaments/{id}/registrations', [OrganizerTournamentController::class, 'registrations'], ['auth', 'role:BAN_TO_CHUC']);
     $router->post('/api/organizer/tournaments/{id}/registrations/open', [OrganizerTournamentController::class, 'openRegistrations'], ['auth', 'role:BAN_TO_CHUC']);
     $router->post('/api/organizer/tournaments/{id}/registrations/close', [OrganizerTournamentController::class, 'closeRegistrations'], ['auth', 'role:BAN_TO_CHUC']);
     $router->post('/api/organizer/tournaments/{id}/registrations/{registrationId}/approve', [OrganizerTournamentController::class, 'approveRegistration'], ['auth', 'role:BAN_TO_CHUC']);
     $router->post('/api/organizer/tournaments/{id}/registrations/{registrationId}/reject', [OrganizerTournamentController::class, 'rejectRegistration'], ['auth', 'role:BAN_TO_CHUC']);
+    $router->post('/api/organizer/tournaments/{id}/registrations/{registrationId}/remove', [OrganizerTournamentController::class, 'removeRegistration'], ['auth', 'role:BAN_TO_CHUC']);
+    $router->get('/api/organizer/higher-eligibility', [OrganizerHigherEligibilityController::class, 'index'], ['auth', 'role:BAN_TO_CHUC']);
+    $router->post('/api/organizer/higher-eligibility/mark', [OrganizerHigherEligibilityController::class, 'mark'], ['auth', 'role:BAN_TO_CHUC']);
+    $router->post('/api/organizer/higher-eligibility/{proposalId}/nominate', [OrganizerHigherEligibilityController::class, 'nominate'], ['auth', 'role:BAN_TO_CHUC']);
+    $router->post('/api/organizer/higher-eligibility/{proposalId}/approve', [OrganizerHigherEligibilityController::class, 'approve'], ['auth', 'role:BAN_TO_CHUC']);
+    $router->post('/api/organizer/higher-eligibility/{proposalId}/reject', [OrganizerHigherEligibilityController::class, 'reject'], ['auth', 'role:BAN_TO_CHUC']);
     $router->get('/api/organizer/teams', [OrganizerTeamProfileController::class, 'all'], ['auth', 'role:BAN_TO_CHUC']);
     $router->add('PUT', '/api/organizer/teams/{teamId}', [OrganizerTeamProfileController::class, 'update'], ['auth', 'role:BAN_TO_CHUC']);
     $router->add('PATCH', '/api/organizer/teams/{teamId}', [OrganizerTeamProfileController::class, 'update'], ['auth', 'role:BAN_TO_CHUC']);
@@ -424,6 +434,7 @@ return static function (Router $router): void {
     $router->post('/api/coach/team-members/{memberId}/transfer', [CoachTeamManagementController::class, 'transferMember'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->get('/api/coach/teams/{teamId}/lineups', [CoachTeamManagementController::class, 'lineups'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->post('/api/coach/teams/{teamId}/lineups', [CoachTeamManagementController::class, 'storeLineup'], ['auth', 'role:HUAN_LUYEN_VIEN']);
+    $router->get('/api/coach/lineups', [CoachTeamManagementController::class, 'lineupList'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->get('/api/coach/lineups/{lineupId}', [CoachTeamManagementController::class, 'lineup'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->add('PUT', '/api/coach/lineups/{lineupId}', [CoachTeamManagementController::class, 'updateLineup'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->add('PATCH', '/api/coach/lineups/{lineupId}', [CoachTeamManagementController::class, 'updateLineup'], ['auth', 'role:HUAN_LUYEN_VIEN']);
@@ -454,6 +465,7 @@ return static function (Router $router): void {
     $router->post('/api/huan-luyen-vien/team-members/{memberId}/transfer', [CoachTeamManagementController::class, 'transferMember'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->get('/api/huan-luyen-vien/teams/{teamId}/lineups', [CoachTeamManagementController::class, 'lineups'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->post('/api/huan-luyen-vien/teams/{teamId}/lineups', [CoachTeamManagementController::class, 'storeLineup'], ['auth', 'role:HUAN_LUYEN_VIEN']);
+    $router->get('/api/huan-luyen-vien/lineups', [CoachTeamManagementController::class, 'lineupList'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->get('/api/huan-luyen-vien/lineups/{lineupId}', [CoachTeamManagementController::class, 'lineup'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->add('PUT', '/api/huan-luyen-vien/lineups/{lineupId}', [CoachTeamManagementController::class, 'updateLineup'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->add('PATCH', '/api/huan-luyen-vien/lineups/{lineupId}', [CoachTeamManagementController::class, 'updateLineup'], ['auth', 'role:HUAN_LUYEN_VIEN']);
@@ -478,6 +490,7 @@ return static function (Router $router): void {
     $router->post('/api/huanluyenvien/team-members/{memberId}/transfer', [CoachTeamManagementController::class, 'transferMember'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->get('/api/huanluyenvien/teams/{teamId}/lineups', [CoachTeamManagementController::class, 'lineups'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->post('/api/huanluyenvien/teams/{teamId}/lineups', [CoachTeamManagementController::class, 'storeLineup'], ['auth', 'role:HUAN_LUYEN_VIEN']);
+    $router->get('/api/huanluyenvien/lineups', [CoachTeamManagementController::class, 'lineupList'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->get('/api/huanluyenvien/lineups/{lineupId}', [CoachTeamManagementController::class, 'lineup'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->add('PUT', '/api/huanluyenvien/lineups/{lineupId}', [CoachTeamManagementController::class, 'updateLineup'], ['auth', 'role:HUAN_LUYEN_VIEN']);
     $router->add('PATCH', '/api/huanluyenvien/lineups/{lineupId}', [CoachTeamManagementController::class, 'updateLineup'], ['auth', 'role:HUAN_LUYEN_VIEN']);

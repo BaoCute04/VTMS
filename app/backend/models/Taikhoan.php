@@ -23,10 +23,13 @@ final class Taikhoan extends Model
                 tk.trangthai,
                 r.namerole AS role,
                 nd.hodem,
-                nd.ten
+                nd.ten,
+                hlv.idhuanluyenvien,
+                hlv.idkhuvuccongtac
             FROM Taikhoan tk
             JOIN Role r ON r.idrole = tk.idrole
             LEFT JOIN Nguoidung nd ON nd.idtaikhoan = tk.idtaikhoan
+            LEFT JOIN Huanluyenvien hlv ON hlv.idnguoidung = nd.idnguoidung
             WHERE tk.username = :username
                OR tk.email = :email
             LIMIT 1",

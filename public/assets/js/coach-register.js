@@ -7,6 +7,24 @@
     const alertBox = document.getElementById("formAlert");
     const message = document.getElementById("formMessage");
     const api = root.dataset.registerApi || "/api/coach/register";
+    const optionsApi = root.dataset.optionsApi || "/api/coach/register/options";
+    const workRegion = document.getElementById("workRegion");
+
+    function regionLabel(region) {
+        return `${region.tenkhuvuc} (${region.capkhuvuc})`;
+    }
+
+    async function loadOptions() {
+        try {
+            const result = await ui.requestJson(optionsApi);
+            const regions = result.data?.work_regions || [];
+            workRegion.innerHTML = '<option value="">-- Chọn khu vực công tác --</option>' +
+                regions.map((region) => `<option value="${region.idkhuvuc}">${ui.escapeHtml(regionLabel(region))}</option>`).join("");
+        } catch (error) {
+            workRegion.innerHTML = '<option value="">Không tải được khu vực</option>';
+            ui.showAlert(alertBox, ui.errorsText(error));
+        }
+    }
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -25,14 +43,15 @@
             ten: name.ten,
             ngaysinh: document.getElementById("dob").value,
             gioitinh: document.getElementById("gender").value,
-            diachi: document.getElementById("club").value.trim(),
+            idkhuvuccongtac: workRegion.value,
+            donvicongtac: document.getElementById("workUnit").value.trim(),
             bangcap: document.getElementById("degree").value.trim(),
             kinhnghiem: document.getElementById("experience").value,
             cccd: document.getElementById("identityNumber").value.trim() || null,
             noidung: document.getElementById("note").value.trim() || "Yêu cầu đăng ký tài khoản huấn luyện viên",
         };
 
-        for (const key of ["username", "password", "email", "phone", "ten", "ngaysinh", "gioitinh", "diachi", "bangcap", "kinhnghiem"]) {
+        for (const key of ["username", "password", "email", "phone", "ten", "ngaysinh", "gioitinh", "idkhuvuccongtac", "donvicongtac", "bangcap", "kinhnghiem"]) {
             if (payload[key] === "") {
                 ui.showAlert(alertBox, "Vui lòng nhập đầy đủ thông tin bắt buộc.");
                 return;
@@ -55,4 +74,6 @@
             ui.showAlert(alertBox, ui.errorsText(error));
         }
     });
+
+    loadOptions();
 })();

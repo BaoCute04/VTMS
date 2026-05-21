@@ -12,6 +12,8 @@
     const matchSub = document.getElementById("matchSub");
     const matchState = document.getElementById("matchState");
     const mMatchId = document.getElementById("m_matchId");
+    const mTeamOne = document.getElementById("m_teamOne");
+    const mTeamTwo = document.getElementById("m_teamTwo");
     const mTournament = document.getElementById("m_tournament");
     const mVenue = document.getElementById("m_venue");
     const mRound = document.getElementById("m_round");
@@ -26,13 +28,13 @@
     const btnResume = document.getElementById("btnResume");
     const btnEnd = document.getElementById("btnEnd");
 
+    const resultCard = document.getElementById("resultCard");
     const setsEl = document.getElementById("sets");
     const btnAddSet = document.getElementById("btnAddSet");
     const btnRemoveSet = document.getElementById("btnRemoveSet");
     const setScore = document.getElementById("setScore");
     const winner = document.getElementById("winner");
     const resultNote = document.getElementById("resultNote");
-    const btnSaveResult = document.getElementById("btnSaveResult");
     const resultState = document.getElementById("resultState");
 
     const refsModal = document.getElementById("refsModal");
@@ -50,6 +52,9 @@
     };
 
     const matchStatusMap = {
+        CHO_DOI_DOI: "Chờ đội",
+        CHO_XEP_LICH: "Chờ xếp lịch",
+        DA_XEP_LICH: "Đã xếp lịch",
         CHUA_DIEN_RA: "Chưa diễn ra",
         SAP_DIEN_RA: "Sắp diễn ra",
         DANG_DIEN_RA: "Đang diễn ra",
@@ -71,7 +76,8 @@
     let match = null;
     let assignedRefs = [];
     let confirmedParticipants = new Set();
-    let sets = [{ a: 0, b: 0 }, { a: 0, b: 0 }, { a: 0, b: 0 }];
+    let sets = [emptySet(), emptySet(), emptySet()];
+    let hasLoadedSupervision = false;
 
     function escapeHtml(value) {
         return String(value ?? "")
@@ -118,6 +124,25 @@
         }
 
         return String(value).replace("T", " ").slice(0, 19);
+    }
+
+    function currentDateTime() {
+        const now = new Date();
+        const pad = (value) => String(value).padStart(2, "0");
+
+        return [
+            now.getFullYear(),
+            pad(now.getMonth() + 1),
+            pad(now.getDate()),
+        ].join("-") + " " + [
+            pad(now.getHours()),
+            pad(now.getMinutes()),
+            pad(now.getSeconds()),
+        ].join(":");
+    }
+
+    function emptySet() {
+        return { a: 0, b: 0, startAt: "", endAt: "" };
     }
 
     function showPage(message, ok = false) {
@@ -179,7 +204,7 @@
     }
 
     function setButtonsLoading(loading) {
-        [btnJoin, btnPickRefs, btnStart, btnPause, btnResume, btnEnd, btnSaveResult, rConfirm].forEach((button) => {
+        [btnJoin, btnPickRefs, btnStart, btnPause, btnResume, btnEnd, rConfirm].forEach((button) => {
             button.dataset.loading = loading ? "1" : "";
             button.disabled = loading;
         });
@@ -194,11 +219,45 @@
         matchSub.textContent = `${match.giaidau?.tengiaidau || ""} • ${match.sandau?.tensandau || ""} • ${formatDateTime(match.thoigianbatdau)}`;
         matchState.textContent = `Trạng thái: ${matchStatusLabel(match.trangthai)}`;
         mMatchId.value = match.idtrandau || "";
+        mTeamOne.value = teamOneName();
+        mTeamTwo.value = teamTwoName();
         mTournament.value = match.giaidau?.tengiaidau || "";
         mVenue.value = match.sandau?.tensandau || "";
         mRound.value = match.vongdau || "";
         mStart.value = formatDateTime(match.thoigianbatdau);
         mEnd.value = formatDateTime(match.thoigianketthuc);
+    }
+
+    function resultVisible() {
+        return ["DANG_DIEN_RA", "TAM_DUNG", "DA_KET_THUC"].includes(String(match?.trangthai || ""));
+    }
+
+    function resultEditable() {
+        return String(match?.trangthai || "") === "DANG_DIEN_RA";
+    }
+
+    function participantReadiness(ids = confirmedParticipants) {
+        const selected = assignedRefs.filter((referee) => ids.has(Number(referee.idtrongtai)) && referee.trangthai === "DA_XAC_NHAN");
+
+        return {
+            hasSupervisor: selected.some((referee) => referee.vaitro === "GIAM_SAT"),
+            hasMainReferee: selected.some((referee) => referee.vaitro === "TRONG_TAI_CHINH"),
+        };
+    }
+
+    function requiredParticipantMessage(ids = confirmedParticipants) {
+        const readiness = participantReadiness(ids);
+        const missing = [];
+
+        if (!readiness.hasSupervisor) {
+            missing.push("1 trọng tài giám sát");
+        }
+
+        if (!readiness.hasMainReferee) {
+            missing.push("1 trọng tài chính");
+        }
+
+        return missing.length > 0 ? `Tổ trọng tài tham gia cần tối thiểu ${missing.join(" và ")}.` : "";
     }
 
     function refreshButtons() {
@@ -213,8 +272,9 @@
         btnStart.disabled = !actions.start;
         btnPause.disabled = !actions.pause;
         btnResume.disabled = !actions.resume;
-        btnEnd.disabled = !actions.finish;
-        btnSaveResult.disabled = !actions.record_result;
+        btnEnd.disabled = !actions.finish || !resultEditable();
+        resultCard?.classList.toggle("hidden", !resultVisible());
+        refreshResultControls();
 
         loadingButtons.forEach((button) => {
             button.disabled = true;
@@ -225,13 +285,25 @@
         const resultSets = Array.isArray(result?.sets) ? result.sets : [];
 
         if (resultSets.length === 0) {
-            return [{ a: 0, b: 0 }, { a: 0, b: 0 }, { a: 0, b: 0 }];
+            return [emptySet(), emptySet(), emptySet()];
         }
 
         return resultSets.map((item) => ({
             a: Number(item.diemdoi1 || 0),
             b: Number(item.diemdoi2 || 0),
+            startAt: item.thoigianbatdau || item.thoigianbatdau_set || item.start_at || "",
+            endAt: item.thoigianketthuc || item.thoigianketthuc_set || item.end_at || "",
         }));
+    }
+
+    function hasBackendResult(result) {
+        return Array.isArray(result?.sets) && result.sets.length > 0;
+    }
+
+    function hasResultDraft() {
+        return sets.length !== 3
+            || sets.some((item) => Number(item.a || 0) > 0 || Number(item.b || 0) > 0 || item.startAt || item.endAt)
+            || String(resultNote.value || "").trim() !== "";
     }
 
     function computeSetWins() {
@@ -259,15 +331,190 @@
         resultState.textContent = `Kết quả: ${setScore.value}`;
     }
 
+    function canStartSet(index) {
+        if (!resultEditable() || !sets[index] || sets[index].startAt) {
+            return false;
+        }
+
+        return index === 0 || !!sets[index - 1]?.endAt;
+    }
+
+    function canEndSet(index) {
+        return resultEditable() && !!sets[index]?.startAt && !sets[index]?.endAt;
+    }
+
+    function canScoreSet(index) {
+        return resultEditable() && !!sets[index]?.startAt && !sets[index]?.endAt;
+    }
+
+    function setScoreGapMessage(index) {
+        const item = sets[index];
+
+        if (!item) {
+            return "";
+        }
+
+        const one = Number(item.a || 0);
+        const two = Number(item.b || 0);
+
+        return Math.abs(one - two) < 2 ? `Set ${index + 1} phải chênh lệch tối thiểu 2 điểm mới được kết thúc.` : "";
+    }
+
+    function refreshResultControls() {
+        const editable = resultEditable();
+
+        if (resultNote) {
+            resultNote.disabled = !editable;
+        }
+
+        if (btnAddSet) {
+            btnAddSet.disabled = !editable || sets.length >= 5;
+        }
+
+        if (btnRemoveSet) {
+            btnRemoveSet.disabled = !editable || sets.length <= 3;
+        }
+    }
+
+    function scoreControl(index, side, value, placeholder, ariaLabel) {
+        const disabled = canScoreSet(index) ? "" : "disabled";
+
+        return `
+            <div class="score-control">
+                <input class="score-entry" type="number" min="1" step="1" inputmode="numeric" data-score-entry="1" data-idx="${index}" data-side="${side}" placeholder="${escapeHtml(placeholder)}" aria-label="${escapeHtml(placeholder)}" ${disabled} />
+                <div class="score-actions" aria-label="${escapeHtml(ariaLabel)}">
+                    <button class="score-step" type="button" data-score-action="add" data-idx="${index}" data-side="${side}" aria-label="Cộng ${escapeHtml(ariaLabel)}" ${disabled}>+</button>
+                    <button class="score-step" type="button" data-score-action="subtract" data-idx="${index}" data-side="${side}" aria-label="Trừ ${escapeHtml(ariaLabel)}" ${disabled}>-</button>
+                </div>
+                <input class="score-display" type="number" value="${escapeHtml(value)}" data-idx="${index}" data-side="${side}" readonly tabindex="-1" aria-label="Điểm hiện tại ${escapeHtml(ariaLabel)}" />
+            </div>
+        `;
+    }
+
+    function setTimeControls(item, index) {
+        const startDisabled = canStartSet(index) ? "" : "disabled";
+        const endDisabled = canEndSet(index) ? "" : "disabled";
+
+        return `
+            <div class="set-time-row">
+                <button class="btn set-time-btn set-time-start" type="button" data-set-time-action="start" data-idx="${index}" ${startDisabled}>Bắt đầu</button>
+                <span class="set-time-value" data-set-time-field="startAt" data-idx="${index}">${escapeHtml(formatDateTime(item.startAt) || "--:--:--")}</span>
+                <span class="set-time-separator">-</span>
+                <button class="btn set-time-btn set-time-end" type="button" data-set-time-action="end" data-idx="${index}" ${endDisabled}>Kết thúc</button>
+                <span class="set-time-value" data-set-time-field="endAt" data-idx="${index}">${escapeHtml(formatDateTime(item.endAt) || "--:--:--")}</span>
+            </div>
+        `;
+    }
+
     function renderSets() {
         setsEl.innerHTML = sets.map((item, index) => `
-            <div class="set-row">
-                <div class="tag">Set ${index + 1}</div>
-                <input type="number" min="0" data-idx="${index}" data-side="a" value="${escapeHtml(item.a)}" placeholder="Điểm đội 1" />
-                <input type="number" min="0" data-idx="${index}" data-side="b" value="${escapeHtml(item.b)}" placeholder="Điểm đội 2" />
+            <div class="set-block">
+                ${setTimeControls(item, index)}
+                <div class="set-row">
+                    <div class="tag">Set ${index + 1}</div>
+                    ${scoreControl(index, "a", item.a, "Ghi điểm đội 1", `điểm đội 1 set ${index + 1}`)}
+                    ${scoreControl(index, "b", item.b, "Ghi điểm đội 2", `điểm đội 2 set ${index + 1}`)}
+                </div>
             </div>
         `).join("");
         recalcResult();
+        refreshResultControls();
+    }
+
+    function syncScoreDisplay(index, side) {
+        const display = setsEl.querySelector(`.score-display[data-idx="${index}"][data-side="${side}"]`);
+
+        if (display) {
+            display.value = String(sets[index][side]);
+        }
+    }
+
+    function syncSetTimeDisplay(index, field) {
+        const display = setsEl.querySelector(`.set-time-value[data-idx="${index}"][data-set-time-field="${field}"]`);
+
+        if (display) {
+            display.textContent = formatDateTime(sets[index][field]) || "--:--:--";
+        }
+    }
+
+    function applySetTime(button) {
+        const index = Number(button.dataset.idx);
+        const action = button.dataset.setTimeAction;
+
+        if (!Number.isInteger(index) || !sets[index] || !["start", "end"].includes(action)) {
+            return;
+        }
+
+        if (!resultEditable()) {
+            showPage("Trận đang tạm dừng, không thể thay đổi thông tin ghi nhận kết quả.");
+            return;
+        }
+
+        if (action === "start" && !canStartSet(index)) {
+            showPage(index === 0 ? "Set này đã bắt đầu." : `Set ${index + 1} chỉ được bắt đầu sau khi set ${index} đã kết thúc.`);
+            return;
+        }
+
+        if (action === "end" && !canEndSet(index)) {
+            showPage(sets[index].endAt ? "Set này đã kết thúc." : "Phải bắt đầu set trước khi kết thúc.");
+            return;
+        }
+
+        if (action === "end") {
+            const gapMessage = setScoreGapMessage(index);
+
+            if (gapMessage) {
+                showPage(gapMessage);
+                return;
+            }
+        }
+
+        const field = action === "start" ? "startAt" : "endAt";
+        sets[index][field] = currentDateTime();
+        renderSets();
+        showPage("");
+    }
+
+    function applyScoreDelta(button) {
+        const index = Number(button.dataset.idx);
+        const side = button.dataset.side;
+        const action = button.dataset.scoreAction;
+
+        if (!Number.isInteger(index) || !sets[index] || !["a", "b"].includes(side) || !["add", "subtract"].includes(action)) {
+            return;
+        }
+
+        if (!resultEditable()) {
+            showPage("Trận đang tạm dừng, không thể thay đổi thông tin ghi nhận kết quả.");
+            return;
+        }
+
+        if (!canScoreSet(index)) {
+            showPage(sets[index]?.endAt ? "Set đã kết thúc, không thể ghi điểm thêm." : "Phải bắt đầu set trước khi ghi điểm.");
+            return;
+        }
+
+        const control = button.closest(".score-control");
+        const input = control?.querySelector("input[data-score-entry]");
+        const raw = String(input?.value || "").trim();
+        const delta = Number(raw);
+
+        if (!Number.isInteger(delta) || delta <= 0) {
+            showPage("Điểm ghi thêm/bớt phải là số nguyên dương.");
+            input?.focus();
+            return;
+        }
+
+        const current = Number(sets[index][side] || 0);
+        sets[index][side] = action === "add" ? current + delta : Math.max(0, current - delta);
+
+        if (input) {
+            input.value = "";
+        }
+
+        syncScoreDisplay(index, side);
+        recalcResult();
+        showPage("");
     }
 
     function validateResult() {
@@ -279,12 +526,24 @@
             const one = Number(item.a);
             const two = Number(item.b);
 
+            if (!item.startAt) {
+                return `Set ${index + 1} phải bấm bắt đầu trước khi kết thúc trận.`;
+            }
+
+            if (!item.endAt) {
+                return `Set ${index + 1} phải bấm kết thúc trước khi kết thúc trận.`;
+            }
+
             if (!Number.isInteger(one) || !Number.isInteger(two) || one < 0 || two < 0) {
                 return `Điểm set ${index + 1} phải là số nguyên không âm.`;
             }
 
             if (one === two) {
                 return `Set ${index + 1} không được hòa.`;
+            }
+
+            if (Math.abs(one - two) < 2) {
+                return `Set ${index + 1} phải chênh lệch tối thiểu 2 điểm.`;
             }
         }
 
@@ -306,6 +565,8 @@
                 setthu: index + 1,
                 diemdoi1: Number(item.a),
                 diemdoi2: Number(item.b),
+                thoigianbatdau: item.startAt || null,
+                thoigianketthuc: item.endAt || null,
             })),
             note: resultNote.value.trim() || null,
         };
@@ -346,6 +607,8 @@
     }
 
     function applySupervision(data) {
+        const shouldKeepDraft = hasLoadedSupervision && hasResultDraft() && !hasBackendResult(data?.ketqua);
+
         match = data;
         assignedRefs = Array.isArray(data?.trongtai_thamgia) ? data.trongtai_thamgia : [];
         confirmedParticipants = new Set(
@@ -353,11 +616,16 @@
                 .filter((referee) => referee.xacnhanthamgia)
                 .map((referee) => Number(referee.idtrongtai))
         );
-        sets = setsFromResult(data?.ketqua);
-        resultNote.value = "";
+
+        if (!shouldKeepDraft) {
+            sets = setsFromResult(data?.ketqua);
+            resultNote.value = data?.ketqua?.ghichu || data?.ketqua?.note || "";
+        }
+
         refreshHeader();
         renderSets();
         refreshButtons();
+        hasLoadedSupervision = true;
     }
 
     async function loadSupervision() {
@@ -459,6 +727,13 @@
             return;
         }
 
+        const requiredMessage = requiredParticipantMessage();
+
+        if (requiredMessage) {
+            showRefs(requiredMessage);
+            return;
+        }
+
         const ok = await runAction(matchEndpoint("participants/confirm"), {
             referee_ids: Array.from(confirmedParticipants),
         }, "Đã xác nhận tổ trọng tài tham gia.");
@@ -471,17 +746,6 @@
     btnStart.addEventListener("click", () => runAction(matchEndpoint("start"), {}, "Đã bắt đầu trận đấu."));
     btnPause.addEventListener("click", () => runAction(matchEndpoint("pause"), {}, "Đã tạm dừng trận đấu."));
     btnResume.addEventListener("click", () => runAction(matchEndpoint("resume"), {}, "Đã tiếp tục trận đấu."));
-
-    btnSaveResult.addEventListener("click", async () => {
-        const error = validateResult();
-
-        if (error) {
-            showPage(error);
-            return;
-        }
-
-        await runAction(matchEndpoint("result"), resultPayload(), "Đã lưu kết quả trận đấu.");
-    });
 
     btnEnd.addEventListener("click", async () => {
         const error = validateResult();
@@ -498,34 +762,54 @@
         await runAction(matchEndpoint("finish"), resultPayload(), "Đã kết thúc trận đấu.");
     });
 
-    setsEl.addEventListener("input", (event) => {
-        const input = event.target.closest("input[data-idx][data-side]");
+    setsEl.addEventListener("click", (event) => {
+        const timeButton = event.target.closest("button[data-set-time-action]");
 
-        if (!input) {
+        if (timeButton) {
+            applySetTime(timeButton);
             return;
         }
 
-        const index = Number(input.dataset.idx);
-        const side = input.dataset.side;
+        const button = event.target.closest("button[data-score-action]");
 
-        if (!Number.isInteger(index) || !sets[index] || !["a", "b"].includes(side)) {
+        if (!button) {
             return;
         }
 
-        sets[index][side] = Number(input.value || 0);
-        recalcResult();
+        applyScoreDelta(button);
+    });
+
+    setsEl.addEventListener("keydown", (event) => {
+        const input = event.target.closest("input[data-score-entry]");
+
+        if (!input || event.key !== "Enter") {
+            return;
+        }
+
+        event.preventDefault();
+        input.closest(".score-control")?.querySelector('button[data-score-action="add"]')?.click();
     });
 
     btnAddSet.addEventListener("click", () => {
+        if (!resultEditable()) {
+            showPage("Trận đang tạm dừng, không thể thay đổi thông tin ghi nhận kết quả.");
+            return;
+        }
+
         if (sets.length >= 5) {
             return;
         }
 
-        sets.push({ a: 0, b: 0 });
+        sets.push(emptySet());
         renderSets();
     });
 
     btnRemoveSet.addEventListener("click", () => {
+        if (!resultEditable()) {
+            showPage("Trận đang tạm dừng, không thể thay đổi thông tin ghi nhận kết quả.");
+            return;
+        }
+
         if (sets.length <= 3) {
             return;
         }

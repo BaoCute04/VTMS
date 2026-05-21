@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Backend\Services\Coach;
 
+use App\Backend\Core\Auth\Auth;
 use App\Backend\Core\Http\Request;
 use App\Backend\Models\Doibong;
 use App\Backend\Models\Yeucaucapnhathoso;
@@ -15,6 +16,7 @@ final class CoachTeamManagementService
     private const TEAM_STATUSES = ['HOAT_DONG', 'CHO_DUYET', 'TAM_KHOA', 'GIAI_THE'];
     private const MEMBER_ROLES = ['DOI_TRUONG', 'THANH_VIEN', 'DU_BI'];
     private const LINEUP_STATUSES = ['BAN_NHAP', 'DA_CHOT', 'DA_CAP_NHAT'];
+    private const LINEUP_GENDERS = ['NAM', 'NU'];
     private const ATHLETE_POSITIONS = ['CHU_CONG', 'PHU_CONG', 'CHUYEN_HAI', 'DOI_CHUYEN', 'LIBERO', 'DOI_TRU'];
     private const MATCH_STATUSES = ['CHUA_DIEN_RA', 'SAP_DIEN_RA', 'DANG_DIEN_RA', 'TAM_DUNG', 'DA_KET_THUC', 'DA_HUY'];
     private const REQUEST_STATUSES = ['CHO_DUYET', 'DA_DUYET', 'TU_CHOI'];
@@ -96,6 +98,19 @@ final class CoachTeamManagementService
 
         if ($errors !== []) {
             return $this->failure('Du lieu doi bong khong hop le.', 422, $errors);
+        }
+
+        if (!isset($data['idkhuvucdaidien'])) {
+            $coachRegionId = $this->sessionCoachWorkRegionId((int) $coach['idhuanluyenvien'])
+                ?? $this->positiveInt($coach['idkhuvuccongtac'] ?? null);
+
+            if ($coachRegionId === null) {
+                return $this->failure('HLV chua co khu vuc cong tac, khong the tao doi bong.', 409, [
+                    'idkhuvucdaidien' => 'Can cap nhat khu vuc cong tac cua HLV truoc khi tao doi bong.',
+                ]);
+            }
+
+            $data['idkhuvucdaidien'] = $coachRegionId;
         }
 
         if ($this->teams->teamNameExists($data['tendoibong'])) {
@@ -241,21 +256,24 @@ final class CoachTeamManagementService
             return $this->failure('Du lieu thanh vien khong hop le.', 422, $errors);
         }
 
-        $athlete = $this->teams->athleteForCoachScope($coachId, $data['idvandongvien']);
+        $athlete = $this->teams->athleteForCoachScope($coachId, $data['athlete_identifier']);
 
         if ($athlete === null) {
             return $this->failure('Khong tim thay van dong vien hop le de them vao doi.', 404);
         }
 
+        $athleteId = (int) $athlete['idvandongvien'];
+        $data['idvandongvien'] = $athleteId;
+
         if ((string) $athlete['trangthaidaugiai'] !== 'DU_DIEU_KIEN') {
             return $this->failure('Chi duoc them van dong vien du dieu kien thi dau.', 409);
         }
 
-        if ($this->teams->membershipForTeamAthlete($teamId, $data['idvandongvien']) !== null) {
+        if ($this->teams->membershipForTeamAthlete($teamId, $athleteId) !== null) {
             return $this->failure('Van dong vien da co lich su thanh vien trong doi nay.', 409);
         }
 
-        $activeMembership = $this->teams->activeMembershipForAthlete($data['idvandongvien']);
+        $activeMembership = $this->teams->activeMembershipForAthlete($athleteId);
 
         if ($activeMembership !== null) {
             return $this->failure('Van dong vien dang thuoc mot doi bong khac.', 409, [
@@ -266,7 +284,7 @@ final class CoachTeamManagementService
         $logNote = $this->limitLogNote(sprintf(
             'HLV #%d them VDV #%d vao doi #%d "%s".',
             $coachId,
-            $data['idvandongvien'],
+            $athleteId,
             $teamId,
             (string) $team['tendoibong']
         ));
@@ -275,7 +293,7 @@ final class CoachTeamManagementService
             $memberId = $this->teams->addMember(
                 $teamId,
                 $coachId,
-                $data['idvandongvien'],
+                $athleteId,
                 $data['vaitro'],
                 $data['ngaythamgia'],
                 $accountId,
@@ -439,19 +457,41 @@ final class CoachTeamManagementService
 
         $tournamentId = $this->positiveInt($filters['tournament_id'] ?? $filters['idgiaidau'] ?? null);
 
-        if ($tournamentId === null) {
-            return $this->failure('Vui long chon giai dau de xem doi hinh.', 422, [
-                'idgiaidau' => 'Giai dau khong hop le.',
-            ]);
+        return [
+            'ok' => true,
+            'status' => 200,
+            'message' => 'Lay danh sach doi hinh thanh cong.',
+            'lineups' => $this->teams->lineupsForTeam($teamId, $tournamentId),
+            'details' => $this->teams->lineupDetailsForTeam($teamId, $tournamentId),
+            'team' => $team,
+        ];
+    }
+
+    public function lineupList(int $accountId, array $filters = []): array
+    {
+        $coach = $this->activeCoach($accountId);
+
+        if (isset($coach['ok']) && $coach['ok'] === false) {
+            return $coach;
+        }
+
+        $teamId = $this->positiveInt($filters['team_id'] ?? $filters['iddoibong'] ?? null);
+        $tournamentId = $this->positiveInt($filters['tournament_id'] ?? $filters['idgiaidau'] ?? null);
+
+        if ($teamId !== null && $this->teams->findForCoach((int) $coach['idhuanluyenvien'], $teamId) === null) {
+            return $this->failure('Khong tim thay doi bong cua HLV.', 404);
         }
 
         return [
             'ok' => true,
             'status' => 200,
             'message' => 'Lay danh sach doi hinh thanh cong.',
-            'lineups' => $this->teams->lineupsForTournamentTeam($tournamentId, $teamId),
-            'details' => $this->teams->lineupDetailsForTournamentTeam($tournamentId, $teamId),
-            'team' => $team,
+            'lineups' => $this->teams->lineupsForCoach((int) $coach['idhuanluyenvien'], $teamId, $tournamentId),
+            'details' => $this->teams->lineupDetailsForCoach((int) $coach['idhuanluyenvien'], $teamId, $tournamentId),
+            'meta' => [
+                'team_id' => $teamId,
+                'tournament_id' => $tournamentId,
+            ],
         ];
     }
 
@@ -500,30 +540,25 @@ final class CoachTeamManagementService
             return $this->failure('Du lieu doi hinh khong hop le.', 422, $errors);
         }
 
-        if ($this->teams->teamRegisteredForTournament($coachId, $teamId, $lineup['idgiaidau']) === null) {
-            return $this->failure('Doi bong chua duoc duyet tham gia giai dau nay.', 409);
+        if ($this->teams->lineupNameExists($teamId, $lineup['tendoihinh'])) {
+            return $this->failure('Ten doi hinh da ton tai trong doi bong.', 409);
         }
 
-        if ($this->teams->lineupNameExists($teamId, $lineup['idgiaidau'], $lineup['tendoihinh'])) {
-            return $this->failure('Ten doi hinh da ton tai trong giai dau.', 409);
-        }
-
-        $memberErrors = $this->validateLineupMembers($teamId, $details);
+        $memberErrors = $this->validateLineupMembers($teamId, $details, (string) $lineup['gioitinh']);
 
         if ($memberErrors !== []) {
             return $this->failure('Thanh vien doi hinh khong hop le.', 422, $memberErrors);
         }
 
         $logNote = $this->limitLogNote(sprintf(
-            'HLV #%d tao doi hinh "%s" cho doi #%d tai giai #%d.',
+            'HLV #%d tao doi hinh "%s" cho doi #%d.',
             $coachId,
             $lineup['tendoihinh'],
-            $teamId,
-            $lineup['idgiaidau']
+            $teamId
         ));
 
         try {
-            $lineupId = $this->teams->createLineup($teamId, $lineup['idgiaidau'], $lineup, $details, $accountId, $request?->ip(), $logNote);
+            $lineupId = $this->teams->createLineup($teamId, $lineup['idgiaidau'] ?? null, $lineup, $details, $accountId, $request?->ip(), $logNote);
             $created = $this->teams->lineupForCoach($coachId, $lineupId);
             $created['details'] = $this->teams->lineupDetails($lineupId);
 
@@ -566,18 +601,17 @@ final class CoachTeamManagementService
         }
 
         $newName = $changes['tendoihinh'] ?? (string) $lineup['tendoihinh'];
-        $tournamentId = (int) ($changes['idgiaidau'] ?? $lineup['idgiaidau']);
 
-        if ($this->teams->teamRegisteredForTournament($coachId, (int) $lineup['iddoibong'], $tournamentId) === null) {
-            return $this->failure('Doi bong chua duoc duyet tham gia giai dau nay.', 409);
-        }
-
-        if ($this->teams->lineupNameExists((int) $lineup['iddoibong'], $tournamentId, $newName, $lineupId)) {
-            return $this->failure('Ten doi hinh da ton tai trong giai dau.', 409);
+        if ($this->teams->lineupNameExists((int) $lineup['iddoibong'], $newName, $lineupId)) {
+            return $this->failure('Ten doi hinh da ton tai trong doi bong.', 409);
         }
 
         if ($details !== null) {
-            $memberErrors = $this->validateLineupMembers((int) $lineup['iddoibong'], $details);
+            $memberErrors = $this->validateLineupMembers(
+                (int) $lineup['iddoibong'],
+                $details,
+                (string) ($changes['gioitinh'] ?? $lineup['gioitinh'] ?? 'NAM')
+            );
 
             if ($memberErrors !== []) {
                 return $this->failure('Thanh vien doi hinh khong hop le.', 422, $memberErrors);
@@ -863,6 +897,23 @@ final class CoachTeamManagementService
         return $coach;
     }
 
+    private function sessionCoachWorkRegionId(int $coachId): ?int
+    {
+        $user = Auth::user();
+
+        if (!is_array($user)) {
+            return null;
+        }
+
+        $sessionCoachId = $this->positiveInt($user['idhuanluyenvien'] ?? ($user['coach']['idhuanluyenvien'] ?? null));
+
+        if ($sessionCoachId !== $coachId) {
+            return null;
+        }
+
+        return $this->positiveInt($user['idkhuvuccongtac'] ?? ($user['coach']['idkhuvuccongtac'] ?? null));
+    }
+
     private function teamFilters(array $filters): array
     {
         $keyword = trim((string) ($filters['q'] ?? $filters['keyword'] ?? ''));
@@ -884,6 +935,7 @@ final class CoachTeamManagementService
         $map = [
             'tendoibong' => ['tendoibong', 'name', 'team_name'],
             'logo' => ['logo'],
+            'idkhuvucdaidien' => ['idkhuvucdaidien', 'representative_region_id', 'region_id', 'khuvuc_id'],
             'diaphuong' => ['diaphuong', 'local', 'location'],
             'mota' => ['mota', 'description', 'note'],
             'trangthai' => ['trangthai', 'status'],
@@ -910,6 +962,18 @@ final class CoachTeamManagementService
             if (in_array($field, ['tendoibong', 'logo', 'diaphuong', 'mota'], true)) {
                 $value = trim((string) $value);
                 $data[$field] = $value === '' && $field !== 'tendoibong' ? null : $value;
+                continue;
+            }
+
+            if ($field === 'idkhuvucdaidien') {
+                $regionId = $this->positiveInt($value);
+
+                if ($regionId === null) {
+                    $errors[$field] = 'Khu vuc dai dien cua doi bong khong hop le.';
+                } else {
+                    $data[$field] = $regionId;
+                }
+
                 continue;
             }
 
@@ -961,12 +1025,12 @@ final class CoachTeamManagementService
 
     private function memberPayload(array $payload): array
     {
-        $athleteId = $this->positiveInt($payload['idvandongvien'] ?? $payload['athlete_id'] ?? null);
+        $athleteIdentifier = trim((string) ($payload['idvandongvien'] ?? $payload['athlete_id'] ?? $payload['mavandongvien'] ?? $payload['athlete_code'] ?? ''));
         $role = strtoupper(trim((string) ($payload['vaitro'] ?? $payload['role'] ?? 'THANH_VIEN')));
         $joinDate = trim((string) ($payload['ngaythamgia'] ?? $payload['join_date'] ?? date('Y-m-d')));
         $errors = [];
 
-        if ($athleteId === null) {
+        if ($athleteIdentifier === '') {
             $errors['idvandongvien'] = 'Van dong vien khong hop le.';
         }
 
@@ -979,7 +1043,8 @@ final class CoachTeamManagementService
         }
 
         return [[
-            'idvandongvien' => $athleteId ?? 0,
+            'athlete_identifier' => $athleteIdentifier,
+            'idvandongvien' => $this->positiveInt($athleteIdentifier) ?? 0,
             'vaitro' => $role,
             'ngaythamgia' => $joinDate,
         ], $errors];
@@ -1020,6 +1085,11 @@ final class CoachTeamManagementService
         $namePresent = array_key_exists('tendoihinh', $payload) || array_key_exists('name', $payload);
         $tournamentPresent = array_key_exists('idgiaidau', $payload) || array_key_exists('tournament_id', $payload);
         $statusPresent = array_key_exists('trangthai', $payload) || array_key_exists('status', $payload);
+        $genderPresent = array_key_exists('gioitinh', $payload) || array_key_exists('gender', $payload);
+        $mainPresent = array_key_exists('la_doihinh_chinh', $payload)
+            || array_key_exists('is_main', $payload)
+            || array_key_exists('main', $payload)
+            || array_key_exists('official', $payload);
 
         if ($namePresent) {
             $name = trim((string) ($payload['tendoihinh'] ?? $payload['name'] ?? ''));
@@ -1036,15 +1106,16 @@ final class CoachTeamManagementService
         }
 
         if ($tournamentPresent) {
-            $tournamentId = $this->positiveInt($payload['idgiaidau'] ?? $payload['tournament_id'] ?? null);
+            $rawTournamentId = $payload['idgiaidau'] ?? $payload['tournament_id'] ?? null;
+            $tournamentId = $this->positiveInt($rawTournamentId);
 
-            if ($tournamentId === null) {
+            if ($rawTournamentId === null || trim((string) $rawTournamentId) === '') {
+                $changes['idgiaidau'] = null;
+            } elseif ($tournamentId === null) {
                 $errors['idgiaidau'] = 'Giai dau khong hop le.';
             } else {
                 $changes['idgiaidau'] = $tournamentId;
             }
-        } elseif (!$partial) {
-            $errors['idgiaidau'] = 'Giai dau bat buoc.';
         }
 
         if ($statusPresent) {
@@ -1057,6 +1128,26 @@ final class CoachTeamManagementService
             }
         } elseif (!$partial) {
             $changes['trangthai'] = 'BAN_NHAP';
+        }
+
+        if ($genderPresent) {
+            $gender = strtoupper(trim((string) ($payload['gioitinh'] ?? $payload['gender'] ?? '')));
+
+            if (!in_array($gender, self::LINEUP_GENDERS, true)) {
+                $errors['gioitinh'] = 'Gioi tinh doi hinh khong hop le.';
+            } else {
+                $changes['gioitinh'] = $gender;
+            }
+        } elseif (!$partial) {
+            $changes['gioitinh'] = 'NAM';
+        }
+
+        if ($mainPresent) {
+            $changes['la_doihinh_chinh'] = $this->boolInt(
+                $payload['la_doihinh_chinh'] ?? $payload['is_main'] ?? $payload['main'] ?? $payload['official'] ?? false
+            );
+        } elseif (!$partial) {
+            $changes['la_doihinh_chinh'] = 0;
         }
 
         $detailRaw = $payload['details'] ?? $payload['members'] ?? $payload['athletes'] ?? null;
@@ -1073,9 +1164,10 @@ final class CoachTeamManagementService
         }
 
         if (!$partial) {
-            $changes['idgiaidau'] ??= 0;
             $changes['tendoihinh'] ??= '';
             $changes['trangthai'] ??= 'BAN_NHAP';
+            $changes['gioitinh'] ??= 'NAM';
+            $changes['la_doihinh_chinh'] ??= 0;
             $details ??= [];
         }
 
@@ -1145,13 +1237,15 @@ final class CoachTeamManagementService
         return [$details, $errors];
     }
 
-    private function validateLineupMembers(int $teamId, array $details): array
+    private function validateLineupMembers(int $teamId, array $details, string $gender): array
     {
         $errors = [];
 
         foreach ($details as $index => $detail) {
             if (!$this->teams->athleteIsActiveMember($teamId, (int) $detail['idvandongvien'])) {
                 $errors["details.{$index}.idvandongvien"] = 'Van dong vien khong phai thanh vien dang tham gia cua doi.';
+            } elseif (!$this->teams->athleteIsActiveMemberWithGender($teamId, (int) $detail['idvandongvien'], $gender)) {
+                $errors["details.{$index}.gioitinh"] = 'Van dong vien khong dung gioi tinh cua doi hinh.';
             }
         }
 
@@ -1357,6 +1451,17 @@ final class CoachTeamManagementService
         $id = (int) $value;
 
         return $id > 0 ? $id : null;
+    }
+
+    private function boolInt(mixed $value): int
+    {
+        if (is_bool($value)) {
+            return $value ? 1 : 0;
+        }
+
+        $normalized = strtolower(trim((string) $value));
+
+        return in_array($normalized, ['1', 'true', 'yes', 'on', 'co', 'có'], true) ? 1 : 0;
     }
 
     private function isDate(string $value): bool

@@ -58,8 +58,17 @@
                 <div id="d_teamRegistration" class="team-registration-state hidden"></div>
             </div>
             <div>
+                <label for="d_lineup">Đội hình đăng ký *</label>
+                <select id="d_lineup"></select>
+                <p class="hint">Có thể chọn bất kỳ đội hình đã chốt/cập nhật đúng giới tính giải, không bắt buộc là đội hình chính.</p>
+            </div>
+            <div>
                 <label for="d_status">Trạng thái</label>
                 <input id="d_status" disabled />
+            </div>
+            <div>
+                <label for="d_gender">Giới tính giải đấu</label>
+                <input id="d_gender" disabled />
             </div>
             <div class="colspan">
                 <label>Mô tả giải đấu</label>

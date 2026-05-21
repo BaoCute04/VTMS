@@ -12,7 +12,8 @@ use Throwable;
 
 final class RefereeMatchSupervisionService
 {
-    private const STARTABLE_STATUSES = ['CHUA_DIEN_RA', 'SAP_DIEN_RA'];
+    private const START_EARLY_SECONDS = 15 * 60;
+    private const STARTABLE_STATUSES = ['DA_XEP_LICH', 'CHUA_DIEN_RA', 'SAP_DIEN_RA'];
     private const RESULT_MUTABLE_STATUSES = ['CHO_CONG_BO', 'DA_DIEU_CHINH'];
 
     public function __construct(private ?Trongtai $referees = null)
@@ -55,6 +56,12 @@ final class RefereeMatchSupervisionService
 
         if (isset($context['ok']) && $context['ok'] === false) {
             return $context;
+        }
+
+        $status = (string) $context['assignment']['trandau_trangthai'];
+
+        if (!in_array($status, self::STARTABLE_STATUSES, true)) {
+            return $this->failure('Chi co the chon to trong tai tham gia truoc khi tran dau bat dau.', 409);
         }
 
         [$refereeIds, $errors] = $this->participantIds($payload, $context);
@@ -112,7 +119,15 @@ final class RefereeMatchSupervisionService
         }
 
         if ($action === 'start' && !$this->isMatchDue($context['assignment'])) {
-            return $this->failure('Tran dau chua den thoi gian bat dau.', 409);
+            return $this->failure('Tran dau chi co the bat dau trong vong 15 phut truoc gio thi dau.', 409);
+        }
+
+        if ($action === 'start') {
+            $participantErrors = $this->requiredParticipantErrors($context);
+
+            if ($participantErrors !== []) {
+                return $this->failure('Can chon to trong tai tham gia truoc khi bat dau tran dau.', 409, $participantErrors);
+            }
         }
 
         if ($action === 'start' && !$this->currentRefereeConfirmed($context)) {
@@ -265,6 +280,10 @@ final class RefereeMatchSupervisionService
             return $this->failure('Khong tim thay tran dau duoc phan cong.', 404);
         }
 
+        if (!$this->isSupervisorAssignment($assignment)) {
+            return $this->failure('Chi trong tai giam sat moi duoc thuc hien thao tac giam sat tran dau.', 403);
+        }
+
         if ($requireConfirmedAssignment && (string) $assignment['phancong_trangthai'] !== 'DA_XAC_NHAN') {
             return $this->failure('Trong tai can xac nhan phan cong truoc khi giam sat tran dau.', 409);
         }
@@ -347,15 +366,23 @@ final class RefereeMatchSupervisionService
     {
         $status = (string) $context['assignment']['trandau_trangthai'];
         $assignmentConfirmed = (string) $context['assignment']['phancong_trangthai'] === 'DA_XAC_NHAN';
+        $canSupervise = $assignmentConfirmed && $this->isSupervisorAssignment($context['assignment']);
+        $hasRequiredParticipants = $this->requiredParticipantErrors($context) === [];
+        $canChangeParticipants = in_array($status, self::STARTABLE_STATUSES, true);
 
         return [
-            'confirm_participants' => $assignmentConfirmed,
-            'start' => $assignmentConfirmed && in_array($status, self::STARTABLE_STATUSES, true) && $this->isMatchDue($context['assignment']),
-            'pause' => $assignmentConfirmed && $status === 'DANG_DIEN_RA',
-            'resume' => $assignmentConfirmed && $status === 'TAM_DUNG',
-            'record_result' => $assignmentConfirmed && in_array($status, ['DANG_DIEN_RA', 'TAM_DUNG', 'DA_KET_THUC'], true),
-            'finish' => $assignmentConfirmed && in_array($status, ['DANG_DIEN_RA', 'TAM_DUNG'], true),
+            'confirm_participants' => $canSupervise && $canChangeParticipants,
+            'start' => $canSupervise && $hasRequiredParticipants && in_array($status, self::STARTABLE_STATUSES, true) && $this->isMatchDue($context['assignment']),
+            'pause' => $canSupervise && $status === 'DANG_DIEN_RA',
+            'resume' => $canSupervise && $status === 'TAM_DUNG',
+            'record_result' => $canSupervise && in_array($status, ['DANG_DIEN_RA', 'TAM_DUNG', 'DA_KET_THUC'], true),
+            'finish' => $canSupervise && in_array($status, ['DANG_DIEN_RA', 'TAM_DUNG'], true),
         ];
+    }
+
+    private function isSupervisorAssignment(array $assignment): bool
+    {
+        return (string) ($assignment['vaitro'] ?? '') === 'GIAM_SAT';
     }
 
     private function participantIds(array $payload, array $context): array
@@ -409,6 +436,24 @@ final class RefereeMatchSupervisionService
                 $errors['referee_ids'] = 'Chi duoc chon trong tai da xac nhan phan cong trong tran.';
                 break;
             }
+        }
+
+        $selectedRoles = [];
+
+        foreach ($context['participants'] as $participant) {
+            $refereeId = (int) $participant['idtrongtai'];
+
+            if (isset($assigned[$refereeId]) && in_array($refereeId, $ids, true)) {
+                $selectedRoles[(string) $participant['vaitro']] = true;
+            }
+        }
+
+        if (!isset($selectedRoles['GIAM_SAT'])) {
+            $errors['giam_sat'] = 'To trong tai tham gia phai co it nhat 1 trong tai giam sat.';
+        }
+
+        if (!isset($selectedRoles['TRONG_TAI_CHINH'])) {
+            $errors['trong_tai_chinh'] = 'To trong tai tham gia phai co it nhat 1 trong tai chinh.';
         }
 
         if (!in_array((int) $context['referee']['idtrongtai'], $ids, true)) {
@@ -520,6 +565,11 @@ final class RefereeMatchSupervisionService
                 continue;
             }
 
+            if (abs($teamOneScore - $teamTwoScore) < 2) {
+                $errors['sets.' . $index . '.diem'] = 'Diem hai doi trong mot set phai chenh lech toi thieu 2 diem.';
+                continue;
+            }
+
             $sets[] = [
                 'setthu' => $setNumber,
                 'diemdoi1' => $teamOneScore,
@@ -575,6 +625,38 @@ final class RefereeMatchSupervisionService
         return false;
     }
 
+    private function requiredParticipantErrors(array $context): array
+    {
+        $hasSupervisor = false;
+        $hasMainReferee = false;
+
+        foreach ($context['participants'] as $participant) {
+            if ((string) $participant['trangthai'] !== 'DA_XAC_NHAN' || !(bool) $participant['xacnhanthamgia']) {
+                continue;
+            }
+
+            if ((string) $participant['vaitro'] === 'GIAM_SAT') {
+                $hasSupervisor = true;
+            }
+
+            if ((string) $participant['vaitro'] === 'TRONG_TAI_CHINH') {
+                $hasMainReferee = true;
+            }
+        }
+
+        $errors = [];
+
+        if (!$hasSupervisor) {
+            $errors['giam_sat'] = 'Can chon it nhat 1 trong tai giam sat tham gia.';
+        }
+
+        if (!$hasMainReferee) {
+            $errors['trong_tai_chinh'] = 'Can chon it nhat 1 trong tai chinh tham gia.';
+        }
+
+        return $errors;
+    }
+
     private function isMatchDue(array $assignment): bool
     {
         $scheduled = strtotime((string) $assignment['thoigianbatdau']);
@@ -583,7 +665,7 @@ final class RefereeMatchSupervisionService
             return false;
         }
 
-        return $scheduled <= time() + 15 * 60;
+        return $scheduled <= time() + self::START_EARLY_SECONDS;
     }
 
     private function matchLogNote(int $refereeId, array $assignment, string $action): string

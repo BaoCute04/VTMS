@@ -148,6 +148,19 @@ final class OrganizerTournamentController extends Controller
         );
     }
 
+    public function cancel(Request $request): Response
+    {
+        $tournamentId = $this->routeTournamentId($request);
+
+        if ($tournamentId === null) {
+            return $this->notFound();
+        }
+
+        return $this->respond(
+            $this->service->cancel($tournamentId, $this->accountId(), $request)
+        );
+    }
+
     public function registrations(Request $request): Response
     {
         $tournamentId = $this->routeTournamentId($request);
@@ -215,6 +228,20 @@ final class OrganizerTournamentController extends Controller
 
         return $this->respond(
             $this->service->rejectRegistration($tournamentId, $registrationId, $request->all(), $this->accountId(), $request)
+        );
+    }
+
+    public function removeRegistration(Request $request): Response
+    {
+        $tournamentId = $this->routeTournamentId($request);
+        $registrationId = $this->routeRegistrationId($request);
+
+        if ($tournamentId === null || $registrationId === null) {
+            return $this->notFound();
+        }
+
+        return $this->respond(
+            $this->service->removeRegistration($tournamentId, $registrationId, $request->all(), $this->accountId(), $request)
         );
     }
 

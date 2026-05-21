@@ -107,6 +107,7 @@ final class Giaidau extends Model
         $where = [
             "gd.trangthai = 'DA_CONG_BO'",
             "gd.trangthaidangky = 'DANG_MO'",
+            'DATE(gd.thoigianbatdau) > CURRENT_DATE()',
         ];
         $bindings = [
             'coach_id' => $coachId,
@@ -139,6 +140,7 @@ final class Giaidau extends Model
                 kv.tenkhuvuc AS tenkhuvuc_phamvi,
                 COALESCE(dl.so_doi_toi_da, gd.quymo) AS quymo,
                 gd.hinhanh,
+                gd.gioitinh,
                 gd.trangthai,
                 gd.trangthaidangky,
                 gd.idbantochuc,
@@ -258,6 +260,7 @@ final class Giaidau extends Model
                 COALESCE(dl.so_doi_toi_da, gd.quymo) AS quymo,
                 gd.hinhanh,
                 gd.tinhchat,
+                gd.gioitinh,
                 gd.trangthai,
                 gd.trangthaidangky,
                 gd.trangthaithietlap,
@@ -293,6 +296,64 @@ final class Giaidau extends Model
         $statement->execute($bindings);
 
         return $statement->fetchAll();
+    }
+
+    public function syncStartedPublishedTournaments(?int $organizerId = null, ?int $tournamentId = null): void
+    {
+        $where = [
+            "trangthai = 'DA_CONG_BO'",
+            'DATE(thoigianbatdau) <= CURRENT_DATE()',
+            'DATE(thoigianketthuc) >= CURRENT_DATE()',
+        ];
+        $bindings = [];
+
+        if ($organizerId !== null) {
+            $where[] = 'idbantochuc = :organizer_id';
+            $bindings['organizer_id'] = $organizerId;
+        }
+
+        if ($tournamentId !== null) {
+            $where[] = 'idgiaidau = :tournament_id';
+            $bindings['tournament_id'] = $tournamentId;
+        }
+
+        $condition = implode(' AND ', $where);
+        $db = $this->db();
+
+        try {
+            $db->beginTransaction();
+
+            $history = $db->prepare(
+                "INSERT INTO Nhatkytrangthai (loaidoituong, iddoituong, trangthaicu, trangthaimoi, lydo, idnguoithuchien)
+                 SELECT
+                    'GIAI_DAU',
+                    idgiaidau,
+                    'DA_CONG_BO',
+                    'DANG_DIEN_RA',
+                    'Tu dong chuyen sang dang dien ra theo ngay bat dau',
+                    NULL
+                 FROM Giaidau
+                 WHERE {$condition}"
+            );
+            $history->execute($bindings);
+
+            $statement = $db->prepare(
+                "UPDATE Giaidau
+                 SET trangthai = 'DANG_DIEN_RA',
+                     trangthaidangky = 'DA_DONG',
+                     ngaycapnhat = CURRENT_TIMESTAMP
+                 WHERE {$condition}"
+            );
+            $statement->execute($bindings);
+
+            $db->commit();
+        } catch (Throwable $exception) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            throw $exception;
+        }
     }
 
     public function competitionLocations(int $organizerId, array $filters = []): array
@@ -724,12 +785,25 @@ final class Giaidau extends Model
         $statement->execute(['tournament_id' => $tournamentId]);
 
         $explicitIds = array_map('intval', array_column($statement->fetchAll(), 'iddoibong'));
+        $higherEligibilityIds = (new Tucachthamgia())->acceptedTeamIdsForTournament($tournamentId);
 
-        return array_values(array_unique(array_merge($ids, $explicitIds)));
+        return $this->filterTeamIdsByTournamentGender(
+            array_values(array_unique(array_merge($ids, $explicitIds, $higherEligibilityIds))),
+            (string) ($tournament['gioitinh'] ?? 'NAM')
+        );
     }
 
     public function teamEligibilityForTournament(int $tournamentId, int $teamId): array
     {
+        $tournament = $this->findById($tournamentId);
+
+        if ($tournament === null) {
+            return [
+                'eligible' => false,
+                'reason' => 'Khong tim thay giai dau.',
+            ];
+        }
+
         $team = $this->first(
             "SELECT
                 db.iddoibong,
@@ -759,6 +833,22 @@ final class Giaidau extends Model
             ];
         }
 
+        $genderSummary = $this->teamGenderSummary($teamId, (string) ($tournament['gioitinh'] ?? 'NAM'));
+
+        if ((int) $genderSummary['matching'] <= 0) {
+            return [
+                'eligible' => false,
+                'reason' => 'Doi bong chua co thanh vien phu hop gioi tinh giai dau.',
+            ];
+        }
+
+        if ((int) $genderSummary['mismatching'] > 0) {
+            return [
+                'eligible' => false,
+                'reason' => 'Doi bong co thanh vien khac gioi tinh voi giai dau.',
+            ];
+        }
+
         $eligibleIds = $this->eligibleTeamIdsForTournament($tournamentId);
 
         if (in_array($teamId, $eligibleIds, true)) {
@@ -784,6 +874,63 @@ final class Giaidau extends Model
                 : 'Doi bong chua dap ung dieu kien tham gia giai dau.',
             'team_region_level' => (string) ($team['capkhuvucdaidien'] ?? ''),
             'team_region_name' => (string) ($team['tenkhuvucdaidien'] ?? ''),
+        ];
+    }
+
+    private function filterTeamIdsByTournamentGender(array $teamIds, string $gender): array
+    {
+        $gender = strtoupper($gender);
+
+        if (!in_array($gender, ['NAM', 'NU'], true)) {
+            return $teamIds;
+        }
+
+        return array_values(array_filter(
+            $teamIds,
+            fn (int $teamId): bool => $this->teamGenderIsCompatible($teamId, $gender)
+        ));
+    }
+
+    private function teamGenderIsCompatible(int $teamId, string $gender): bool
+    {
+        $summary = $this->teamGenderSummary($teamId, $gender);
+
+        return (int) $summary['matching'] > 0 && (int) $summary['mismatching'] === 0;
+    }
+
+    private function teamGenderSummary(int $teamId, string $gender): array
+    {
+        $gender = strtoupper($gender);
+
+        if (!in_array($gender, ['NAM', 'NU'], true)) {
+            return [
+                'total' => 0,
+                'matching' => 1,
+                'mismatching' => 0,
+            ];
+        }
+
+        $summary = $this->first(
+            "SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN nd.gioitinh = :gender THEN 1 ELSE 0 END) AS matching,
+                SUM(CASE WHEN nd.gioitinh <> :mismatch_gender THEN 1 ELSE 0 END) AS mismatching
+             FROM Thanhviendoibong tv
+             JOIN Vandongvien vdv ON vdv.idvandongvien = tv.idvandongvien
+             JOIN Nguoidung nd ON nd.idnguoidung = vdv.idnguoidung
+             WHERE tv.iddoibong = :team_id
+               AND tv.trangthai = 'DANG_THAM_GIA'",
+            [
+                'team_id' => $teamId,
+                'gender' => $gender,
+                'mismatch_gender' => $gender,
+            ]
+        );
+
+        return [
+            'total' => (int) ($summary['total'] ?? 0),
+            'matching' => (int) ($summary['matching'] ?? 0),
+            'mismatching' => (int) ($summary['mismatching'] ?? 0),
         ];
     }
 
@@ -843,9 +990,9 @@ final class Giaidau extends Model
 
             $statement = $db->prepare(
                 "INSERT INTO Giaidau
-                    (tengiaidau, mota, idcapgiaidau, idkhuvucphamvi, idbantochuc, idluat, thoigianbatdau, thoigianketthuc, quymo, hinhanh, tinhchat, trangthai, trangthaidangky, trangthaithietlap, ghichu_diadiem)
+                    (tengiaidau, mota, idcapgiaidau, idkhuvucphamvi, idbantochuc, idluat, thoigianbatdau, thoigianketthuc, quymo, hinhanh, tinhchat, gioitinh, trangthai, trangthaidangky, trangthaithietlap, ghichu_diadiem)
                  VALUES
-                    (:tengiaidau, :mota, :idcapgiaidau, :idkhuvucphamvi, :idbantochuc, :idluat, :thoigianbatdau, :thoigianketthuc, :quymo, :hinhanh, :tinhchat, 'NHAP', 'CHUA_MO', 'DANG_THIET_LAP', :ghichu_diadiem)"
+                    (:tengiaidau, :mota, :idcapgiaidau, :idkhuvucphamvi, :idbantochuc, :idluat, :thoigianbatdau, :thoigianketthuc, :quymo, :hinhanh, :tinhchat, :gioitinh, 'NHAP', 'CHUA_MO', 'DANG_THIET_LAP', :ghichu_diadiem)"
             );
 
             $statement->execute([
@@ -860,6 +1007,7 @@ final class Giaidau extends Model
                 'quymo' => $tournament['quymo'],
                 'hinhanh' => $tournament['hinhanh'],
                 'tinhchat' => $tournament['tinhchat'],
+                'gioitinh' => $tournament['gioitinh'],
                 'ghichu_diadiem' => $tournament['ghichu_diadiem'],
             ]);
 
@@ -1000,6 +1148,47 @@ final class Giaidau extends Model
         }
     }
 
+    public function cancelPublishedTournament(
+        int $tournamentId,
+        int $actorAccountId,
+        ?string $ipAddress,
+        string $logNote,
+        string $reason
+    ): void {
+        $db = $this->db();
+
+        try {
+            $db->beginTransaction();
+
+            $statement = $db->prepare(
+                "UPDATE Giaidau
+                 SET trangthai = 'DA_HUY',
+                     trangthaidangky = 'DA_DONG',
+                     ngaycapnhat = CURRENT_TIMESTAMP
+                 WHERE idgiaidau = :tournament_id
+                   AND trangthai = 'DA_CONG_BO'
+                   AND DATE(thoigianbatdau) > CURRENT_DATE()"
+            );
+
+            $statement->execute(['tournament_id' => $tournamentId]);
+
+            if ($statement->rowCount() !== 1) {
+                throw new \RuntimeException('TOURNAMENT_NOT_CANCELED');
+            }
+
+            $this->recordStatusHistory('GIAI_DAU', $tournamentId, 'DA_CONG_BO', 'DA_HUY', $reason, $actorAccountId);
+            $this->recordSystemLog($actorAccountId, 'Huy giai dau da cong bo', 'Giaidau', $tournamentId, $ipAddress, $logNote);
+
+            $db->commit();
+        } catch (Throwable $exception) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
     public function updateRegistrationWindow(
         int $tournamentId,
         string $oldStatus,
@@ -1053,51 +1242,27 @@ final class Giaidau extends Model
 
     private function notifyEligibleTeamsRegistrationOpen(int $tournamentId): void
     {
-        $eligibleTeamIds = $this->eligibleTeamIdsForTournament($tournamentId);
-
-        if ($eligibleTeamIds === []) {
-            return;
-        }
-
-        $bindings = ['tournament_id' => $tournamentId];
-        $placeholders = [];
-        foreach ($eligibleTeamIds as $index => $teamId) {
-            $key = 'team_id_' . $index;
-            $placeholders[] = ':' . $key;
-            $bindings[$key] = $teamId;
-        }
-
         $statement = $this->db()->prepare(
             "INSERT INTO Thongbao (idnguoinhan, tieude, noidung, loai, trangthai)
              SELECT
                 nd.idtaikhoan,
-                CONCAT('Mời đăng ký giải đấu: ', gd.tengiaidau),
-                CONCAT('Giải đấu ', gd.tengiaidau, ' đã mở đăng ký. Đội ', db.tendoibong, ' có thể gửi hồ sơ tham gia.'),
+                CONCAT('Giải đấu mới: ', gd.tengiaidau),
+                CONCAT('Giải đấu ', gd.tengiaidau, ' đã được công bố và mở đăng ký. Huấn luyện viên có đội đủ điều kiện có thể gửi hồ sơ tham gia.'),
                 'HE_THONG',
                 'CHUA_DOC'
              FROM Giaidau gd
-             JOIN Doibong db ON db.trangthai = 'HOAT_DONG'
-             JOIN Huanluyenvien hlv ON hlv.idhuanluyenvien = db.idhuanluyenvien
+             JOIN Huanluyenvien hlv ON hlv.trangthai = 'DA_XAC_NHAN'
              JOIN Nguoidung nd ON nd.idnguoidung = hlv.idnguoidung
              WHERE gd.idgiaidau = :tournament_id
-               AND db.iddoibong IN (" . implode(', ', $placeholders) . ")
-               AND hlv.trangthai = 'DA_XAC_NHAN'
-               AND NOT EXISTS (
-                    SELECT 1
-                    FROM Dangkygiaidau dk
-                    WHERE dk.idgiaidau = gd.idgiaidau
-                      AND dk.iddoibong = db.iddoibong
-                      AND dk.trangthai <> 'DA_HUY'
-               )
                AND NOT EXISTS (
                     SELECT 1
                     FROM Thongbao tb
                     WHERE tb.idnguoinhan = nd.idtaikhoan
-                      AND tb.tieude = CONCAT('Mời đăng ký giải đấu: ', gd.tengiaidau)
+                      AND tb.tieude = CONCAT('Giải đấu mới: ', gd.tengiaidau)
                )"
         );
 
-        $statement->execute($bindings);
+        $statement->execute(['tournament_id' => $tournamentId]);
     }
 
     public function registrationsForTournament(int $tournamentId, array $filters = []): array
@@ -1123,6 +1288,7 @@ final class Giaidau extends Model
                 dk.idgiaidau,
                 dk.iddoibong,
                 dk.idhuanluyenvien,
+                dk.iddoihinh,
                 dk.ngaydangky,
                 dk.trangthai,
                 dk.lydotuchoi,
@@ -1130,6 +1296,9 @@ final class Giaidau extends Model
                 db.logo AS doibong_logo,
                 db.diaphuong AS doibong_diaphuong,
                 db.trangthai AS doibong_trangthai,
+                dh.tendoihinh,
+                dh.gioitinh AS gioitinh_doihinh,
+                dh.la_doihinh_chinh,
                 hlv.bangcap AS huanluyenvien_bangcap,
                 hlv.kinhnghiem AS huanluyenvien_kinhnghiem,
                 hlv.trangthai AS huanluyenvien_trangthai,
@@ -1139,6 +1308,7 @@ final class Giaidau extends Model
                 tk.email AS huanluyenvien_email
              FROM Dangkygiaidau dk
              JOIN Doibong db ON db.iddoibong = dk.iddoibong
+             LEFT JOIN Doihinh dh ON dh.iddoihinh = dk.iddoihinh
              JOIN Huanluyenvien hlv ON hlv.idhuanluyenvien = dk.idhuanluyenvien
              JOIN Nguoidung nd ON nd.idnguoidung = hlv.idnguoidung
              JOIN Taikhoan tk ON tk.idtaikhoan = nd.idtaikhoan
@@ -1197,6 +1367,7 @@ final class Giaidau extends Model
                 dk.idgiaidau,
                 dk.iddoibong,
                 dk.idhuanluyenvien,
+                dk.iddoihinh,
                 dk.ngaydangky,
                 dk.trangthai,
                 dk.lydotuchoi,
@@ -1213,6 +1384,9 @@ final class Giaidau extends Model
                 db.logo AS doibong_logo,
                 db.diaphuong AS doibong_diaphuong,
                 db.trangthai AS doibong_trangthai,
+                dh.tendoihinh,
+                dh.gioitinh AS gioitinh_doihinh,
+                dh.la_doihinh_chinh,
                 (
                     SELECT yc.idyeucau
                     FROM Yeucauxacnhan yc
@@ -1289,6 +1463,7 @@ final class Giaidau extends Model
              JOIN Giaidau gd ON gd.idgiaidau = dk.idgiaidau
              LEFT JOIN Dieulegiaidau dl ON dl.idgiaidau = gd.idgiaidau
              JOIN Doibong db ON db.iddoibong = dk.iddoibong
+             LEFT JOIN Doihinh dh ON dh.iddoihinh = dk.iddoihinh
              WHERE " . implode(' AND ', $where) . "
              ORDER BY dk.ngaydangky DESC, dk.iddangky DESC"
         );
@@ -1322,10 +1497,55 @@ final class Giaidau extends Model
         ) !== null;
     }
 
+    public function lineupForTeam(int $teamId, int $lineupId): ?array
+    {
+        return $this->first(
+            "SELECT
+                dh.iddoihinh,
+                dh.iddoibong,
+                dh.idgiaidau,
+                dh.tendoihinh,
+                dh.gioitinh,
+                dh.la_doihinh_chinh,
+                dh.trangthai,
+                COUNT(ctdh.idchitietdoihinh) AS so_vdv
+             FROM Doihinh dh
+             LEFT JOIN Chitietdoihinh ctdh ON ctdh.iddoihinh = dh.iddoihinh
+             WHERE dh.iddoihinh = :lineup_id
+               AND dh.iddoibong = :team_id
+             GROUP BY dh.iddoihinh, dh.iddoibong, dh.idgiaidau, dh.tendoihinh, dh.gioitinh, dh.la_doihinh_chinh, dh.trangthai
+             LIMIT 1",
+            [
+                'lineup_id' => $lineupId,
+                'team_id' => $teamId,
+            ]
+        );
+    }
+
+    public function lineupSizeRuleForTournament(int $tournamentId): array
+    {
+        $row = $this->first(
+            "SELECT
+                COALESCE(dl.so_vdv_toi_thieu_moi_doi, 6) AS min_players,
+                COALESCE(dl.so_vdv_toi_da_moi_doi, 14) AS max_players
+             FROM Giaidau gd
+             LEFT JOIN Dieulegiaidau dl ON dl.idgiaidau = gd.idgiaidau
+             WHERE gd.idgiaidau = :tournament_id
+             LIMIT 1",
+            ['tournament_id' => $tournamentId]
+        );
+
+        return [
+            'min_players' => (int) ($row['min_players'] ?? 6),
+            'max_players' => (int) ($row['max_players'] ?? 14),
+        ];
+    }
+
     public function registerTeamForTournament(
         int $tournamentId,
         int $teamId,
         int $coachId,
+        ?int $lineupId,
         int $organizerId,
         string $content,
         int $actorAccountId,
@@ -1343,13 +1563,14 @@ final class Giaidau extends Model
             $db->beginTransaction();
 
             $statement = $db->prepare(
-                "INSERT INTO Dangkygiaidau (idgiaidau, iddoibong, idhuanluyenvien, trangthai)
-                 VALUES (:tournament_id, :team_id, :coach_id, 'CHO_DUYET')"
+                "INSERT INTO Dangkygiaidau (idgiaidau, iddoibong, idhuanluyenvien, iddoihinh, trangthai)
+                 VALUES (:tournament_id, :team_id, :coach_id, :lineup_id, 'CHO_DUYET')"
             );
             $statement->execute([
                 'tournament_id' => $tournamentId,
                 'team_id' => $teamId,
                 'coach_id' => $coachId,
+                'lineup_id' => $lineupId,
             ]);
 
             $registrationId = (int) $db->lastInsertId();
@@ -1403,6 +1624,24 @@ final class Giaidau extends Model
         try {
             $db->beginTransaction();
 
+            $currentStatement = $db->prepare(
+                "SELECT trangthai
+                 FROM Dangkygiaidau
+                 WHERE iddangky = :registration_id
+                   AND idhuanluyenvien = :coach_id
+                 FOR UPDATE"
+            );
+            $currentStatement->execute([
+                'registration_id' => $registrationId,
+                'coach_id' => $coachId,
+            ]);
+            $current = $currentStatement->fetch();
+
+            if ($current === false || !in_array((string) $current['trangthai'], ['CHO_DUYET', 'DA_DUYET'], true)) {
+                throw new \RuntimeException('REGISTRATION_NOT_CANCELLED');
+            }
+
+            $oldStatus = (string) $current['trangthai'];
             $request = $this->findPendingTournamentRegistrationRequest($registrationId);
 
             $statement = $db->prepare(
@@ -1411,7 +1650,7 @@ final class Giaidau extends Model
                      lydotuchoi = :reason
                  WHERE iddangky = :registration_id
                    AND idhuanluyenvien = :coach_id
-                   AND trangthai = 'CHO_DUYET'"
+                   AND trangthai IN ('CHO_DUYET', 'DA_DUYET')"
             );
             $statement->execute([
                 'reason' => $reason,
@@ -1423,7 +1662,7 @@ final class Giaidau extends Model
                 throw new \RuntimeException('REGISTRATION_NOT_CANCELLED');
             }
 
-            $this->recordStatusHistory('DANG_KY_GIAI', $registrationId, 'CHO_DUYET', 'DA_HUY', $reason, $actorAccountId);
+            $this->recordStatusHistory('DANG_KY_GIAI', $registrationId, $oldStatus, 'DA_HUY', $reason, $actorAccountId);
 
             if ($request !== null) {
                 $statement = $db->prepare(
@@ -1560,7 +1799,11 @@ final class Giaidau extends Model
         string $logNote
     ): void {
         $db = $this->db();
-        $action = $newStatus === 'DA_DUYET' ? 'Duyet dang ky doi bong' : 'Tu choi dang ky doi bong';
+        $action = match ($newStatus) {
+            'DA_DUYET' => 'Duyet dang ky doi bong',
+            'DA_HUY' => 'Loai doi bong khoi giai dau',
+            default => 'Tu choi dang ky doi bong',
+        };
         $requestNote = $rejectionReason ?: $action;
 
         try {
@@ -1647,6 +1890,7 @@ final class Giaidau extends Model
                 gd.quymo,
                 gd.hinhanh,
                 gd.tinhchat,
+                gd.gioitinh,
                 gd.trangthai,
                 gd.trangthaidangky,
                 gd.trangthaithietlap,
@@ -1959,7 +2203,7 @@ final class Giaidau extends Model
     {
         $sets = [];
         $bindings = ['tournament_id' => $tournamentId];
-        $fields = ['tengiaidau', 'mota', 'idcapgiaidau', 'idkhuvucphamvi', 'idluat', 'thoigianbatdau', 'thoigianketthuc', 'quymo', 'hinhanh', 'tinhchat', 'ghichu_diadiem'];
+        $fields = ['tengiaidau', 'mota', 'idcapgiaidau', 'idkhuvucphamvi', 'idluat', 'thoigianbatdau', 'thoigianketthuc', 'quymo', 'hinhanh', 'tinhchat', 'gioitinh', 'ghichu_diadiem'];
 
         foreach ($fields as $field) {
             if (!array_key_exists($field, $tournament)) {

@@ -5,6 +5,8 @@
     const ui = window.CoachUI;
     const teamsApi = root.dataset.teamsApi || "/api/coach/teams";
     const registrationsApi = root.dataset.registrationsApi || "/api/coach/tournament-registrations";
+    const lineupsApi = root.dataset.lineupsApi || "/api/coach/lineups";
+    const lineupEditorUrl = root.dataset.lineupEditorUrl || "/huan-luyen-vien/doi-hinh/chinh-sua";
     const teamSelect = document.getElementById("teamSelect");
     const tournamentSelect = document.getElementById("tournamentSelect");
     const container = document.getElementById("lineupInfo");
@@ -13,10 +15,14 @@
     let teams = [];
     let registrations = [];
 
-    function tournamentOptionsForTeam(teamId) {
+    function genderLabel(value) {
+        return value === "NU" ? "Nữ" : "Nam";
+    }
+
+    function tournamentOptions() {
         const seen = new Set();
         return registrations
-            .filter((registration) => String(registration.iddoibong) === String(teamId) && registration.trangthai === "DA_DUYET")
+            .filter((registration) => registration.trangthai === "DA_DUYET")
             .filter((registration) => {
                 if (seen.has(registration.idgiaidau)) return false;
                 seen.add(registration.idgiaidau);
@@ -26,11 +32,14 @@
     }
 
     function refreshTournamentSelect() {
-        ui.fillSelect(tournamentSelect, tournamentOptionsForTeam(teamSelect.value), "idgiaidau", "tengiaidau", "Chọn giải đấu");
+        ui.fillSelect(tournamentSelect, tournamentOptions(), "idgiaidau", "tengiaidau", "Tất cả giải đấu");
+    }
 
-        if (!tournamentSelect.value && tournamentSelect.options.length > 1) {
-            tournamentSelect.selectedIndex = 1;
-        }
+    function editUrl(lineup) {
+        const params = new URLSearchParams();
+        params.set("team_id", lineup.iddoibong);
+        params.set("lineup_id", lineup.iddoihinh);
+        return `${lineupEditorUrl}?${params.toString()}`;
     }
 
     async function loadBase() {
@@ -40,36 +49,41 @@
         ]);
         teams = teamsPayload.data || [];
         registrations = registrationsPayload.data || [];
-        ui.fillSelect(teamSelect, teams, "iddoibong", "tendoibong", "Chọn đội bóng");
-
-        if (!teamSelect.value && teams.length > 0) {
-            teamSelect.value = teams[0].iddoibong;
-        }
-
+        ui.fillSelect(teamSelect, teams, "iddoibong", "tendoibong", "Tất cả đội bóng");
         refreshTournamentSelect();
     }
 
     async function loadLineups() {
-        if (!teamSelect.value || !tournamentSelect.value) {
-            container.innerHTML = '<p class="empty">Chọn đội và giải đấu để xem đội hình.</p>';
-            return;
-        }
+        const params = new URLSearchParams();
+        if (teamSelect.value) params.set("team_id", teamSelect.value);
+        if (tournamentSelect.value) params.set("tournament_id", tournamentSelect.value);
 
-        const payload = await ui.requestJson(`${teamsApi}/${teamSelect.value}/lineups?tournament_id=${encodeURIComponent(tournamentSelect.value)}`);
+        const query = params.toString();
+        const payload = await ui.requestJson(query ? `${lineupsApi}?${query}` : lineupsApi);
         const lineups = payload.data || [];
         const details = payload.details || [];
 
         if (lineups.length === 0) {
-            container.innerHTML = '<p class="empty">Chưa có đội hình được tạo cho giải này.</p>';
+            container.innerHTML = '<p class="empty">Chưa có đội hình phù hợp.</p>';
             return;
         }
 
         container.innerHTML = lineups.map((lineup) => {
             const [badgeClass, label] = ui.badge(lineup.trangthai);
             const items = details.filter((detail) => String(detail.iddoihinh) === String(lineup.iddoihinh));
+            const tournamentName = lineup.tengiaidau || "Không gắn giải đấu";
+            const mainBadge = Number(lineup.la_doihinh_chinh || 0) === 1
+                ? '<span class="badge ok">Đội hình chính</span>'
+                : "";
             return `
                 <article class="lineup-block">
-                    <h3>${ui.escapeHtml(lineup.tendoihinh)} <span class="badge ${badgeClass}">${ui.escapeHtml(label)}</span></h3>
+                    <div class="lineup-head">
+                        <div>
+                            <h3>${ui.escapeHtml(lineup.tendoihinh)} <span class="badge ${badgeClass}">${ui.escapeHtml(label)}</span> ${mainBadge}</h3>
+                            <p class="sub">${ui.escapeHtml(lineup.tendoibong || "-")} • ${ui.escapeHtml(genderLabel(lineup.gioitinh))} • ${ui.escapeHtml(tournamentName)}</p>
+                        </div>
+                        <a class="btn" href="${ui.escapeHtml(editUrl(lineup))}">Sửa</a>
+                    </div>
                     <table class="coach-table compact">
                         <thead><tr><th>STT</th><th>VĐV</th><th>Vị trí</th><th>Ghi chú</th></tr></thead>
                         <tbody>
@@ -88,14 +102,15 @@
         }).join("");
     }
 
-    teamSelect.addEventListener("change", () => {
-        refreshTournamentSelect();
+    document.getElementById("btnSearch").addEventListener("click", () => {
         loadLineups().catch((error) => ui.show(pageMessage, ui.errorsText(error), true));
     });
-    tournamentSelect.addEventListener("change", () => loadLineups().catch((error) => ui.show(pageMessage, ui.errorsText(error), true)));
-    document.getElementById("btnRefresh").addEventListener("click", async () => {
+
+    document.getElementById("btnReset").addEventListener("click", async () => {
         try {
             await loadBase();
+            teamSelect.value = "";
+            tournamentSelect.value = "";
             await loadLineups();
         } catch (error) {
             ui.show(pageMessage, ui.errorsText(error), true);

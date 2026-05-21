@@ -33,7 +33,7 @@ final class CoachAthleteAccountService
             return $this->failure('Chi huan luyen vien da duoc xac nhan moi duoc tao tai khoan van dong vien.', 403);
         }
 
-        [$account, $profile, $athlete, $membership, $confirmation, $errors] = $this->validatePayload($payload);
+        [$account, $profile, $athlete, $membership, $errors] = $this->validatePayload($payload);
 
         if ($errors !== []) {
             return $this->failure('Du lieu van dong vien khong hop le.', 422, $errors);
@@ -68,32 +68,15 @@ final class CoachAthleteAccountService
             ]);
         }
 
-        $organizer = null;
-        if ($confirmation['organizer_id'] !== null) {
-            $organizer = $this->athletes->receivingOrganizer($confirmation['organizer_id']);
-        } elseif ($team !== null && $team['idbantochuc'] !== null) {
-            $organizer = $this->athletes->receivingOrganizer((int) $team['idbantochuc']);
-        } else {
-            $organizer = $this->athletes->receivingOrganizer();
-        }
-
-        if ($organizer === null) {
-            return $this->failure('Khong tim thay ban to chuc dang hoat dong de tiep nhan yeu cau.', 409, [
-                'organizer_id' => 'Ban to chuc tiep nhan khong ton tai hoac khong hoat dong.',
-            ]);
-        }
-
-        $confirmation['organizer_id'] = (int) $organizer['idbantochuc'];
         $account['idrole'] = $roleId;
         $account['password'] = password_hash((string) $account['password'], PASSWORD_DEFAULT);
 
         $logNote = $this->limitLogNote(sprintf(
-            'HLV #%d tao tai khoan VDV "%s %s"%s, gui yeu cau xac nhan tu cach thi dau den BTC #%d.',
+            'HLV #%d tao truc tiep tai khoan VDV "%s %s"%s.',
             (int) $coach['idhuanluyenvien'],
             $profile['hodem'],
             $profile['ten'],
-            $team === null ? '' : sprintf(' cho doi #%d "%s"', (int) $team['iddoibong'], (string) $team['tendoibong']),
-            $confirmation['organizer_id']
+            $team === null ? '' : sprintf(' cho doi #%d "%s"', (int) $team['iddoibong'], (string) $team['tendoibong'])
         ));
 
         try {
@@ -102,7 +85,6 @@ final class CoachAthleteAccountService
                 $profile,
                 $athlete,
                 $membership,
-                $confirmation,
                 (int) $coach['idhuanluyenvien'],
                 $accountId,
                 $request?->ip(),
@@ -112,9 +94,9 @@ final class CoachAthleteAccountService
             return [
                 'ok' => true,
                 'status' => 201,
-                'message' => 'Tao tai khoan van dong vien thanh cong, cho ban to chuc xac nhan tu cach thi dau.',
+                'message' => 'Tao tai khoan van dong vien thanh cong.',
                 'created' => $created,
-                'athlete' => $this->athletes->findForOrganizer($confirmation['organizer_id'], (int) $created['athlete_id']),
+                'athlete' => $this->athletes->findByAccountId((int) $created['account_id']),
             ];
         } catch (Throwable) {
             return $this->failure('Khong the tao tai khoan van dong vien.', 500, [
@@ -149,9 +131,6 @@ final class CoachAthleteAccountService
         $teamRole = strtoupper(trim((string) $this->read($payload, ['team_role', 'vaitrotrongdoi', 'membership.role', 'membership.vaitro'], 'THANH_VIEN')));
         $memberStatus = strtoupper(trim((string) $this->read($payload, ['membership_status', 'trangthaithanhvien', 'membership.status', 'membership.trangthai'], 'DANG_THAM_GIA')));
         $joinDate = trim((string) $this->read($payload, ['ngaythamgia', 'join_date', 'membership.ngaythamgia', 'membership.join_date'], date('Y-m-d')));
-
-        $organizerRaw = $this->read($payload, ['organizer_id', 'idbantochuc', 'receiver_organizer_id'], null);
-        $content = trim((string) $this->read($payload, ['noidung', 'content', 'request_content'], 'Yeu cau xac nhan tu cach thi dau VDV'));
 
         $errors = [];
 
@@ -266,23 +245,6 @@ final class CoachAthleteAccountService
             $errors['ngaythamgia'] = 'Ngay tham gia khong hop le.';
         }
 
-        $organizerId = null;
-        if ($organizerRaw !== null && trim((string) $organizerRaw) !== '') {
-            if (!ctype_digit((string) $organizerRaw) || (int) $organizerRaw <= 0) {
-                $errors['organizer_id'] = 'Ma ban to chuc tiep nhan khong hop le.';
-            } else {
-                $organizerId = (int) $organizerRaw;
-            }
-        }
-
-        if ($content === '') {
-            $content = 'Yeu cau xac nhan tu cach thi dau VDV';
-        }
-
-        if (strlen($content) > 1000) {
-            $errors['noidung'] = 'Noi dung yeu cau toi da 1000 ky tu.';
-        }
-
         return [[
             'username' => $username,
             'email' => $email,
@@ -307,9 +269,6 @@ final class CoachAthleteAccountService
             'role' => $teamRole,
             'status' => $memberStatus,
             'join_date' => $joinDate === '' ? date('Y-m-d') : $joinDate,
-        ], [
-            'organizer_id' => $organizerId,
-            'content' => $content,
         ], $errors];
     }
 

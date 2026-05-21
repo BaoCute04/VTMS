@@ -25,6 +25,13 @@ final class CoachRegistrationController extends Controller
         );
     }
 
+    public function options(Request $request): Response
+    {
+        return $this->respond(
+            $this->service->options()
+        );
+    }
+
     private function respond(array $result): Response
     {
         $payload = [
@@ -38,6 +45,10 @@ final class CoachRegistrationController extends Controller
 
         if (array_key_exists('registration', $result)) {
             $payload['registration'] = $result['registration'];
+        }
+
+        if (array_key_exists('options', $result)) {
+            $payload['data'] = $result['options'];
         }
 
         if (!empty($result['errors'])) {

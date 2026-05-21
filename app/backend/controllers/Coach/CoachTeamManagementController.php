@@ -111,6 +111,14 @@ final class CoachTeamManagementController extends Controller
         ]));
     }
 
+    public function lineupList(Request $request): Response
+    {
+        return $this->respond($this->service->lineupList($this->accountId(), [
+            'team_id' => $request->query('team_id', $request->query('iddoibong', '')),
+            'tournament_id' => $request->query('tournament_id', $request->query('idgiaidau', '')),
+        ]));
+    }
+
     public function lineup(Request $request): Response
     {
         $lineupId = $this->routePositiveInt($request, 'lineupId');

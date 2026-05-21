@@ -7,7 +7,7 @@
         <div>
             <p class="eyebrow">HUẤN LUYỆN VIÊN</p>
             <h1>Tài khoản Vận động viên</h1>
-            <p class="sub">Tạo tài khoản VĐV và gửi yêu cầu xác nhận tư cách thi đấu đến Ban tổ chức.</p>
+            <p class="sub">Tạo tài khoản VĐV do huấn luyện viên trực tiếp quản lý.</p>
         </div>
         <button id="btnCreate" class="btn primary" type="button">+ Tạo tài khoản VĐV</button>
     </header>

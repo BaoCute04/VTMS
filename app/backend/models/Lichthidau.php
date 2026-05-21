@@ -924,6 +924,20 @@ final class Lichthidau extends Model
                 td.thoigianbatdau,
                 td.thoigianketthuc,
                 td.trangthai,
+                (
+                    SELECT COUNT(*)
+                    FROM Phancongtrongtai pctt
+                    WHERE pctt.idtrandau = td.idtrandau
+                      AND pctt.vaitro = 'TRONG_TAI_CHINH'
+                      AND pctt.trangthai = 'DA_XAC_NHAN'
+                ) AS confirmed_main_referees,
+                (
+                    SELECT COUNT(*)
+                    FROM Phancongtrongtai pctt
+                    WHERE pctt.idtrandau = td.idtrandau
+                      AND pctt.vaitro = 'GIAM_SAT'
+                      AND pctt.trangthai = 'DA_XAC_NHAN'
+                ) AS confirmed_supervisors,
                 td.ngaytao,
                 td.ngaycapnhat
              FROM Trandau td
@@ -966,6 +980,20 @@ final class Lichthidau extends Model
                 td.thoigianbatdau,
                 td.thoigianketthuc,
                 td.trangthai,
+                (
+                    SELECT COUNT(*)
+                    FROM Phancongtrongtai pctt
+                    WHERE pctt.idtrandau = td.idtrandau
+                      AND pctt.vaitro = 'TRONG_TAI_CHINH'
+                      AND pctt.trangthai = 'DA_XAC_NHAN'
+                ) AS confirmed_main_referees,
+                (
+                    SELECT COUNT(*)
+                    FROM Phancongtrongtai pctt
+                    WHERE pctt.idtrandau = td.idtrandau
+                      AND pctt.vaitro = 'GIAM_SAT'
+                      AND pctt.trangthai = 'DA_XAC_NHAN'
+                ) AS confirmed_supervisors,
                 td.ngaytao,
                 td.ngaycapnhat
              FROM Trandau td
@@ -1850,21 +1878,33 @@ final class Lichthidau extends Model
         );
         $statement->execute(['match_id' => $matchId]);
 
+        $statement = $this->db()->prepare(
+            "DELETE FROM Trongtaitrandau
+             WHERE idtrandau = :match_id"
+        );
+        $statement->execute(['match_id' => $matchId]);
+
         if ($assignments === []) {
             return;
         }
 
-        $statement = $this->db()->prepare(
+        $assignmentStatement = $this->db()->prepare(
             "INSERT INTO Phancongtrongtai (idtrandau, idtrongtai, vaitro, trangthai)
-             VALUES (:match_id, :referee_id, :role, 'CHO_XAC_NHAN')"
+             VALUES (:match_id, :referee_id, :role, 'DA_XAC_NHAN')"
+        );
+        $detailStatement = $this->db()->prepare(
+            "INSERT INTO Trongtaitrandau (idtrandau, idtrongtai, vaitro, xacnhanthamgia, thoigianxacnhan)
+             VALUES (:match_id, :referee_id, :role, TRUE, CURRENT_TIMESTAMP)"
         );
 
         foreach ($assignments as $assignment) {
-            $statement->execute([
+            $params = [
                 'match_id' => $matchId,
                 'referee_id' => $assignment['idtrongtai'],
                 'role' => $assignment['vaitro'],
-            ]);
+            ];
+            $assignmentStatement->execute($params);
+            $detailStatement->execute($params);
         }
     }
 

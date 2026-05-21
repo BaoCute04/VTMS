@@ -17,6 +17,7 @@ final class Doibong extends Model
                 hlv.idnguoidung,
                 hlv.bangcap,
                 hlv.kinhnghiem,
+                hlv.idkhuvuccongtac,
                 hlv.trangthai,
                 tk.idtaikhoan,
                 tk.username,
@@ -67,6 +68,7 @@ final class Doibong extends Model
                 db.iddoibong,
                 db.tendoibong,
                 db.logo,
+                db.idkhuvucdaidien,
                 db.diaphuong,
                 db.mota,
                 db.idhuanluyenvien,
@@ -110,6 +112,7 @@ final class Doibong extends Model
                 db.iddoibong,
                 db.tendoibong,
                 db.logo,
+                db.idkhuvucdaidien,
                 db.diaphuong,
                 db.mota,
                 db.idhuanluyenvien,
@@ -135,12 +138,13 @@ final class Doibong extends Model
             $db->beginTransaction();
 
             $statement = $db->prepare(
-                "INSERT INTO Doibong (tendoibong, logo, diaphuong, mota, idhuanluyenvien, trangthai)
-                 VALUES (:name, :logo, :local, :description, :coach_id, :status)"
+                "INSERT INTO Doibong (tendoibong, logo, idkhuvucdaidien, diaphuong, mota, idhuanluyenvien, trangthai)
+                 VALUES (:name, :logo, :representative_region_id, :local, :description, :coach_id, :status)"
             );
             $statement->execute([
                 'name' => $team['tendoibong'],
                 'logo' => $team['logo'],
+                'representative_region_id' => $team['idkhuvucdaidien'],
                 'local' => $team['diaphuong'],
                 'description' => $team['mota'],
                 'coach_id' => $coachId,
@@ -720,6 +724,8 @@ final class Doibong extends Model
                 dh.iddoibong,
                 dh.idgiaidau,
                 dh.tendoihinh,
+                dh.gioitinh,
+                dh.la_doihinh_chinh,
                 dh.trangthai,
                 dh.ngaytao,
                 dh.ngaycapnhat
@@ -737,6 +743,71 @@ final class Doibong extends Model
         return $statement->fetchAll();
     }
 
+    public function lineupsForTeam(int $teamId, ?int $tournamentId = null): array
+    {
+        $sql = "SELECT
+                dh.iddoihinh,
+                dh.iddoibong,
+                dh.idgiaidau,
+                dh.tendoihinh,
+                dh.gioitinh,
+                dh.la_doihinh_chinh,
+                dh.trangthai,
+                dh.ngaytao,
+                dh.ngaycapnhat,
+                gd.tengiaidau
+             FROM Doihinh dh
+             LEFT JOIN Giaidau gd ON gd.idgiaidau = dh.idgiaidau
+             WHERE dh.iddoibong = :team_id";
+        $bindings = ['team_id' => $teamId];
+
+        if ($tournamentId !== null) {
+            $sql .= ' AND dh.idgiaidau = :tournament_id';
+            $bindings['tournament_id'] = $tournamentId;
+        }
+
+        $statement = $this->db()->prepare($sql . ' ORDER BY dh.ngaytao DESC, dh.iddoihinh DESC');
+        $statement->execute($bindings);
+
+        return $statement->fetchAll();
+    }
+
+    public function lineupsForCoach(int $coachId, ?int $teamId = null, ?int $tournamentId = null): array
+    {
+        $sql = "SELECT
+                dh.iddoihinh,
+                dh.iddoibong,
+                dh.idgiaidau,
+                dh.tendoihinh,
+                dh.gioitinh,
+                dh.la_doihinh_chinh,
+                dh.trangthai,
+                dh.ngaytao,
+                dh.ngaycapnhat,
+                db.tendoibong,
+                gd.tengiaidau
+             FROM Doihinh dh
+             JOIN Doibong db ON db.iddoibong = dh.iddoibong
+             LEFT JOIN Giaidau gd ON gd.idgiaidau = dh.idgiaidau
+             WHERE db.idhuanluyenvien = :coach_id";
+        $bindings = ['coach_id' => $coachId];
+
+        if ($teamId !== null) {
+            $sql .= ' AND dh.iddoibong = :team_id';
+            $bindings['team_id'] = $teamId;
+        }
+
+        if ($tournamentId !== null) {
+            $sql .= ' AND dh.idgiaidau = :tournament_id';
+            $bindings['tournament_id'] = $tournamentId;
+        }
+
+        $statement = $this->db()->prepare($sql . ' ORDER BY dh.ngaytao DESC, dh.iddoihinh DESC');
+        $statement->execute($bindings);
+
+        return $statement->fetchAll();
+    }
+
     public function lineupDetailsForTournamentTeam(int $tournamentId, int $teamId): array
     {
         $statement = $this->db()->prepare(
@@ -748,6 +819,7 @@ final class Doibong extends Model
                 ctdh.sothutu,
                 ctdh.ghichu,
                 vdv.mavandongvien,
+                nd.gioitinh,
                 TRIM(CONCAT(COALESCE(nd.hodem, ''), ' ', COALESCE(nd.ten, ''))) AS hoten
              FROM Chitietdoihinh ctdh
              JOIN Doihinh dh ON dh.iddoihinh = ctdh.iddoihinh
@@ -762,6 +834,74 @@ final class Doibong extends Model
             'tournament_id' => $tournamentId,
             'team_id' => $teamId,
         ]);
+
+        return $statement->fetchAll();
+    }
+
+    public function lineupDetailsForTeam(int $teamId, ?int $tournamentId = null): array
+    {
+        $sql = "SELECT
+                ctdh.idchitietdoihinh,
+                ctdh.iddoihinh,
+                ctdh.idvandongvien,
+                ctdh.vitri,
+                ctdh.sothutu,
+                ctdh.ghichu,
+                vdv.mavandongvien,
+                nd.gioitinh,
+                TRIM(CONCAT(COALESCE(nd.hodem, ''), ' ', COALESCE(nd.ten, ''))) AS hoten
+             FROM Chitietdoihinh ctdh
+             JOIN Doihinh dh ON dh.iddoihinh = ctdh.iddoihinh
+             JOIN Vandongvien vdv ON vdv.idvandongvien = ctdh.idvandongvien
+             JOIN Nguoidung nd ON nd.idnguoidung = vdv.idnguoidung
+             WHERE dh.iddoibong = :team_id";
+        $bindings = ['team_id' => $teamId];
+
+        if ($tournamentId !== null) {
+            $sql .= ' AND dh.idgiaidau = :tournament_id';
+            $bindings['tournament_id'] = $tournamentId;
+        }
+
+        $statement = $this->db()->prepare($sql . ' ORDER BY dh.iddoihinh, ctdh.sothutu, ctdh.idchitietdoihinh');
+        $statement->execute($bindings);
+
+        return $statement->fetchAll();
+    }
+
+    public function lineupDetailsForCoach(int $coachId, ?int $teamId = null, ?int $tournamentId = null): array
+    {
+        $sql = "SELECT
+                ctdh.idchitietdoihinh,
+                ctdh.iddoihinh,
+                ctdh.idvandongvien,
+                ctdh.vitri,
+                ctdh.sothutu,
+                ctdh.ghichu,
+                dh.iddoibong,
+                dh.idgiaidau,
+                vdv.mavandongvien,
+                nd.gioitinh,
+                TRIM(CONCAT(COALESCE(nd.hodem, ''), ' ', COALESCE(nd.ten, ''))) AS hoten
+             FROM Chitietdoihinh ctdh
+             JOIN Doihinh dh ON dh.iddoihinh = ctdh.iddoihinh
+             JOIN Doibong db ON db.iddoibong = dh.iddoibong
+             JOIN Vandongvien vdv ON vdv.idvandongvien = ctdh.idvandongvien
+             JOIN Nguoidung nd ON nd.idnguoidung = vdv.idnguoidung
+             WHERE db.idhuanluyenvien = :coach_id";
+        $bindings = ['coach_id' => $coachId];
+
+        if ($teamId !== null) {
+            $sql .= ' AND dh.iddoibong = :team_id';
+            $bindings['team_id'] = $teamId;
+        }
+
+        if ($tournamentId !== null) {
+            $sql .= ' AND dh.idgiaidau = :tournament_id';
+            $bindings['tournament_id'] = $tournamentId;
+        }
+
+        $statement = $this->db()->prepare($sql . ' ORDER BY dh.iddoihinh, ctdh.sothutu, ctdh.idchitietdoihinh');
+        $statement->execute($bindings);
 
         return $statement->fetchAll();
     }
@@ -939,8 +1079,19 @@ final class Doibong extends Model
         }
     }
 
-    public function athleteForCoachScope(int $coachId, int $athleteId): ?array
+    public function athleteForCoachScope(int $coachId, string $athleteIdentifier): ?array
     {
+        $athleteIdentifier = trim($athleteIdentifier);
+        $where = ctype_digit($athleteIdentifier)
+            ? 'vdv.idvandongvien = :athlete_id'
+            : 'vdv.mavandongvien = :athlete_code';
+
+        $bindings = ctype_digit($athleteIdentifier)
+            ? ['athlete_id' => (int) $athleteIdentifier]
+            : ['athlete_code' => $athleteIdentifier];
+
+        $bindings['coach_id_membership'] = $coachId;
+
         return $this->first(
             "SELECT
                 vdv.idvandongvien,
@@ -959,7 +1110,7 @@ final class Doibong extends Model
              FROM Vandongvien vdv
              JOIN Nguoidung nd ON nd.idnguoidung = vdv.idnguoidung
              JOIN Taikhoan tk ON tk.idtaikhoan = nd.idtaikhoan
-             WHERE vdv.idvandongvien = :athlete_id
+             WHERE {$where}
                AND (
                     EXISTS (
                         SELECT 1
@@ -976,10 +1127,7 @@ final class Doibong extends Model
                     )
                )
              LIMIT 1",
-            [
-                'athlete_id' => $athleteId,
-                'coach_id_membership' => $coachId,
-            ]
+            $bindings
         );
     }
 
@@ -1244,6 +1392,8 @@ final class Doibong extends Model
                 dh.iddoibong,
                 dh.idgiaidau,
                 dh.tendoihinh,
+                dh.gioitinh,
+                dh.la_doihinh_chinh,
                 dh.trangthai,
                 dh.ngaytao,
                 dh.ngaycapnhat,
@@ -1251,7 +1401,7 @@ final class Doibong extends Model
                 gd.tengiaidau
              FROM Doihinh dh
              JOIN Doibong db ON db.iddoibong = dh.iddoibong
-             JOIN Giaidau gd ON gd.idgiaidau = dh.idgiaidau
+             LEFT JOIN Giaidau gd ON gd.idgiaidau = dh.idgiaidau
              WHERE dh.iddoihinh = :lineup_id
                AND db.idhuanluyenvien = :coach_id
              LIMIT 1",
@@ -1273,6 +1423,7 @@ final class Doibong extends Model
                 ctdh.sothutu,
                 ctdh.ghichu,
                 vdv.mavandongvien,
+                nd.gioitinh,
                 TRIM(CONCAT(COALESCE(nd.hodem, ''), ' ', COALESCE(nd.ten, ''))) AS hoten
              FROM Chitietdoihinh ctdh
              JOIN Vandongvien vdv ON vdv.idvandongvien = ctdh.idvandongvien
@@ -1286,18 +1437,21 @@ final class Doibong extends Model
         return $statement->fetchAll();
     }
 
-    public function lineupNameExists(int $teamId, int $tournamentId, string $name, ?int $excludeLineupId = null): bool
+    public function lineupNameExists(int $teamId, string $name, ?int $excludeLineupId = null, ?int $tournamentId = null): bool
     {
         $sql = "SELECT 1
              FROM Doihinh
              WHERE iddoibong = :team_id
-               AND idgiaidau = :tournament_id
                AND tendoihinh = :name";
         $bindings = [
             'team_id' => $teamId,
-            'tournament_id' => $tournamentId,
             'name' => $name,
         ];
+
+        if ($tournamentId !== null) {
+            $sql .= ' AND idgiaidau = :tournament_id';
+            $bindings['tournament_id'] = $tournamentId;
+        }
 
         if ($excludeLineupId !== null) {
             $sql .= ' AND iddoihinh <> :exclude_lineup_id';
@@ -1323,9 +1477,29 @@ final class Doibong extends Model
         ) !== null;
     }
 
+    public function athleteIsActiveMemberWithGender(int $teamId, int $athleteId, string $gender): bool
+    {
+        return $this->first(
+            "SELECT 1
+             FROM Thanhviendoibong tv
+             JOIN Vandongvien vdv ON vdv.idvandongvien = tv.idvandongvien
+             JOIN Nguoidung nd ON nd.idnguoidung = vdv.idnguoidung
+             WHERE tv.iddoibong = :team_id
+               AND tv.idvandongvien = :athlete_id
+               AND tv.trangthai = 'DANG_THAM_GIA'
+               AND nd.gioitinh = :gender
+             LIMIT 1",
+            [
+                'team_id' => $teamId,
+                'athlete_id' => $athleteId,
+                'gender' => $gender,
+            ]
+        ) !== null;
+    }
+
     public function createLineup(
         int $teamId,
-        int $tournamentId,
+        ?int $tournamentId,
         array $lineup,
         array $details,
         int $actorAccountId,
@@ -1338,17 +1512,23 @@ final class Doibong extends Model
             $db->beginTransaction();
 
             $statement = $db->prepare(
-                "INSERT INTO Doihinh (iddoibong, idgiaidau, tendoihinh, trangthai)
-                 VALUES (:team_id, :tournament_id, :name, :status)"
+                "INSERT INTO Doihinh (iddoibong, idgiaidau, tendoihinh, gioitinh, la_doihinh_chinh, trangthai)
+                 VALUES (:team_id, :tournament_id, :name, :gender, :is_main, :status)"
             );
             $statement->execute([
                 'team_id' => $teamId,
                 'tournament_id' => $tournamentId,
                 'name' => $lineup['tendoihinh'],
+                'gender' => $lineup['gioitinh'] ?? 'NAM',
+                'is_main' => (int) ($lineup['la_doihinh_chinh'] ?? 0),
                 'status' => $lineup['trangthai'],
             ]);
 
             $lineupId = (int) $db->lastInsertId();
+            if ((int) ($lineup['la_doihinh_chinh'] ?? 0) === 1) {
+                $this->unsetOtherMainLineups($teamId, $lineupId, (string) ($lineup['gioitinh'] ?? 'NAM'));
+            }
+
             $this->insertLineupDetails($lineupId, $details);
             $this->recordSystemLog($actorAccountId, 'Tao doi hinh', 'Doihinh', $lineupId, $ipAddress, $logNote);
 
@@ -1386,15 +1566,32 @@ final class Doibong extends Model
         try {
             $db->beginTransaction();
 
+            $current = $this->first(
+                'SELECT iddoibong, gioitinh FROM Doihinh WHERE iddoihinh = :lineup_id LIMIT 1',
+                ['lineup_id' => $lineupId]
+            );
+
+            if ($current === null) {
+                throw new \RuntimeException('LINEUP_NOT_UPDATED');
+            }
+
             if ($changes !== [] || $details !== null) {
                 $statement = $db->prepare(
                     'UPDATE Doihinh SET ' . implode(', ', $sets) . ' WHERE iddoihinh = :lineup_id'
                 );
                 $statement->execute($bindings);
 
-                if ($statement->rowCount() < 1) {
+                if ($statement->rowCount() < 1 && $this->first('SELECT 1 FROM Doihinh WHERE iddoihinh = :lineup_id LIMIT 1', ['lineup_id' => $lineupId]) === null) {
                     throw new \RuntimeException('LINEUP_NOT_UPDATED');
                 }
+            }
+
+            if ((int) ($changes['la_doihinh_chinh'] ?? 0) === 1) {
+                $this->unsetOtherMainLineups(
+                    (int) $current['iddoibong'],
+                    $lineupId,
+                    (string) ($changes['gioitinh'] ?? $current['gioitinh'] ?? 'NAM')
+                );
             }
 
             if ($details !== null) {
@@ -1413,6 +1610,24 @@ final class Doibong extends Model
 
             throw $exception;
         }
+    }
+
+    private function unsetOtherMainLineups(int $teamId, int $lineupId, string $gender): void
+    {
+        $statement = $this->db()->prepare(
+            "UPDATE Doihinh
+             SET la_doihinh_chinh = 0,
+                 ngaycapnhat = CURRENT_TIMESTAMP
+             WHERE iddoibong = :team_id
+               AND iddoihinh <> :lineup_id
+               AND gioitinh = :gender
+               AND la_doihinh_chinh = 1"
+        );
+        $statement->execute([
+            'team_id' => $teamId,
+            'lineup_id' => $lineupId,
+            'gender' => $gender,
+        ]);
     }
 
     public function scheduleForCoachTeam(int $coachId, int $teamId, array $filters = []): array
