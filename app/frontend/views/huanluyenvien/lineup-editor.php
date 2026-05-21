@@ -1,13 +1,12 @@
 <section
     class="coach-page coach-lineup-editor"
     data-teams-api="<?= e(url('/api/coach/teams')) ?>"
-    data-registrations-api="<?= e(url('/api/coach/tournament-registrations')) ?>"
 >
     <header class="coach-topbar">
         <div>
             <p class="eyebrow">HUẤN LUYỆN VIÊN</p>
             <h1>Tạo / Cập nhật đội hình</h1>
-            <p class="sub">Chọn đội bóng, giải đấu và danh sách VĐV trong đội hình.</p>
+            <p class="sub">Chọn đội bóng và danh sách VĐV trong đội hình.</p>
         </div>
     </header>
 
@@ -18,10 +17,6 @@
                 <select id="teamSelect"></select>
             </div>
             <div>
-                <label for="tournamentSelect">Giải đấu *</label>
-                <select id="tournamentSelect"></select>
-            </div>
-            <div>
                 <label for="lineupSelect">Đội hình hiện có</label>
                 <select id="lineupSelect"><option value="">Tạo đội hình mới</option></select>
             </div>
@@ -30,12 +25,26 @@
                 <input id="lineupName" placeholder="VD: Đội hình vòng bảng" />
             </div>
             <div>
+                <label for="lineupGender">Giới tính đội hình *</label>
+                <select id="lineupGender">
+                    <option value="NAM">Nam</option>
+                    <option value="NU">Nữ</option>
+                </select>
+            </div>
+            <div>
                 <label for="lineupStatus">Trạng thái</label>
                 <select id="lineupStatus">
                     <option value="BAN_NHAP">Bản nháp</option>
                     <option value="DA_CHOT">Đã chốt</option>
                     <option value="DA_CAP_NHAT">Đã cập nhật</option>
                 </select>
+            </div>
+            <div>
+                <label for="lineupMain">Đội hình chính thức</label>
+                <label class="inline-check">
+                    <input id="lineupMain" type="checkbox" />
+                    Đặt làm đội hình thi đấu chính cho giới tính này
+                </label>
             </div>
         </div>
     </section>

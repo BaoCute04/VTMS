@@ -46,6 +46,7 @@ $navByRole = [
         ],
         'Quản lý' => [
             ['icon' => 'DB', 'label' => 'Đội bóng', 'href' => '/ban-to-chuc/doi-bong'],
+            ['icon' => 'DC', 'label' => 'Tư cách cấp trên', 'href' => '/ban-to-chuc/tu-cach-cap-tren'],
             ['icon' => 'SD', 'label' => 'Sân đấu', 'href' => '/ban-to-chuc/san-dau'],
             ['icon' => 'TT', 'label' => 'Trọng tài', 'href' => '/ban-to-chuc/trong-tai'],
             ['icon' => 'TK', 'label' => 'Tài khoản HLV', 'href' => '/ban-to-chuc/tai-khoan-hlv'],

@@ -341,7 +341,7 @@ final class OrganizerScheduleService
             return $context;
         }
 
-        [$match, $errors] = $this->validateMatchCreatePayload($tournamentId, $payload);
+        [$match, $errors] = $this->validateMatchCreatePayload($tournamentId, $payload, $context['tournament']);
 
         if ($errors !== []) {
             return $this->failure('Du lieu tran dau khong hop le.', 422, $errors);
@@ -684,7 +684,7 @@ final class OrganizerScheduleService
             return $this->failure('Chi duoc cap nhat tran dau chua dien ra hoac sap dien ra.', 409);
         }
 
-        [$changes, $slots, $assignments, $errors, $changedFields] = $this->validateMatchUpdatePayload($tournamentId, $payload, $current);
+        [$changes, $slots, $assignments, $errors, $changedFields] = $this->validateMatchUpdatePayload($tournamentId, $payload, $current, $context['tournament']);
 
         if ($errors !== []) {
             return $this->failure('Du lieu cap nhat tran dau khong hop le.', 422, $errors);
@@ -972,7 +972,7 @@ final class OrganizerScheduleService
         return $text;
     }
 
-    private function validateMatchCreatePayload(int $tournamentId, array $payload): array
+    private function validateMatchCreatePayload(int $tournamentId, array $payload, array $tournament): array
     {
         $errors = [];
         $slots = $this->matchSlotsPayload($tournamentId, $payload, $errors);
@@ -995,12 +995,12 @@ final class OrganizerScheduleService
         $match['ma_tran'] ??= sprintf('R%d-%s', (int) ($match['idvongdau'] ?? 0), date('YmdHis'));
         $match['thutu_tran'] ??= 1;
 
-        $this->validateMatchCandidate($tournamentId, $match, null, $errors);
+        $this->validateMatchCandidate($tournamentId, $match, $tournament, null, $errors);
 
         return [$match, $errors];
     }
 
-    private function validateMatchUpdatePayload(int $tournamentId, array $payload, array $current): array
+    private function validateMatchUpdatePayload(int $tournamentId, array $payload, array $current, array $tournament): array
     {
         $errors = [];
         $slots = null;
@@ -1061,7 +1061,7 @@ final class OrganizerScheduleService
             $changedFields[] = 'referee_assignments';
         }
 
-        $this->validateMatchCandidate($tournamentId, $candidate, (int) $current['idtrandau'], $errors);
+        $this->validateMatchCandidate($tournamentId, $candidate, $tournament, (int) $current['idtrandau'], $errors);
 
         foreach ($candidate as $field => $value) {
             $currentValue = $current[$field] ?? null;
@@ -1081,7 +1081,7 @@ final class OrganizerScheduleService
         return [$changes, $slots, $assignments, $errors, array_values(array_unique($changedFields))];
     }
 
-    private function validateMatchCandidate(int $tournamentId, array $match, ?int $excludeMatchId, array &$errors): void
+    private function validateMatchCandidate(int $tournamentId, array $match, array $tournament, ?int $excludeMatchId, array &$errors): void
     {
         foreach (['idvongdau', 'trangthai'] as $field) {
             if ($match[$field] === null) {
@@ -1102,6 +1102,8 @@ final class OrganizerScheduleService
         if ($match['thoigianketthuc'] !== null && $match['thoigianbatdau'] !== null && $match['thoigianketthuc'] <= $match['thoigianbatdau']) {
             $errors['thoigianketthuc'] = 'Thoi gian ket thuc phai lon hon thoi gian bat dau.';
         }
+
+        $this->validateMatchTimeWithinTournament($match, $tournament, $errors);
 
         if ($match['idsandau'] !== null && $this->schedules->activeVenueById((int) $match['idsandau']) === null) {
             $errors['idsandau'] = 'San dau khong ton tai hoac khong o trang thai hoat dong.';
@@ -1157,6 +1159,55 @@ final class OrganizerScheduleService
         if ($conflict !== null) {
             $errors['thoigianbatdau'] = 'Thoi gian bi trung san dau hoac doi bong voi tran dau #' . (string) $conflict['idtrandau'] . '.';
         }
+    }
+
+    private function validateMatchTimeWithinTournament(array $match, array $tournament, array &$errors): void
+    {
+        $startDate = substr((string) ($tournament['thoigianbatdau'] ?? ''), 0, 10);
+        $endDate = substr((string) ($tournament['thoigianketthuc'] ?? ''), 0, 10);
+
+        if ($startDate === '' || $endDate === '') {
+            return;
+        }
+
+        $tournamentStart = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $startDate . ' 00:00:00');
+        $tournamentEnd = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $endDate . ' 23:59:59');
+
+        if ($tournamentStart === false || $tournamentEnd === false) {
+            return;
+        }
+
+        $matchStart = $this->dateTimeFromDatabaseValue($match['thoigianbatdau'] ?? null);
+        $matchEnd = $this->dateTimeFromDatabaseValue($match['thoigianketthuc'] ?? null);
+
+        if ($matchStart !== null && $matchStart < $tournamentStart) {
+            $errors['thoigianbatdau'] = 'Thoi gian bat dau tran dau khong duoc truoc ngay bat dau giai dau.';
+        }
+
+        if ($matchStart !== null && $matchStart > $tournamentEnd) {
+            $errors['thoigianbatdau'] = 'Thoi gian bat dau tran dau khong duoc sau ngay ket thuc giai dau.';
+        }
+
+        if ($matchEnd !== null && $matchEnd < $tournamentStart) {
+            $errors['thoigianketthuc'] = 'Thoi gian ket thuc tran dau khong duoc truoc ngay bat dau giai dau.';
+        }
+
+        if ($matchEnd !== null && $matchEnd > $tournamentEnd) {
+            $errors['thoigianketthuc'] = 'Thoi gian ket thuc tran dau khong duoc sau ngay ket thuc giai dau.';
+        }
+    }
+
+    private function dateTimeFromDatabaseValue(mixed $value): ?DateTimeImmutable
+    {
+        $text = trim((string) ($value ?? ''));
+
+        if ($text === '') {
+            return null;
+        }
+
+        $date = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', str_replace('T', ' ', $text));
+
+        return $date === false ? null : $date;
     }
 
     private function standardScheduleOptions(array $payload, array $tournament, array $venues): array
@@ -1585,6 +1636,12 @@ final class OrganizerScheduleService
         foreach ($source as $index => $item) {
             if (!is_array($item)) {
                 $errors['referee_assignments.' . $index] = 'Phan cong trong tai khong hop le.';
+                continue;
+            }
+
+            $assignmentStatus = strtoupper(trim((string) ($item['trangthai'] ?? $item['status'] ?? $item['phancong_trangthai'] ?? 'DA_XAC_NHAN')));
+
+            if (in_array($assignmentStatus, ['TU_CHOI', 'DA_HUY'], true)) {
                 continue;
             }
 

@@ -273,7 +273,7 @@
                 <label for="mm_status">Trạng thái</label>
                 <select id="mm_status">
                     <option value="CHO_DOI_DOI">Chờ đội</option>
-                    <option value="CHO_XEP_LICH">Chờ xếp lịch</option>
+                    <option value="CHO_XEP_LICH">Chờ xếp lịch / phân công trọng tài</option>
                     <option value="DA_XEP_LICH">Đã xếp lịch</option>
                     <option value="CHUA_DIEN_RA">Chưa diễn ra</option>
                     <option value="SAP_DIEN_RA">Sắp diễn ra</option>

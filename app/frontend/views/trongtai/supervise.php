@@ -36,8 +36,16 @@
                 <input id="m_venue" disabled />
             </div>
             <div>
+                <label for="m_teamOne">Đội số 1</label>
+                <input id="m_teamOne" disabled />
+            </div>
+            <div>
                 <label for="m_round">Vòng đấu</label>
                 <input id="m_round" disabled />
+            </div>
+            <div>
+                <label for="m_teamTwo">Đội số 2</label>
+                <input id="m_teamTwo" disabled />
             </div>
             <div>
                 <label for="m_start">Bắt đầu</label>
@@ -61,7 +69,7 @@
         </div>
     </section>
 
-    <section class="supervise-card">
+    <section class="supervise-card hidden" id="resultCard">
         <div class="card-head">
             <div>
                 <h2>Ghi nhận kết quả</h2>
@@ -92,9 +100,6 @@
             </div>
         </div>
 
-        <div class="supervise-actions">
-            <button id="btnSaveResult" class="btn primary" type="button" disabled>Lưu kết quả</button>
-        </div>
     </section>
 </section>
 

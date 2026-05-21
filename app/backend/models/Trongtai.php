@@ -477,7 +477,7 @@ final class Trongtai extends Model
                 $statement = $db->prepare(
                     "UPDATE Phancongtrongtai
                      SET vaitro = :role,
-                         trangthai = 'CHO_XAC_NHAN',
+                        trangthai = 'DA_XAC_NHAN',
                          ngayphancong = CURRENT_TIMESTAMP
                      WHERE idphancong = :assignment_id"
                 );
@@ -488,7 +488,7 @@ final class Trongtai extends Model
             } else {
                 $statement = $db->prepare(
                     "INSERT INTO Phancongtrongtai (idtrandau, idtrongtai, vaitro, trangthai)
-                     VALUES (:match_id, :referee_id, :role, 'CHO_XAC_NHAN')"
+                     VALUES (:match_id, :referee_id, :role, 'DA_XAC_NHAN')"
                 );
                 $statement->execute([
                     'match_id' => $matchId,
@@ -515,8 +515,8 @@ final class Trongtai extends Model
                 $statement = $db->prepare(
                     "UPDATE Trongtaitrandau
                      SET vaitro = :role,
-                         xacnhanthamgia = FALSE,
-                         thoigianxacnhan = NULL
+                        xacnhanthamgia = FALSE,
+                        thoigianxacnhan = NULL
                      WHERE idtrongtaitrandau = :detail_id"
                 );
                 $statement->execute([
@@ -973,7 +973,16 @@ final class Trongtai extends Model
         $statement = $this->db()->prepare(
             $this->baseAssignmentScheduleSelect() . '
              WHERE ' . implode(' AND ', $where) . '
-             ORDER BY td.thoigianbatdau ASC, pctt.ngayphancong DESC, pctt.idphancong DESC'
+             ORDER BY
+                CASE
+                    WHEN pctt.trangthai = \'DA_XAC_NHAN\'
+                     AND td.trangthai NOT IN (\'DA_HUY\', \'DA_KET_THUC\')
+                     AND gd.trangthai <> \'DA_HUY\'
+                    THEN 0 ELSE 1
+                END,
+                td.thoigianbatdau ASC,
+                pctt.ngayphancong DESC,
+                pctt.idphancong DESC'
         );
         $statement->execute($bindings);
 
@@ -992,7 +1001,12 @@ final class Trongtai extends Model
                 SUM(CASE WHEN pctt.trangthai = 'TU_CHOI' THEN 1 ELSE 0 END) AS tu_choi,
                 SUM(CASE WHEN pctt.trangthai = 'DA_HUY' THEN 1 ELSE 0 END) AS da_huy,
                 SUM(CASE WHEN DATE(td.thoigianbatdau) = CURRENT_DATE THEN 1 ELSE 0 END) AS hom_nay,
-                SUM(CASE WHEN td.thoigianbatdau > CURRENT_TIMESTAMP AND pctt.trangthai IN ('CHO_XAC_NHAN','DA_XAC_NHAN') THEN 1 ELSE 0 END) AS sap_toi
+                SUM(CASE
+                    WHEN td.thoigianbatdau > CURRENT_TIMESTAMP
+                     AND td.trangthai NOT IN ('DA_HUY', 'DA_KET_THUC')
+                     AND pctt.trangthai IN ('CHO_XAC_NHAN','DA_XAC_NHAN')
+                    THEN 1 ELSE 0
+                END) AS sap_toi
              FROM Phancongtrongtai pctt
              JOIN Trandau td ON td.idtrandau = pctt.idtrandau
              JOIN Giaidau gd ON gd.idgiaidau = td.idgiaidau
@@ -1121,24 +1135,40 @@ final class Trongtai extends Model
             }
 
             $oldStatus = (string) $assignment['phancong_trangthai'];
-            $statement = $db->prepare(
-                "UPDATE Phancongtrongtai
-                 SET trangthai = :new_status
-                 WHERE idphancong = :assignment_id
-                   AND idtrongtai = :referee_id
-                   AND trangthai = 'CHO_XAC_NHAN'"
-            );
-            $statement->execute([
-                'new_status' => $newStatus,
-                'assignment_id' => $assignmentId,
-                'referee_id' => $refereeId,
-            ]);
+            if ($newStatus === 'TU_CHOI') {
+                $statement = $db->prepare(
+                    "UPDATE Phancongtrongtai
+                     SET trangthai = :new_status
+                     WHERE idphancong = :assignment_id
+                       AND idtrongtai = :referee_id
+                       AND trangthai IN ('DA_XAC_NHAN', 'CHO_XAC_NHAN')"
+                );
+                $statement->execute([
+                    'new_status' => $newStatus,
+                    'assignment_id' => $assignmentId,
+                    'referee_id' => $refereeId,
+                ]);
+            } else {
+                $statement = $db->prepare(
+                    "UPDATE Phancongtrongtai
+                     SET trangthai = :new_status
+                     WHERE idphancong = :assignment_id
+                       AND idtrongtai = :referee_id
+                       AND trangthai = 'CHO_XAC_NHAN'"
+                );
+                $statement->execute([
+                    'new_status' => $newStatus,
+                    'assignment_id' => $assignmentId,
+                    'referee_id' => $refereeId,
+                ]);
+            }
 
             if ($statement->rowCount() !== 1) {
                 throw new \RuntimeException('ASSIGNMENT_NOT_ACTIONABLE');
             }
 
             $confirmed = $newStatus === 'DA_XAC_NHAN' ? 1 : 0;
+            $confirmedAtSql = $confirmed === 1 ? 'CURRENT_TIMESTAMP' : 'NULL';
             $detail = $this->first(
                 "SELECT idtrongtaitrandau
                  FROM Trongtaitrandau
@@ -1155,8 +1185,8 @@ final class Trongtai extends Model
                 $statement = $db->prepare(
                     "UPDATE Trongtaitrandau
                      SET vaitro = :role,
-                         xacnhanthamgia = :confirmed,
-                         thoigianxacnhan = CURRENT_TIMESTAMP
+                        xacnhanthamgia = :confirmed,
+                        thoigianxacnhan = {$confirmedAtSql}
                      WHERE idtrongtaitrandau = :detail_id"
                 );
                 $statement->execute([
@@ -1167,7 +1197,7 @@ final class Trongtai extends Model
             } else {
                 $statement = $db->prepare(
                     "INSERT INTO Trongtaitrandau (idtrandau, idtrongtai, vaitro, xacnhanthamgia, thoigianxacnhan)
-                     VALUES (:match_id, :referee_id, :role, :confirmed, CURRENT_TIMESTAMP)"
+                     VALUES (:match_id, :referee_id, :role, :confirmed, {$confirmedAtSql})"
                 );
                 $statement->execute([
                     'match_id' => (int) $assignment['idtrandau'],
@@ -1177,7 +1207,11 @@ final class Trongtai extends Model
                 ]);
             }
 
-            $action = $newStatus === 'DA_XAC_NHAN' ? 'Xac nhan tham gia tran dau' : 'Tu choi phan cong tran dau';
+            if ($newStatus === 'TU_CHOI') {
+                $this->markMatchWaitingForRefereesIfNeeded((int) $assignment['idtrandau'], $actorAccountId);
+            }
+
+            $action = $newStatus === 'DA_XAC_NHAN' ? 'Xac nhan tham gia tran dau' : 'Huy xac nhan phan cong tran dau';
             $this->recordStatusHistory('TRAN_DAU', (int) $assignment['idtrandau'], $oldStatus, $newStatus, $reason, $actorAccountId);
             $this->recordSystemLog($actorAccountId, $action, 'Phancongtrongtai', $assignmentId, $ipAddress, $logNote);
 
@@ -1191,6 +1225,56 @@ final class Trongtai extends Model
 
             throw $exception;
         }
+    }
+
+    private function markMatchWaitingForRefereesIfNeeded(int $matchId, int $actorAccountId): void
+    {
+        $match = $this->first(
+            "SELECT trangthai
+             FROM Trandau
+             WHERE idtrandau = :match_id
+             FOR UPDATE",
+            ['match_id' => $matchId]
+        );
+
+        if ($match === null || !in_array((string) $match['trangthai'], ['DA_XEP_LICH', 'CHUA_DIEN_RA', 'SAP_DIEN_RA'], true)) {
+            return;
+        }
+
+        if ($this->hasRequiredConfirmedReferees($matchId)) {
+            return;
+        }
+
+        $statement = $this->db()->prepare(
+            "UPDATE Trandau
+             SET trangthai = 'CHO_XEP_LICH',
+                 ngaycapnhat = CURRENT_TIMESTAMP
+             WHERE idtrandau = :match_id"
+        );
+        $statement->execute(['match_id' => $matchId]);
+
+        $this->recordStatusHistory(
+            'TRAN_DAU',
+            $matchId,
+            (string) $match['trangthai'],
+            'CHO_XEP_LICH',
+            'Trong tai huy xac nhan lam tran dau thieu trong tai bat buoc',
+            $actorAccountId
+        );
+    }
+
+    private function hasRequiredConfirmedReferees(int $matchId): bool
+    {
+        $row = $this->first(
+            "SELECT
+                SUM(CASE WHEN vaitro = 'TRONG_TAI_CHINH' AND trangthai = 'DA_XAC_NHAN' THEN 1 ELSE 0 END) AS main_count,
+                SUM(CASE WHEN vaitro = 'GIAM_SAT' AND trangthai = 'DA_XAC_NHAN' THEN 1 ELSE 0 END) AS supervisor_count
+             FROM Phancongtrongtai
+             WHERE idtrandau = :match_id",
+            ['match_id' => $matchId]
+        );
+
+        return (int) ($row['main_count'] ?? 0) > 0 && (int) ($row['supervisor_count'] ?? 0) > 0;
     }
 
     public function confirmRefereeMatchParticipants(
@@ -1343,11 +1427,6 @@ final class Trongtai extends Model
 
             $resultId = null;
 
-            if ($result !== null && $sets !== null) {
-                $resultId = $this->saveResultInternal($matchId, $result, $sets, $actorAccountId);
-                $this->recordSystemLog($actorAccountId, 'Ghi nhan ket qua tran dau', 'Ketquatrandau', $resultId, $ipAddress, $resultLogNote);
-            }
-
             $statement = $db->prepare(
                 "UPDATE Trandau
                  SET trangthai = 'DA_KET_THUC',
@@ -1363,6 +1442,11 @@ final class Trongtai extends Model
 
             if ($statement->rowCount() !== 1) {
                 throw new \RuntimeException('MATCH_STATUS_NOT_UPDATED');
+            }
+
+            if ($result !== null && $sets !== null) {
+                $resultId = $this->saveResultInternal($matchId, $result, $sets, $actorAccountId);
+                $this->recordSystemLog($actorAccountId, 'Ghi nhan ket qua tran dau', 'Ketquatrandau', $resultId, $ipAddress, $resultLogNote);
             }
 
             $this->recordStatusHistory('TRAN_DAU', $matchId, $expectedOldStatus, 'DA_KET_THUC', 'Ket thuc tran dau', $actorAccountId);
@@ -1593,10 +1677,8 @@ final class Trongtai extends Model
             ]);
 
             $resultId = (int) $this->db()->lastInsertId();
-            $oldStatus = null;
         } else {
             $resultId = (int) $existing['idketqua'];
-            $oldStatus = (string) $existing['trangthai'];
             $statement = $this->db()->prepare(
                 "UPDATE Ketquatrandau
                  SET iddoithang = :winner_team_id,
@@ -1623,7 +1705,6 @@ final class Trongtai extends Model
         }
 
         $this->replaceResultSetsInternal($resultId, $sets);
-        $this->recordStatusHistory('KET_QUA_TRAN_DAU', $resultId, $oldStatus, 'CHO_CONG_BO', 'Trong tai ghi nhan ket qua tran dau', $actorAccountId);
 
         return $resultId;
     }

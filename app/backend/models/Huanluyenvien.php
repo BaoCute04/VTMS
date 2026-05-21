@@ -23,7 +23,7 @@ final class Huanluyenvien extends Model
     public function findForOrganizer(int $organizerId, int $coachId): ?array
     {
         [$sql, $bindings] = $this->baseCoachQuery($organizerId, []);
-        $sql .= ' WHERE hlv.idhuanluyenvien = :coach_id LIMIT 1';
+        $sql .= ' AND hlv.idhuanluyenvien = :coach_id LIMIT 1';
         $bindings['coach_id'] = $coachId;
 
         return $this->first($sql, $bindings);
@@ -72,7 +72,50 @@ final class Huanluyenvien extends Model
         return $role === null ? null : (int) $role['idrole'];
     }
 
-    public function receivingOrganizer(?int $organizerId = null): ?array
+    public function activeWorkRegions(): array
+    {
+        $statement = $this->db()->query(
+            "SELECT DISTINCT
+                kv.idkhuvuc,
+                kv.makhuvuc,
+                kv.tenkhuvuc,
+                kv.capkhuvuc,
+                kv.idkhuvuccha
+             FROM Khuvuc kv
+             JOIN Bantochuc btc
+               ON btc.idkhuvucquanly = kv.idkhuvuc
+              AND btc.trangthai = 'HOAT_DONG'
+             JOIN Nguoidung nd ON nd.idnguoidung = btc.idnguoidung
+             JOIN Taikhoan tk
+               ON tk.idtaikhoan = nd.idtaikhoan
+              AND tk.trangthai = 'HOAT_DONG'
+             WHERE kv.trangthai = 'HOAT_DONG'
+             ORDER BY
+                FIELD(kv.capkhuvuc, 'QUOC_GIA', 'TINH_THANH', 'QUAN_HUYEN', 'XA_PHUONG', 'DON_VI'),
+                kv.tenkhuvuc ASC"
+        );
+
+        return $statement->fetchAll();
+    }
+
+    public function activeWorkRegion(int $regionId): ?array
+    {
+        return $this->first(
+            "SELECT
+                idkhuvuc,
+                makhuvuc,
+                tenkhuvuc,
+                capkhuvuc,
+                idkhuvuccha
+             FROM Khuvuc
+             WHERE idkhuvuc = :region_id
+               AND trangthai = 'HOAT_DONG'
+             LIMIT 1",
+            ['region_id' => $regionId]
+        );
+    }
+
+    public function receivingOrganizer(?int $organizerId = null, ?int $workRegionId = null): ?array
     {
         $bindings = [];
         $where = [
@@ -85,10 +128,16 @@ final class Huanluyenvien extends Model
             $bindings['organizer_id'] = $organizerId;
         }
 
+        if ($workRegionId !== null) {
+            $where[] = 'btc.idkhuvucquanly = :work_region_id';
+            $bindings['work_region_id'] = $workRegionId;
+        }
+
         return $this->first(
             "SELECT
                 btc.idbantochuc,
                 btc.idnguoidung,
+                btc.idkhuvucquanly,
                 btc.donvi,
                 btc.chucvu,
                 btc.trangthai,
@@ -155,11 +204,15 @@ final class Huanluyenvien extends Model
             $userId = (int) $db->lastInsertId();
 
             $statement = $db->prepare(
-                "INSERT INTO Huanluyenvien (idnguoidung, bangcap, kinhnghiem, trangthai)
-                 VALUES (:idnguoidung, :bangcap, :kinhnghiem, 'CHO_DUYET')"
+                "INSERT INTO Huanluyenvien
+                    (idnguoidung, idkhuvuccongtac, donvicongtac, bangcap, kinhnghiem, trangthai)
+                 VALUES
+                    (:idnguoidung, :idkhuvuccongtac, :donvicongtac, :bangcap, :kinhnghiem, 'CHO_DUYET')"
             );
             $statement->execute([
                 'idnguoidung' => $userId,
+                'idkhuvuccongtac' => $coach['idkhuvuccongtac'],
+                'donvicongtac' => $coach['donvicongtac'],
                 'bangcap' => $coach['bangcap'],
                 'kinhnghiem' => $coach['kinhnghiem'],
             ]);
@@ -309,11 +362,16 @@ final class Huanluyenvien extends Model
 
     private function baseCoachQuery(int $organizerId, array $filters): array
     {
-        $where = [];
-        $bindings = ['organizer_id' => $organizerId];
+        $where = ['hlv.idkhuvuccongtac = btc_scope.idkhuvucquanly'];
+        $bindings = [
+            'organizer_scope_id' => $organizerId,
+            'request_organizer_id' => $organizerId,
+        ];
 
         if (($filters['q'] ?? '') !== '') {
             $where[] = "(hlv.bangcap LIKE :keyword
+                OR hlv.donvicongtac LIKE :keyword
+                OR kvct.tenkhuvuc LIKE :keyword
                 OR tk.username LIKE :keyword
                 OR tk.email LIKE :keyword
                 OR tk.sodienthoai LIKE :keyword
@@ -358,9 +416,14 @@ final class Huanluyenvien extends Model
         $sql = "SELECT
                 hlv.idhuanluyenvien,
                 hlv.idnguoidung,
+                hlv.idkhuvuccongtac,
+                hlv.donvicongtac,
                 hlv.bangcap,
                 hlv.kinhnghiem,
                 hlv.trangthai,
+                kvct.makhuvuc AS makhuvuccongtac,
+                kvct.tenkhuvuc AS tenkhuvuccongtac,
+                kvct.capkhuvuc AS capkhuvuccongtac,
                 nd.idtaikhoan,
                 nd.hodem,
                 nd.ten,
@@ -387,6 +450,9 @@ final class Huanluyenvien extends Model
                 COALESCE(team_stats.total_teams, 0) AS total_teams,
                 COALESCE(team_stats.active_teams, 0) AS active_teams
              FROM Huanluyenvien hlv
+             JOIN Bantochuc btc_scope
+               ON btc_scope.idbantochuc = :organizer_scope_id
+             LEFT JOIN Khuvuc kvct ON kvct.idkhuvuc = hlv.idkhuvuccongtac
              JOIN Nguoidung nd ON nd.idnguoidung = hlv.idnguoidung
              JOIN Taikhoan tk ON tk.idtaikhoan = nd.idtaikhoan
              LEFT JOIN (
@@ -397,7 +463,7 @@ final class Huanluyenvien extends Model
                 WHERE loainguoigui = 'HUAN_LUYEN_VIEN'
                   AND loainguoinhan = 'BAN_TO_CHUC'
                   AND loaixacnhan = 'XAC_NHAN_HLV'
-                  AND idnguoinhan = :organizer_id
+                  AND idnguoinhan = :request_organizer_id
                 GROUP BY idnguoigui
              ) latest_yc ON latest_yc.idnguoigui = hlv.idhuanluyenvien
              LEFT JOIN Yeucauxacnhan yc ON yc.idyeucau = latest_yc.latest_request_id

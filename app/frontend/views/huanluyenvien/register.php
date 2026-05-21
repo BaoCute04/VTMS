@@ -1,4 +1,8 @@
-<section class="coach-page coach-register" data-register-api="<?= e(url('/api/coach/register')) ?>">
+<section
+    class="coach-page coach-register"
+    data-register-api="<?= e(url('/api/coach/register')) ?>"
+    data-options-api="<?= e(url('/api/coach/register/options')) ?>"
+>
     <header class="coach-topbar">
         <div>
             <p class="eyebrow">HUẤN LUYỆN VIÊN</p>
@@ -48,8 +52,14 @@
                     </select>
                 </div>
                 <div>
-                    <label for="club">Đơn vị / Câu lạc bộ *</label>
-                    <input id="club" required />
+                    <label for="workRegion">Khu vực công tác *</label>
+                    <select id="workRegion" required>
+                        <option value="">Đang tải khu vực...</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="workUnit">Đơn vị / Câu lạc bộ công tác *</label>
+                    <input id="workUnit" required />
                 </div>
                 <div>
                     <label for="degree">Trình độ / Bằng cấp *</label>

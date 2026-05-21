@@ -332,12 +332,25 @@ final class RefereeAssignmentScheduleService
                 return $this->failure('Khong tim thay phan cong tran dau.', 404);
             }
 
-            if ((string) $assignment['phancong_trangthai'] !== 'CHO_XAC_NHAN') {
-                return $this->failure('Chi co the phan hoi phan cong dang cho xac nhan.', 409);
-            }
+            $currentStatus = (string) $assignment['phancong_trangthai'];
+            $inputReason = trim((string) ($request?->input('reason', $request?->input('lydo', '')) ?? ''));
 
-            $action = $newStatus === 'DA_XAC_NHAN' ? 'Xac nhan tham gia tran dau' : 'Tu choi phan cong tran dau';
-            $reason = $newStatus === 'DA_XAC_NHAN' ? 'Trong tai xac nhan tham gia tran dau' : 'Trong tai tu choi phan cong tran dau';
+            if ($newStatus === 'TU_CHOI') {
+                if (!in_array($currentStatus, ['DA_XAC_NHAN', 'CHO_XAC_NHAN'], true)) {
+                    return $this->failure('Chi co the huy xac nhan phan cong da xac nhan.', 409);
+                }
+                if ($inputReason === '') {
+                    return $this->failure('Vui long nhap ly do huy xac nhan.', 422);
+                }
+                $action = 'Huy xac nhan phan cong tran dau';
+                $reason = $inputReason;
+            } else {
+                if ($currentStatus !== 'CHO_XAC_NHAN') {
+                    return $this->failure('Chi co the xac nhan phan cong dang cho xac nhan.', 409);
+                }
+                $action = 'Xac nhan tham gia tran dau';
+                $reason = 'Trong tai xac nhan tham gia tran dau';
+            }
             $updated = $this->referees->respondToAssignment(
                 (int) $referee['idtrongtai'],
                 $assignmentId,
@@ -354,7 +367,7 @@ final class RefereeAssignmentScheduleService
                 'status' => 200,
                 'message' => $newStatus === 'DA_XAC_NHAN'
                     ? 'Xac nhan tham gia phan cong thanh cong.'
-                    : 'Tu choi phan cong thanh cong.',
+                    : 'Da huy xac nhan phan cong thanh cong.',
                 'assignment' => $updated,
             ];
         } catch (Throwable) {

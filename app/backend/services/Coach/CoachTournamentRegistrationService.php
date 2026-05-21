@@ -33,10 +33,15 @@ final class CoachTournamentRegistrationService
             return $this->failure('Bo loc giai dau khong hop le.', 422, $errors);
         }
 
+        $coachId = (int) $coachResult['idhuanluyenvien'];
         $tournaments = [];
-        foreach ($this->tournaments->openTournamentsForCoach((int) $coachResult['idhuanluyenvien'], $normalized) as $tournament) {
+        foreach ($this->tournaments->openTournamentsForCoach($coachId, $normalized) as $tournament) {
+            $registrations = $this->tournaments->registrationsForCoach($coachId, [
+                'tournament_id' => (int) $tournament['idgiaidau'],
+            ]);
             $normalizedTournament = $this->normalizeTournamentForCoach($tournament);
             $normalizedTournament['eligible_team_ids'] = $this->tournaments->eligibleTeamIdsForTournament((int) $tournament['idgiaidau']);
+            $normalizedTournament['coach_registration_status'] = $this->coachRegistrationStatus($tournament, $registrations);
             $tournaments[] = $normalizedTournament;
         }
 
@@ -128,6 +133,10 @@ final class CoachTournamentRegistrationService
             return $this->failure('Giai dau hien khong mo dang ky.', 409);
         }
 
+        if (!$this->isBeforeTournamentStart($tournament)) {
+            return $this->failure('Dang ky giai dau da bi khoa sau khi giai dau bat dau.', 409);
+        }
+
         $team = $this->tournaments->teamForCoach($coachId, $data['team_id']);
 
         if ($team === null) {
@@ -136,6 +145,31 @@ final class CoachTournamentRegistrationService
 
         if ((string) $team['trangthai'] !== 'HOAT_DONG') {
             return $this->failure('Chi duoc dang ky doi bong dang hoat dong.', 409);
+        }
+
+        $lineup = $this->tournaments->lineupForTeam($data['team_id'], $data['lineup_id']);
+
+        if ($lineup === null) {
+            return $this->failure('Vui long chon doi hinh thi dau hop le cua doi bong.', 422);
+        }
+
+        if ((string) ($lineup['gioitinh'] ?? '') !== (string) ($tournament['gioitinh'] ?? 'NAM')) {
+            return $this->failure('Doi hinh khong dung gioi tinh cua giai dau.', 409);
+        }
+
+        if (!in_array((string) $lineup['trangthai'], ['DA_CHOT', 'DA_CAP_NHAT'], true)) {
+            return $this->failure('Chi duoc dang ky bang doi hinh da chot hoac da cap nhat.', 409);
+        }
+
+        $sizeRule = $this->tournaments->lineupSizeRuleForTournament($data['tournament_id']);
+        $lineupSize = (int) ($lineup['so_vdv'] ?? 0);
+
+        if ($lineupSize < $sizeRule['min_players'] || $lineupSize > $sizeRule['max_players']) {
+            return $this->failure('Doi hinh khong dap ung so luong VDV theo dieu le giai dau.', 409, [
+                'lineup_size' => (string) $lineupSize,
+                'min_players' => (string) $sizeRule['min_players'],
+                'max_players' => (string) $sizeRule['max_players'],
+            ]);
         }
 
         $eligibility = $this->tournaments->teamEligibilityForTournament($data['tournament_id'], $data['team_id']);
@@ -176,6 +210,7 @@ final class CoachTournamentRegistrationService
                 $data['tournament_id'],
                 $data['team_id'],
                 $coachId,
+                $data['lineup_id'],
                 (int) $tournament['idbantochuc'],
                 $content,
                 $accountId,
@@ -212,14 +247,16 @@ final class CoachTournamentRegistrationService
             return $this->failure('Khong tim thay dang ky giai dau.', 404);
         }
 
-        if ((string) $registration['trangthai'] !== 'CHO_DUYET') {
-            return $this->failure('Chi duoc huy dang ky giai dau dang cho duyet.', 409);
+        if (!in_array((string) $registration['trangthai'], ['CHO_DUYET', 'DA_DUYET'], true)) {
+            return $this->failure('Chi duoc huy dang ky hoac huy thi dau khi ho so dang cho duyet/da duyet.', 409);
         }
 
-        $reason = $this->reason($payload, 'HLV huy dang ky giai dau');
+        $reason = $this->reason($payload, (string) $registration['trangthai'] === 'DA_DUYET' ? 'HLV huy thi dau' : 'HLV huy dang ky giai dau');
+        $actionLabel = (string) $registration['trangthai'] === 'DA_DUYET' ? 'huy thi dau' : 'huy dang ky';
         $logNote = $this->limitLogNote(sprintf(
-            'HLV #%d huy dang ky doi "%s" tham gia giai dau "%s". Ly do: %s',
+            'HLV #%d %s doi "%s" tham gia giai dau "%s". Ly do: %s',
             $coachId,
+            $actionLabel,
             (string) $registration['tendoibong'],
             (string) $registration['tengiaidau'],
             $reason
@@ -238,12 +275,12 @@ final class CoachTournamentRegistrationService
             return [
                 'ok' => true,
                 'status' => 200,
-                'message' => 'Huy dang ky giai dau thanh cong.',
+                'message' => (string) $registration['trangthai'] === 'DA_DUYET' ? 'Huy thi dau thanh cong.' : 'Huy dang ky giai dau thanh cong.',
                 'registration' => $this->tournaments->findRegistrationForCoach($coachId, $registrationId),
             ];
         } catch (RuntimeException $exception) {
             if ($exception->getMessage() === 'REGISTRATION_NOT_CANCELLED') {
-                return $this->failure('Chi duoc huy dang ky giai dau dang cho duyet.', 409);
+                return $this->failure('Chi duoc huy dang ky hoac huy thi dau khi ho so dang cho duyet/da duyet.', 409);
             }
 
             return $this->failure('Khong the huy dang ky giai dau.', 500);
@@ -284,10 +321,48 @@ final class CoachTournamentRegistrationService
         return $tournament;
     }
 
+    private function isBeforeTournamentStart(array $tournament): bool
+    {
+        $startDate = trim((string) ($tournament['thoigianbatdau'] ?? ''));
+
+        if ($startDate === '') {
+            return false;
+        }
+
+        $today = new \DateTimeImmutable('today');
+        $start = \DateTimeImmutable::createFromFormat('Y-m-d', substr($startDate, 0, 10));
+
+        return $start instanceof \DateTimeImmutable && $start > $today;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $registrations
+     */
+    private function coachRegistrationStatus(array $tournament, array $registrations): ?string
+    {
+        if ((string) ($tournament['trangthai'] ?? '') === 'DA_KET_THUC') {
+            return 'DA_KET_THUC';
+        }
+
+        $statuses = array_map(
+            static fn (array $registration): string => (string) ($registration['trangthai'] ?? ''),
+            $registrations
+        );
+
+        foreach (['DA_DUYET', 'CHO_DUYET', 'DA_HUY', 'TU_CHOI'] as $status) {
+            if (in_array($status, $statuses, true)) {
+                return $status;
+            }
+        }
+
+        return null;
+    }
+
     private function registrationPayload(array $payload): array
     {
         $tournamentRaw = $payload['idgiaidau'] ?? $payload['tournament_id'] ?? null;
         $teamRaw = $payload['iddoibong'] ?? $payload['team_id'] ?? null;
+        $lineupRaw = $payload['iddoihinh'] ?? $payload['lineup_id'] ?? null;
         $content = trim((string) ($payload['noidung'] ?? $payload['content'] ?? $payload['request_content'] ?? ''));
         $errors = [];
 
@@ -299,6 +374,10 @@ final class CoachTournamentRegistrationService
             $errors['iddoibong'] = 'Doi bong khong hop le.';
         }
 
+        if ($lineupRaw === null || !ctype_digit((string) $lineupRaw) || (int) $lineupRaw <= 0) {
+            $errors['iddoihinh'] = 'Doi hinh thi dau khong hop le.';
+        }
+
         if ($content !== '' && strlen($content) > 1000) {
             $errors['noidung'] = 'Noi dung yeu cau toi da 1000 ky tu.';
         }
@@ -306,6 +385,7 @@ final class CoachTournamentRegistrationService
         return [[
             'tournament_id' => (int) $tournamentRaw,
             'team_id' => (int) $teamRaw,
+            'lineup_id' => (int) $lineupRaw,
             'content' => $content === '' ? null : $content,
         ], $errors];
     }

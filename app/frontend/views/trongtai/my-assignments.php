@@ -36,7 +36,7 @@
             <option value="">Tất cả trạng thái</option>
             <option value="CHO_XAC_NHAN">Chờ xác nhận</option>
             <option value="DA_XAC_NHAN">Đã xác nhận</option>
-            <option value="TU_CHOI">Từ chối</option>
+            <option value="TU_CHOI">Đã hủy xác nhận</option>
             <option value="DA_HUY">Đã hủy</option>
         </select>
 
@@ -49,7 +49,7 @@
     <section class="assignments-stats" aria-label="Thống kê lịch phân công">
         <div class="stat"><span id="sTotal">0</span><small>Tổng phân công</small></div>
         <div class="stat"><span id="sUpcoming">0</span><small>Sắp diễn ra</small></div>
-        <div class="stat"><span id="sNeedConfirm">0</span><small>Chờ xác nhận</small></div>
+        <div class="stat"><span id="sNeedConfirm">0</span><small>Đã xác nhận</small></div>
     </section>
 
     <div class="table-wrap">
@@ -133,13 +133,17 @@
                 <label for="m_note">Ghi chú</label>
                 <textarea id="m_note" rows="3" disabled placeholder="(Nếu backend có ghi chú phân công)"></textarea>
             </div>
+            <div class="colspan hidden" id="m_cancelReasonWrap">
+                <label for="m_cancelReason">Lý do hủy xác nhận</label>
+                <textarea id="m_cancelReason" rows="3" placeholder="Nhập lý do không tham gia trận đấu..."></textarea>
+            </div>
         </div>
 
         <div id="m_alert" class="assignments-alert hidden"></div>
 
         <div class="modal-actions">
-            <button id="btnDecline" class="btn danger" type="button">Từ chối</button>
-            <button id="btnConfirm" class="btn primary" type="button">Xác nhận tham gia</button>
+            <button id="btnDecline" class="btn danger" type="button">Hủy xác nhận</button>
+            <button id="btnConfirm" class="btn primary" type="button" hidden>Xác nhận tham gia</button>
             <button id="btnClose" class="btn" type="button">Đóng</button>
         </div>
     </div>

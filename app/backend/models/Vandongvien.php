@@ -186,7 +186,6 @@ final class Vandongvien extends Model
         array $profile,
         array $athlete,
         array $membership,
-        array $confirmation,
         int $coachId,
         int $actorAccountId,
         ?string $ipAddress,
@@ -199,7 +198,7 @@ final class Vandongvien extends Model
 
             $statement = $db->prepare(
                 "INSERT INTO Taikhoan (username, password, email, sodienthoai, idrole, trangthai)
-                 VALUES (:username, :password, :email, :sodienthoai, :idrole, 'CHO_DUYET')"
+                 VALUES (:username, :password, :email, :sodienthoai, :idrole, 'HOAT_DONG')"
             );
             $statement->execute([
                 'username' => $account['username'],
@@ -235,7 +234,7 @@ final class Vandongvien extends Model
                 "INSERT INTO Vandongvien
                     (idnguoidung, mavandongvien, chieucao, cannang, vitri, trangthaidaugiai)
                  VALUES
-                    (:idnguoidung, :mavandongvien, :chieucao, :cannang, :vitri, 'CHO_XAC_NHAN')"
+                    (:idnguoidung, :mavandongvien, :chieucao, :cannang, :vitri, 'DU_DIEU_KIEN')"
             );
             $statement->execute([
                 'idnguoidung' => $userId,
@@ -276,25 +275,9 @@ final class Vandongvien extends Model
                 ]);
             }
 
-            $statement = $db->prepare(
-                "INSERT INTO Yeucauxacnhan
-                    (loainguoigui, idnguoigui, loainguoinhan, idnguoinhan, loaixacnhan, noidung, trangthai)
-                 VALUES
-                    ('VAN_DONG_VIEN', :athlete_id, 'BAN_TO_CHUC', :organizer_id, 'XAC_NHAN_VDV', :content, 'CHO_DUYET')"
-            );
-            $statement->execute([
-                'athlete_id' => $athleteId,
-                'organizer_id' => $confirmation['organizer_id'],
-                'content' => $confirmation['content'],
-            ]);
-
-            $requestId = (int) $db->lastInsertId();
-
-            $this->recordStatusHistory('TAI_KHOAN', $newAccountId, null, 'CHO_DUYET', 'HLV tao tai khoan van dong vien', $actorAccountId);
-            $this->recordStatusHistory('YEU_CAU_XAC_NHAN', $requestId, null, 'CHO_DUYET', 'Gui yeu cau xac nhan tu cach thi dau VDV', $actorAccountId);
+            $this->recordStatusHistory('TAI_KHOAN', $newAccountId, null, 'HOAT_DONG', 'HLV tao tai khoan van dong vien', $actorAccountId);
             $this->recordSystemLog($actorAccountId, 'Tao tai khoan van dong vien', 'Taikhoan', $newAccountId, $ipAddress, $logNote);
-            $this->recordSystemLog($actorAccountId, 'Tao ho so van dong vien cho xac nhan', 'Vandongvien', $athleteId, $ipAddress, $logNote);
-            $this->recordSystemLog($actorAccountId, 'Gui yeu cau xac nhan tu cach thi dau van dong vien', 'Yeucauxacnhan', $requestId, $ipAddress, $logNote);
+            $this->recordSystemLog($actorAccountId, 'Tao ho so van dong vien', 'Vandongvien', $athleteId, $ipAddress, $logNote);
 
             if ($memberId !== null) {
                 $this->recordSystemLog($actorAccountId, 'Them van dong vien vao doi bong', 'Thanhviendoibong', $memberId, $ipAddress, $logNote);
@@ -307,13 +290,10 @@ final class Vandongvien extends Model
                 'user_id' => $userId,
                 'athlete_id' => $athleteId,
                 'athlete_code' => $athlete['mavandongvien'],
-                'request_id' => $requestId,
                 'membership_id' => $memberId,
                 'team_id' => $membership['team_id'],
-                'organizer_id' => (int) $confirmation['organizer_id'],
-                'account_status' => 'CHO_DUYET',
-                'competition_status' => 'CHO_XAC_NHAN',
-                'request_status' => 'CHO_DUYET',
+                'account_status' => 'HOAT_DONG',
+                'competition_status' => 'DU_DIEU_KIEN',
             ];
         } catch (Throwable $exception) {
             if ($db->inTransaction()) {

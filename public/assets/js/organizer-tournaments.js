@@ -32,6 +32,7 @@ const fields = {
     levelHint: document.getElementById("m_level_hint"),
     region: document.getElementById("m_scope_region"),
     law: document.getElementById("m_law"),
+    gender: document.getElementById("m_gender"),
     nature: document.getElementById("m_nature"),
     start: document.getElementById("m_start"),
     end: document.getElementById("m_end"),
@@ -57,7 +58,6 @@ const fields = {
     ruleContent: document.getElementById("m_rule_content"),
     formatType: document.getElementById("m_format_type"),
     pairing: document.getElementById("m_pairing"),
-    teamSelection: document.getElementById("m_team_selection"),
     alert: document.getElementById("m_alert"),
     regTitle: document.getElementById("r_tourName"),
     regStatus: document.getElementById("r_status"),
@@ -71,6 +71,7 @@ const fields = {
 const buttons = {
     modalClose: document.getElementById("m_close"),
     modalCancel: document.getElementById("m_cancel"),
+    modalCancelTournament: document.getElementById("m_cancel_tournament"),
     modalSave: document.getElementById("m_save"),
     regClose: document.getElementById("r_close"),
     regCloseBottom: document.getElementById("r_closeBtn"),
@@ -88,10 +89,16 @@ const tournamentStatusLabels = {
     DA_HUY: "Đã hủy",
 };
 
+const tournamentGenderLabels = {
+    NAM: "Nam",
+    NU: "Nữ",
+};
+
 const registrationWindowLabels = {
     CHUA_MO: "Chưa mở",
     DANG_MO: "Đang mở",
     DA_DONG: "Đã đóng",
+    DA_KHOA: "Đã khóa",
 };
 
 const registrationStatusLabels = {
@@ -174,7 +181,7 @@ function statusClass(status) {
 
 function regWindowClass(status) {
     if (status === "DANG_MO") return "reg-on";
-    if (status === "DA_DONG") return "reg-closed";
+    if (status === "DA_DONG" || status === "DA_KHOA") return "reg-closed";
     return "reg-off";
 }
 
@@ -189,6 +196,15 @@ function todayIsoDate() {
 function isBeforeTournamentStart(item) {
     const startDate = String(item?.thoigianbatdau || "").slice(0, 10);
     return /^\d{4}-\d{2}-\d{2}$/.test(startDate) && startDate > todayIsoDate();
+}
+
+function displayedRegistrationWindowStatus(item) {
+    const status = item.trangthai || "";
+    const regStatus = item.trangthaidangky || "";
+    if (status === "DA_CONG_BO" && regStatus === "DANG_MO" && !isBeforeTournamentStart(item)) {
+        return "DA_KHOA";
+    }
+    return regStatus;
 }
 
 function canEditTournament(item) {
@@ -304,7 +320,7 @@ function updateTeamLimitOptions(preferred = {}, preview = eligibilityPreview) {
     const selectedMax = Number(preferred.maxTeams || fields.maxTeams.value || fields.size.value || 0);
     const maxSelectable = Math.max(64, selectedMax, activeTeams, eligibleTeams, 2);
 
-    fillNumberSelect(fields.minTeams, 2, Math.max(2, maxSelectable - 1), preferred.minTeams || fields.minTeams.value || 2);
+    fillNumberSelect(fields.minTeams, 2, maxSelectable, preferred.minTeams || fields.minTeams.value || 2);
     fillNumberSelect(fields.maxTeams, 2, maxSelectable, preferred.maxTeams || fields.maxTeams.value || Math.max(2, selectedMax || eligibleTeams || activeTeams || 2));
 
     fields.minTeams.disabled = false;
@@ -330,8 +346,8 @@ function syncTeamLimitsFromScale() {
         fields.maxTeams.value = String(scale);
     }
     const minTeams = Number(fields.minTeams.value || 0);
-    if (minTeams >= scale && fields.minTeams.querySelector(`option[value="${Math.max(2, scale - 1)}"]`)) {
-        fields.minTeams.value = String(Math.max(2, scale - 1));
+    if (minTeams > scale && fields.minTeams.querySelector(`option[value="${scale}"]`)) {
+        fields.minTeams.value = String(scale);
     }
 }
 
@@ -486,7 +502,7 @@ function renderTournaments() {
     tbody.innerHTML = tournaments.map((item) => {
         const id = tournamentId(item);
         const status = item.trangthai || "";
-        const regStatus = item.trangthaidangky || "";
+        const regStatus = displayedRegistrationWindowStatus(item);
         const approved = Number(item.dangky_da_duyet || 0);
         const pending = Number(item.dangky_cho_duyet || 0);
         const levelRegion = [
@@ -504,7 +520,7 @@ function renderTournaments() {
                 <td>${escapeHtml(item.thoigianbatdau)} - ${escapeHtml(item.thoigianketthuc)}</td>
                 <td>
                     <strong>${escapeHtml(levelRegion)}</strong>
-                    <span class="sub">${escapeHtml(natureLabels[item.tinhchat] || item.tinhchat || "")}</span>
+                    <span class="sub">${escapeHtml(natureLabels[item.tinhchat] || item.tinhchat || "")} • ${escapeHtml(tournamentGenderLabels[item.gioitinh] || item.gioitinh || "Nam")}</span>
                 </td>
                 <td>${Number(item.quymo || 0)}<br><span class="sub">Duyệt: ${approved}, chờ: ${pending}</span></td>
                 <td><span class="badge ${statusClass(status)}">${escapeHtml(tournamentStatusLabels[status] || status)}</span></td>
@@ -522,8 +538,10 @@ function rowActions(item) {
     const canEditDraft = status === "NHAP" || status === "CHUA_CONG_BO";
     const canEdit = canEditTournament(item);
     const canPublish = canEditDraft;
-    const canOpenReg = status === "DA_CONG_BO" && (regStatus === "CHUA_MO" || regStatus === "DA_DONG");
-    const canCloseReg = status === "DA_CONG_BO" && regStatus === "DANG_MO";
+    const canCancelPublished = status === "DA_CONG_BO" && isBeforeTournamentStart(item);
+    const canManageRegistration = status === "DA_CONG_BO" && isBeforeTournamentStart(item);
+    const canOpenReg = canManageRegistration && (regStatus === "CHUA_MO" || regStatus === "DA_DONG");
+    const canCloseReg = canManageRegistration && regStatus === "DANG_MO";
 
     return `
         <div class="row-actions">
@@ -532,6 +550,7 @@ function rowActions(item) {
             ${canOpenReg ? `<button class="btn" type="button" data-action="open-reg" data-id="${id}">Mở ĐK</button>` : ""}
             ${canCloseReg ? `<button class="btn" type="button" data-action="close-reg" data-id="${id}">Đóng ĐK</button>` : ""}
             ${canEdit ? `<button class="btn" type="button" data-action="edit" data-id="${id}">Sửa</button>` : ""}
+            ${canCancelPublished ? `<button class="btn danger" type="button" data-action="cancel-tournament" data-id="${id}">Hủy</button>` : ""}
             ${canEditDraft ? `<button class="btn danger" type="button" data-action="delete" data-id="${id}">Xóa</button>` : ""}
         </div>
     `;
@@ -553,10 +572,13 @@ function openTournamentModal(mode, item = null) {
 
     fields.title.textContent = "Tạo giải đấu";
     buttons.modalSave.textContent = "Lưu";
+    buttons.modalCancelTournament.classList.add("hidden");
+    buttons.modalCancelTournament.disabled = true;
     fields.name.value = "";
     fields.level.value = tournamentOptions.levels[0]?.idcapgiaidau ? String(tournamentOptions.levels[0].idcapgiaidau) : "";
     updateRegionsForSelectedLevel();
     fields.law.value = tournamentOptions.rules[0]?.idluat ? String(tournamentOptions.rules[0].idluat) : "";
+    fields.gender.value = "NAM";
     fields.nature.value = "CHINH_THUC";
     fields.start.value = "";
     fields.end.value = "";
@@ -579,17 +601,20 @@ function openTournamentModal(mode, item = null) {
     fields.ruleContent.value = "";
     fields.formatType.value = "KET_HOP";
     fields.pairing.value = "HYBRID";
-    fields.teamSelection.value = "KET_HOP";
     setImageMode("url");
 
     if (mode === "edit" && item) {
         editingId = tournamentId(item);
         fields.title.textContent = "Sửa giải đấu";
         buttons.modalSave.textContent = "Cập nhật";
+        const canCancelTournament = item.trangthai === "DA_CONG_BO" && isBeforeTournamentStart(item);
+        buttons.modalCancelTournament.classList.toggle("hidden", !canCancelTournament);
+        buttons.modalCancelTournament.disabled = !canCancelTournament;
         fields.name.value = item.tengiaidau || "";
         fields.level.value = item.idcapgiaidau ? String(item.idcapgiaidau) : "";
         updateRegionsForSelectedLevel(item.idkhuvucphamvi || "");
         fields.law.value = item.idluat ? String(item.idluat) : "";
+        fields.gender.value = item.gioitinh || "NAM";
         fields.nature.value = item.tinhchat || "CHINH_THUC";
         fields.start.value = item.thoigianbatdau || "";
         fields.end.value = item.thoigianketthuc || "";
@@ -618,10 +643,6 @@ function openTournamentModal(mode, item = null) {
         if (item.thethuc) {
             fields.formatType.value = formatTypeFromStoredFormat(item.thethuc);
             fields.pairing.value = item.thethuc.cach_xep_mac_dinh || "HYBRID";
-        }
-
-        if (item.quytac) {
-            fields.teamSelection.value = item.quytac.chedochondoi || "KET_HOP";
         }
 
         const conditions = Array.isArray(item.dieukien) ? item.dieukien : (item.dieukien ? [item.dieukien] : []);
@@ -672,6 +693,7 @@ function collectTournamentPayload() {
         idcapgiaidau: fields.level.value ? Number(fields.level.value) : null,
         idkhuvucphamvi: fields.region.value ? Number(fields.region.value) : null,
         idluat: fields.law.value ? Number(fields.law.value) : null,
+        gioitinh: fields.gender.value,
         tinhchat: fields.nature.value,
         thoigianbatdau: fields.start.value,
         thoigianketthuc: fields.end.value,
@@ -689,7 +711,7 @@ function collectTournamentPayload() {
             so_vdv_toi_thieu_moi_doi: Number(fields.minPlayers.value || 6),
             so_vdv_toi_da_moi_doi: Number(fields.maxPlayers.value || 14),
             le_phi_tham_gia: fields.fee.value === "" ? 0 : Number(fields.fee.value),
-            cho_phep_dang_ky_tu_do: fields.teamSelection.value !== "BTC_CHON_THU_CONG",
+            cho_phep_dang_ky_tu_do: true,
             yeu_cau_duyet_dang_ky: true,
         },
         thethuc: {
@@ -699,7 +721,7 @@ function collectTournamentPayload() {
             seed_source_mac_dinh: "BTC_NHAP_TAY",
         },
         quytac: {
-            chedochondoi: fields.teamSelection.value,
+            chedochondoi: "DANG_KY_THU_CONG",
             soluongdoitoida: scale,
             ...eligibility,
         },
@@ -717,11 +739,12 @@ function validateTournamentPayload(payload) {
     if (!payload.idcapgiaidau) return "Vui lòng chọn cấp giải đấu.";
     if (!payload.idkhuvucphamvi) return "Vui lòng chọn khu vực phạm vi.";
     if (!payload.idluat) return "Vui lòng chọn luật thi đấu.";
+    if (!["NAM", "NU"].includes(payload.gioitinh)) return "Vui lòng chọn giới tính giải đấu.";
     if (payload.thoigianbatdau === "" || payload.thoigianketthuc === "") return "Vui lòng nhập ngày bắt đầu và ngày kết thúc.";
     if (payload.thoigianketthuc < payload.thoigianbatdau) return "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.";
     if (!Number.isInteger(payload.quymo) || payload.quymo <= 0) return "Quy mô phải là số nguyên lớn hơn 0.";
     if (payload.dieule.so_doi_toi_thieu < 2) return "Số đội tối thiểu phải từ 2 trở lên.";
-    if (payload.dieule.so_doi_toi_da <= payload.dieule.so_doi_toi_thieu) return "Số đội tối đa phải lớn hơn số đội tối thiểu.";
+    if (payload.dieule.so_doi_toi_da < payload.dieule.so_doi_toi_thieu) return "Số đội tối đa phải lớn hơn hoặc bằng số đội tối thiểu.";
     if (payload.dieule.so_doi_toi_da < payload.quymo) return "Số đội tối đa trong điều lệ phải lớn hơn hoặc bằng quy mô giải.";
     if (payload.dieule.so_vdv_toi_thieu_moi_doi < 6 || payload.dieule.so_vdv_toi_thieu_moi_doi > 14) return "Số VĐV tối thiểu mỗi đội phải từ 6 đến 14.";
     if (payload.dieule.so_vdv_toi_da_moi_doi < 6 || payload.dieule.so_vdv_toi_da_moi_doi > 14) return "Số VĐV tối đa mỗi đội phải từ 6 đến 14.";
@@ -796,6 +819,27 @@ async function publishTournament(id) {
     }
 }
 
+async function cancelTournament(id = editingId) {
+    if (!id || !window.confirm("Hủy giải đấu đã công bố này?")) return;
+    setPageMessage("");
+
+    try {
+        await apiRequest(`${tournamentsApi}/${id}/cancel`, {
+            method: "POST",
+            body: JSON.stringify({ lydo: "BTC hủy giải đấu đã công bố" }),
+        });
+        closeTournamentModal();
+        setPageMessage("Hủy giải đấu thành công.", true);
+        await loadTournaments();
+    } catch (error) {
+        if (tournamentModal.classList.contains("hidden")) {
+            setPageMessage(error.message);
+        } else {
+            showAlert(fields.alert, error.message);
+        }
+    }
+}
+
 async function runTournamentAction(url, successMessage, options = {}) {
     setPageMessage("");
     try {
@@ -858,6 +902,7 @@ function renderRegistrations(registrations) {
         const id = registrationId(item);
         const status = item.trangthai || "";
         const actionable = status === "CHO_DUYET";
+        const removable = status === "DA_DUYET";
         return `
             <tr>
                 <td>${id}</td>
@@ -870,6 +915,7 @@ function renderRegistrations(registrations) {
                     <div class="row-actions">
                         <button class="btn primary" type="button" data-action="approve-reg" data-id="${id}" ${actionable ? "" : "disabled"}>Duyệt</button>
                         <button class="btn danger" type="button" data-action="reject-reg" data-id="${id}" data-team="${escapeHtml(item.tendoibong)}" ${actionable ? "" : "disabled"}>Từ chối</button>
+                        <button class="btn danger" type="button" data-action="remove-reg" data-id="${id}" data-team="${escapeHtml(item.tendoibong)}" ${removable ? "" : "disabled"}>Loại đội</button>
                     </div>
                 </td>
             </tr>
@@ -929,6 +975,22 @@ async function rejectRegistration() {
     }
 }
 
+async function removeRegistration(id, teamName) {
+    if (!window.confirm(`Loại đội "${teamName || ""}" khỏi giải đấu?`)) return;
+
+    try {
+        await apiRequest(`${tournamentsApi}/${currentTournamentId}/registrations/${id}/remove`, {
+            method: "POST",
+            body: JSON.stringify({ lydotuchoi: "BTC loại đội thi đấu" }),
+        });
+        setPageMessage("Loại đội thi đấu thành công.", true);
+        await loadRegistrations();
+        await loadTournaments();
+    } catch (error) {
+        setPageMessage(error.message);
+    }
+}
+
 tbody.addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-action]");
     if (!button) return;
@@ -940,6 +1002,7 @@ tbody.addEventListener("click", async (event) => {
     if (action === "publish") return publishTournament(id);
     if (action === "open-reg") return runTournamentAction(`${tournamentsApi}/${id}/registrations/open`, "Mở đăng ký giải đấu thành công.");
     if (action === "close-reg") return runTournamentAction(`${tournamentsApi}/${id}/registrations/close`, "Đóng đăng ký giải đấu thành công.");
+    if (action === "cancel-tournament") return cancelTournament(id);
     if (action === "delete") {
         if (window.confirm("Xóa giải đấu nháp/chưa công bố này?")) {
             return runTournamentAction(`${tournamentsApi}/${id}`, "Xóa giải đấu thành công.", { method: "DELETE" });
@@ -962,11 +1025,13 @@ fields.regTable.addEventListener("click", async (event) => {
     const id = Number(button.dataset.id);
     if (button.dataset.action === "approve-reg") return approveRegistration(id);
     if (button.dataset.action === "reject-reg") openRejectRegistration(id, button.dataset.team || "");
+    if (button.dataset.action === "remove-reg") return removeRegistration(id, button.dataset.team || "");
 });
 
 btnCreate.addEventListener("click", () => openTournamentModal("create"));
 buttons.modalClose.addEventListener("click", closeTournamentModal);
 buttons.modalCancel.addEventListener("click", closeTournamentModal);
+buttons.modalCancelTournament.addEventListener("click", () => cancelTournament());
 buttons.modalSave.addEventListener("click", saveTournament);
 buttons.regClose.addEventListener("click", closeRegistrations);
 buttons.regCloseBottom.addEventListener("click", closeRegistrations);
@@ -995,8 +1060,8 @@ fields.maxTeams.addEventListener("change", syncScaleFromMaxTeams);
 fields.minTeams.addEventListener("change", () => {
     const minTeams = Number(fields.minTeams.value || 0);
     const maxTeams = Number(fields.maxTeams.value || 0);
-    if (minTeams >= maxTeams && fields.maxTeams.options.length > 0) {
-        const next = Array.from(fields.maxTeams.options).find((option) => Number(option.value) > minTeams);
+    if (minTeams > maxTeams && fields.maxTeams.options.length > 0) {
+        const next = Array.from(fields.maxTeams.options).find((option) => Number(option.value) >= minTeams);
         if (next) fields.maxTeams.value = next.value;
         syncScaleFromMaxTeams();
     }

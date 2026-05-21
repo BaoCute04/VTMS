@@ -18,6 +18,18 @@ final class CoachRegistrationService
         $this->coaches ??= new Huanluyenvien();
     }
 
+    public function options(): array
+    {
+        return [
+            'ok' => true,
+            'status' => 200,
+            'message' => 'Lay danh muc dang ky huan luyen vien thanh cong.',
+            'options' => [
+                'work_regions' => $this->coaches->activeWorkRegions(),
+            ],
+        ];
+    }
+
     public function register(array $payload, ?Request $request = null): array
     {
         [$account, $profile, $coach, $confirmation, $errors] = $this->validatePayload($payload);
@@ -32,11 +44,14 @@ final class CoachRegistrationService
             return $this->failure('Khong tim thay vai tro HUAN_LUYEN_VIEN trong he thong.', 500);
         }
 
-        $organizer = $this->coaches->receivingOrganizer($confirmation['organizer_id']);
+        $organizer = $this->coaches->receivingOrganizer(
+            $confirmation['organizer_id'],
+            (int) $coach['idkhuvuccongtac']
+        );
 
         if ($organizer === null) {
-            return $this->failure('Khong tim thay ban to chuc dang hoat dong de tiep nhan yeu cau.', 409, [
-                'organizer_id' => 'Ban to chuc tiep nhan khong ton tai hoac khong hoat dong.',
+            return $this->failure('Khong tim thay ban to chuc dang hoat dong trong khu vuc cong tac de tiep nhan yeu cau.', 409, [
+                'idkhuvuccongtac' => 'Khu vuc cong tac chua co ban to chuc dang hoat dong de duyet yeu cau.',
             ]);
         }
 
@@ -45,9 +60,10 @@ final class CoachRegistrationService
         $confirmation['organizer_id'] = (int) $organizer['idbantochuc'];
 
         $logNote = $this->limitLogNote(sprintf(
-            'HLV "%s %s" dang ky tai khoan, gui yeu cau xac nhan tu cach den BTC #%d.',
+            'HLV "%s %s" dang ky tai khoan tai khu vuc #%d, gui yeu cau xac nhan tu cach den BTC #%d.',
             $profile['hodem'],
             $profile['ten'],
+            (int) $coach['idkhuvuccongtac'],
             $confirmation['organizer_id']
         ));
 
@@ -93,6 +109,8 @@ final class CoachRegistrationService
         $identityNumber = trim((string) $this->read($payload, ['cccd', 'identity_number', 'profile.cccd']));
 
         $degree = trim((string) $this->read($payload, ['bangcap', 'degree', 'coach.bangcap', 'coach.degree']));
+        $workUnit = trim((string) $this->read($payload, ['donvicongtac', 'work_unit', 'club', 'coach.donvicongtac', 'coach.work_unit']));
+        $workRegionRaw = $this->read($payload, ['idkhuvuccongtac', 'work_region_id', 'coach.idkhuvuccongtac', 'coach.work_region_id'], null);
         $experienceRaw = $this->read($payload, ['kinhnghiem', 'experience', 'coach.kinhnghiem', 'coach.experience'], 0);
         $experienceRaw = trim((string) $experienceRaw) === '' ? 0 : $experienceRaw;
         $organizerRaw = $this->read($payload, ['organizer_id', 'idbantochuc', 'receiver_organizer_id'], null);
@@ -178,6 +196,24 @@ final class CoachRegistrationService
             $errors['bangcap'] = 'Bang cap toi da 300 ky tu.';
         }
 
+        $workRegionId = null;
+        if ($workRegionRaw === null || trim((string) $workRegionRaw) === '') {
+            $errors['idkhuvuccongtac'] = 'Vui long chon khu vuc cong tac.';
+        } elseif (!ctype_digit((string) $workRegionRaw) || (int) $workRegionRaw <= 0) {
+            $errors['idkhuvuccongtac'] = 'Khu vuc cong tac khong hop le.';
+        } else {
+            $workRegionId = (int) $workRegionRaw;
+            if ($this->coaches->activeWorkRegion($workRegionId) === null) {
+                $errors['idkhuvuccongtac'] = 'Khu vuc cong tac khong ton tai hoac da ngung su dung.';
+            }
+        }
+
+        if ($workUnit === '') {
+            $errors['donvicongtac'] = 'Vui long nhap don vi hoac cau lac bo cong tac.';
+        } elseif (strlen($workUnit) > 300) {
+            $errors['donvicongtac'] = 'Don vi cong tac toi da 300 ky tu.';
+        }
+
         if (filter_var($experienceRaw, FILTER_VALIDATE_INT) === false || (int) $experienceRaw < 0) {
             $errors['kinhnghiem'] = 'Kinh nghiem phai la so nguyen >= 0.';
         }
@@ -214,6 +250,8 @@ final class CoachRegistrationService
             'avatar' => $avatar === '' ? null : $avatar,
             'cccd' => $identityNumber === '' ? null : $identityNumber,
         ], [
+            'idkhuvuccongtac' => $workRegionId,
+            'donvicongtac' => $workUnit,
             'bangcap' => $degree === '' ? null : $degree,
             'kinhnghiem' => (int) $experienceRaw,
         ], [

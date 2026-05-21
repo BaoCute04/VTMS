@@ -39,6 +39,8 @@
         dob: document.getElementById("m_dob"),
         hometown: document.getElementById("m_hometown"),
         address: document.getElementById("m_address"),
+        workUnit: document.getElementById("m_workUnit"),
+        workRegion: document.getElementById("m_workRegion"),
         degree: document.getElementById("m_degree"),
         exp: document.getElementById("m_exp"),
         requestId: document.getElementById("m_reqId"),
@@ -208,7 +210,7 @@
         computeStats(coaches);
 
         if (coaches.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="empty">Không có huấn luyện viên phù hợp.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="empty">Không có huấn luyện viên phù hợp.</td></tr>';
             return;
         }
 
@@ -223,6 +225,10 @@
                     <div>${escapeHtml(coach.email || "")}</div>
                     <span class="sub">${escapeHtml(coach.sodienthoai || "")}</span>
                 </td>
+                <td>
+                    <div>${escapeHtml(coach.donvicongtac || "")}</div>
+                    <span class="sub">${escapeHtml(coach.tenkhuvuccongtac || "")}</span>
+                </td>
                 <td>${escapeHtml(coach.bangcap || "")}</td>
                 <td>${Number(coach.kinhnghiem || 0)}</td>
                 <td>${statusBadge(coach.trangthai)}</td>
@@ -233,7 +239,7 @@
     }
 
     async function loadCoaches() {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty">Đang tải dữ liệu...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="empty">Đang tải dữ liệu...</td></tr>';
         setMessage("");
 
         try {
@@ -263,6 +269,8 @@
         detailFields.dob.value = coach.ngaysinh || "";
         detailFields.hometown.value = coach.quequan || "";
         detailFields.address.value = coach.diachi || "";
+        detailFields.workUnit.value = coach.donvicongtac || "";
+        detailFields.workRegion.value = [coach.tenkhuvuccongtac, coach.capkhuvuccongtac].filter(Boolean).join(" - ");
         detailFields.degree.value = coach.bangcap || "";
         detailFields.exp.value = Number(coach.kinhnghiem || 0);
 
