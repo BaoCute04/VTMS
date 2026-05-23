@@ -13,7 +13,7 @@ final class Lichthidau extends Model
     {
         $where = [
             'gd.idbantochuc = :organizer_id',
-            "gd.trangthai = 'DA_CONG_BO'",
+            "gd.trangthai <> 'DA_HUY'",
         ];
         $bindings = ['organizer_id' => $organizerId];
 

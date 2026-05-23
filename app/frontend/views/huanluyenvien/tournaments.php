@@ -8,7 +8,7 @@
         <div>
             <p class="eyebrow">HUẤN LUYỆN VIÊN</p>
             <h1>Danh sách giải đấu</h1>
-            <p class="sub">Chọn giải đấu đang mở để đăng ký tham gia.</p>
+            <p class="sub">Xem giải đang mở đăng ký và các giải đội của bạn đã gửi hồ sơ.</p>
         </div>
     </header>
 

@@ -7,7 +7,7 @@
         <div>
             <p class="eyebrow">BAN TỔ CHỨC</p>
             <h1>Quản lý lịch thi đấu</h1>
-            <p class="sub">Xem cấu trúc vòng đấu của giải đã công bố; sau khi đóng đăng ký có thể tạo bảng, sinh trận và xếp lịch.</p>
+            <p class="sub">Xem cấu trúc vòng đấu của các giải chưa bị hủy; sau khi đóng đăng ký có thể tạo bảng, sinh trận và xếp lịch.</p>
         </div>
     </header>
 
@@ -15,7 +15,7 @@
         <aside class="schedule-sidebar">
             <div class="sidebar-head">
                 <h2>Giải đấu</h2>
-                <p class="sub">Hiển thị các giải đã công bố do ban tổ chức quản lý.</p>
+                <p class="sub">Hiển thị các giải chưa bị hủy do ban tổ chức quản lý.</p>
             </div>
 
             <div class="sidebar-tools">

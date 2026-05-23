@@ -559,8 +559,8 @@ final class OrganizerTournamentService
             'idcapgiaidau' => $levelId,
             'idkhuvucphamvi' => $regionId,
             'idluat' => $lawId,
-            'thoigianbatdau' => $this->dateValue($payload['thoigianbatdau'] ?? $payload['ngaybatdau'] ?? $payload['start_date'] ?? null, 'thoigianbatdau', 'Ngày bắt đầu', $errors),
-            'thoigianketthuc' => $this->dateValue($payload['thoigianketthuc'] ?? $payload['ngayketthuc'] ?? $payload['end_date'] ?? null, 'thoigianketthuc', 'Ngày kết thúc', $errors),
+            'thoigianbatdau' => $this->dateValue($payload['thoigianbatdau'] ?? $payload['ngaybatdau'] ?? $payload['start_date'] ?? null, 'thoigianbatdau', 'Thời gian bắt đầu', $errors),
+            'thoigianketthuc' => $this->dateValue($payload['thoigianketthuc'] ?? $payload['ngayketthuc'] ?? $payload['end_date'] ?? null, 'thoigianketthuc', 'Thời gian kết thúc', $errors),
             'quymo' => $scale,
             'hinhanh' => $this->nullableString($payload['hinhanh'] ?? $payload['image'] ?? null, 500, 'Hình ảnh', 'hinhanh', $errors),
             'tinhchat' => $this->enumValue($payload['tinhchat'] ?? $payload['tinh_chat'] ?? 'CHINH_THUC', ['CHINH_THUC', 'GIAO_HUU', 'PHONG_TRAO', 'NOI_BO', 'MO_RONG'], 'tinhchat', $errors),
@@ -568,8 +568,8 @@ final class OrganizerTournamentService
             'ghichu_diadiem' => $this->nullableString($payload['ghichu_diadiem'] ?? $payload['location_note'] ?? null, 500, 'Ghi chú địa điểm', 'ghichu_diadiem', $errors),
         ];
 
-        if ($tournament['thoigianbatdau'] !== null && $tournament['thoigianketthuc'] !== null && $tournament['thoigianketthuc'] < $tournament['thoigianbatdau']) {
-            $errors['thoigianketthuc'] = 'Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.';
+        if ($tournament['thoigianbatdau'] !== null && $tournament['thoigianketthuc'] !== null && $tournament['thoigianketthuc'] <= $tournament['thoigianbatdau']) {
+            $errors['thoigianketthuc'] = 'Thời gian kết thúc phải sau thời gian bắt đầu.';
         }
 
         if ($scale !== null && $scale < 2) {
@@ -577,7 +577,7 @@ final class OrganizerTournamentService
         }
 
         $configuration = [
-            'dieule' => $this->regulationFromPayload($payload, $scale ?? 2, $errors),
+            'dieule' => $this->regulationFromPayload($payload, $scale ?? 2, $errors, $level),
             'thethuc' => $this->structuredCompetitionFormatFromPayload($payload, $errors),
             'quytac' => $this->teamSelectionRuleFromPayload($payload, $level, $scale, $conditions, $errors),
             'dieukien' => $conditions,
@@ -626,14 +626,21 @@ final class OrganizerTournamentService
             return false;
         }
 
-        $today = new \DateTimeImmutable('today');
-        $start = \DateTimeImmutable::createFromFormat('Y-m-d', substr($startDate, 0, 10));
+        $normalized = str_replace('T', ' ', $startDate);
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $normalized)) {
+            $normalized .= ' 00:00:00';
+        } elseif (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $normalized)) {
+            $normalized .= ':00';
+        }
+
+        $now = new \DateTimeImmutable('now');
+        $start = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $normalized);
 
         if (!$start instanceof \DateTimeImmutable) {
             return false;
         }
 
-        return $start > $today;
+        return $start > $now;
     }
 
     private function arraySource(mixed $source): array
@@ -695,7 +702,7 @@ final class OrganizerTournamentService
         $errors['idluat'] = 'Luật thi đấu không tồn tại hoặc không hoạt động.';
     }
 
-    private function regulationFromPayload(array $payload, int $scale, array &$errors): array
+    private function regulationFromPayload(array $payload, int $scale, array &$errors, ?array $level = null): array
     {
         $source = $this->arraySource($payload['dieule'] ?? []);
 
@@ -742,7 +749,7 @@ final class OrganizerTournamentService
             'thoi_gian_mo_dang_ky' => $this->nullableDateTime($source['thoi_gian_mo_dang_ky'] ?? $payload['thoi_gian_mo_dang_ky'] ?? null, 'dieule.thoi_gian_mo_dang_ky', $errors),
             'thoi_gian_dong_dang_ky' => $this->nullableDateTime($source['thoi_gian_dong_dang_ky'] ?? $payload['thoi_gian_dong_dang_ky'] ?? null, 'dieule.thoi_gian_dong_dang_ky', $errors),
             'cho_phep_dang_ky_tu_do' => $this->boolInt($source['cho_phep_dang_ky_tu_do'] ?? $payload['cho_phep_dang_ky_tu_do'] ?? true),
-            'yeu_cau_duyet_dang_ky' => $this->boolInt($source['yeu_cau_duyet_dang_ky'] ?? $payload['yeu_cau_duyet_dang_ky'] ?? true),
+            'yeu_cau_duyet_dang_ky' => $this->isLowestTournamentLevel($level) ? 1 : $this->boolInt($source['yeu_cau_duyet_dang_ky'] ?? $payload['yeu_cau_duyet_dang_ky'] ?? true),
             'quy_dinh_bo_cuoc' => $this->nullableString($source['quy_dinh_bo_cuoc'] ?? $payload['quy_dinh_bo_cuoc'] ?? null, 1000, 'Quy định bỏ cuộc', 'dieule.quy_dinh_bo_cuoc', $errors),
             'quy_dinh_khieu_nai' => $this->nullableString($source['quy_dinh_khieu_nai'] ?? $payload['quy_dinh_khieu_nai'] ?? null, 1000, 'Quy định khiếu nại', 'dieule.quy_dinh_khieu_nai', $errors),
         ];
@@ -831,17 +838,7 @@ final class OrganizerTournamentService
             $source = [];
         }
 
-        $requirements = $this->achievementRequirementsFromPayload(
-            $source['thanh_tich_duoc_phep']
-                ?? $payload['thanh_tich_duoc_phep']
-                ?? $source['yeu_cau_thanh_tich']
-                ?? $payload['yeu_cau_thanh_tich']
-                ?? ['KHONG_YEU_CAU']
-        );
-
-        if ($requirements === []) {
-            $requirements = ['KHONG_YEU_CAU'];
-        }
+        $requirements = ['KHONG_YEU_CAU'];
 
         $conditions = [];
         foreach ($requirements as $index => $requirement) {
@@ -857,7 +854,7 @@ final class OrganizerTournamentService
                 'idcapgiaidau_thanh_tich_nguon' => $eligibility['idcapgiaidau_thanh_tich_nguon'],
                 'hang_toi_thieu_duoc_phep' => $eligibility['hang_toi_thieu_duoc_phep'],
                 'so_mua_giai_gan_nhat_duoc_tinh' => $eligibility['so_mua_giai_gan_nhat_duoc_tinh'],
-                'chi_tinh_giai_chinh_thuc' => $this->boolInt($source['chi_tinh_giai_chinh_thuc'] ?? $payload['chi_tinh_giai_chinh_thuc'] ?? true),
+                'chi_tinh_giai_chinh_thuc' => 0,
                 'bat_buoc_cung_khuvuc' => $this->boolInt($source['bat_buoc_cung_khuvuc'] ?? $payload['bat_buoc_cung_khuvuc'] ?? true),
                 'cho_phep_btc_duyet_ngoai_le' => $eligibility['cho_phep_btc_duyet_ngoai_le'],
                 'mota' => $this->nullableString($source['mota'] ?? $payload['mota_dieukien'] ?? null, 1000, 'Mô tả điều kiện tham gia', 'dieukien.mota', $errors),
@@ -1005,9 +1002,18 @@ final class OrganizerTournamentService
         );
         $achievementBased = in_array($achievementRequirement, ['VO_DICH', 'A_QUAN', 'HANG_BA', 'TOP_N', 'THEO_XEP_HANG'], true);
 
+        if ($this->isLowestTournamentLevel($level)) {
+            $achievementRequirement = 'KHONG_YEU_CAU';
+            $achievementLevelId = null;
+            $minimumRank = null;
+            $recentSeasons = null;
+            $achievementBased = false;
+        }
+
         if (!$achievementBased) {
             $achievementLevelId = null;
             $minimumRank = null;
+            $recentSeasons = null;
         }
 
         if ($achievementBased && $achievementLevelId === null) {
@@ -1034,7 +1040,9 @@ final class OrganizerTournamentService
             'idcapgiaidau_thanh_tich_nguon' => $achievementLevelId,
             'hang_toi_thieu_duoc_phep' => $minimumRank,
             'so_mua_giai_gan_nhat_duoc_tinh' => $recentSeasons,
-            'cho_phep_btc_duyet_ngoai_le' => $this->boolInt($source['cho_phep_btc_duyet_ngoai_le'] ?? $payload['cho_phep_btc_duyet_ngoai_le'] ?? false),
+            'cho_phep_btc_duyet_ngoai_le' => $achievementBased
+                ? $this->boolInt($source['cho_phep_btc_duyet_ngoai_le'] ?? $payload['cho_phep_btc_duyet_ngoai_le'] ?? false)
+                : 0,
         ];
     }
 
@@ -1047,6 +1055,11 @@ final class OrganizerTournamentService
         }
 
         return null;
+    }
+
+    private function isLowestTournamentLevel(?array $level): bool
+    {
+        return strtoupper((string) ($level['macapgiaidau'] ?? '')) === 'XA_PHUONG';
     }
 
     private function nonNegativeMoneyString(mixed $value, string $errorKey, array &$errors): string
@@ -1452,8 +1465,8 @@ final class OrganizerTournamentService
         $errors = [];
         $requiredTextFields = [
             'tengiaidau' => 'Tên giải đấu là bắt buộc.',
-            'thoigianbatdau' => 'Ngày bắt đầu là bắt buộc.',
-            'thoigianketthuc' => 'Ngày kết thúc là bắt buộc.',
+            'thoigianbatdau' => 'Thời gian bắt đầu là bắt buộc.',
+            'thoigianketthuc' => 'Thời gian kết thúc là bắt buộc.',
         ];
 
         foreach ($requiredTextFields as $field => $message) {
@@ -1481,8 +1494,8 @@ final class OrganizerTournamentService
         $startDate = trim((string) ($tournament['thoigianbatdau'] ?? ''));
         $endDate = trim((string) ($tournament['thoigianketthuc'] ?? ''));
 
-        if ($startDate !== '' && $endDate !== '' && $endDate < $startDate) {
-            $errors['thoigianketthuc'] = 'Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.';
+        if ($startDate !== '' && $endDate !== '' && $endDate <= $startDate) {
+            $errors['thoigianketthuc'] = 'Thời gian kết thúc phải sau thời gian bắt đầu.';
         }
 
         $regulation = is_array($tournament['dieule'] ?? null) ? $tournament['dieule'] : null;
@@ -1592,26 +1605,31 @@ final class OrganizerTournamentService
 
     private function dateValue(mixed $value, string $errorKey, string $label, array &$errors): ?string
     {
-        $date = trim((string) ($value ?? ''));
+        $date = str_replace('T', ' ', trim((string) ($value ?? '')));
 
         if ($date === '') {
             $errors[$errorKey] = $label . ' la bat buoc.';
             return null;
         }
 
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-            $errors[$errorKey] = $label . ' phai theo dinh dang YYYY-MM-DD.';
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $date .= ' 00:00:00';
+        } elseif (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $date)) {
+            $date .= ':00';
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $date)) {
+            $errors[$errorKey] = $label . ' phai theo dinh dang YYYY-MM-DD HH:MM[:SS].';
             return null;
         }
 
-        [$year, $month, $day] = array_map('intval', explode('-', $date));
-
-        if (!checkdate($month, $day, $year)) {
+        $parsed = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $date);
+        if (!$parsed || $parsed->format('Y-m-d H:i:s') !== $date) {
             $errors[$errorKey] = $label . ' khong hop le.';
             return null;
         }
 
-        return $date;
+        return $parsed->format('Y-m-d H:i:s');
     }
 
     private function positiveInt(mixed $value, string $errorKey, string $label, array &$errors): ?int

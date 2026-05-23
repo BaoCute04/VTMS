@@ -34,6 +34,7 @@ final class CoachTournamentRegistrationService
         }
 
         $coachId = (int) $coachResult['idhuanluyenvien'];
+        $coachTeamIds = $this->tournaments->teamIdsForCoach($coachId);
         $tournaments = [];
         foreach ($this->tournaments->openTournamentsForCoach($coachId, $normalized) as $tournament) {
             $registrations = $this->tournaments->registrationsForCoach($coachId, [
@@ -41,6 +42,11 @@ final class CoachTournamentRegistrationService
             ]);
             $normalizedTournament = $this->normalizeTournamentForCoach($tournament);
             $normalizedTournament['eligible_team_ids'] = $this->tournaments->eligibleTeamIdsForTournament((int) $tournament['idgiaidau']);
+
+            if ($registrations === [] && array_intersect($coachTeamIds, $normalizedTournament['eligible_team_ids']) === []) {
+                continue;
+            }
+
             $normalizedTournament['coach_registration_status'] = $this->coachRegistrationStatus($tournament, $registrations);
             $tournaments[] = $normalizedTournament;
         }

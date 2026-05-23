@@ -82,6 +82,27 @@ final class AuthService
             ];
         }
 
+        if ((string) $account['role'] === 'BAN_TO_CHUC') {
+            $organizerId = isset($account['idbantochuc']) ? (int) $account['idbantochuc'] : 0;
+            $unitCanOrganize = (int) ($account['duoc_to_chuc_giai_bantochuc'] ?? 0) === 1;
+            $organizerActive = (string) ($account['trangthai_bantochuc'] ?? '') === 'HOAT_DONG';
+            $unitActive = (string) ($account['trangthai_donvi_bantochuc'] ?? '') === 'HOAT_DONG';
+            $unitTypeActive = (string) ($account['trangthai_loaidonvi_bantochuc'] ?? '') === 'HOAT_DONG';
+
+            $user['organizer'] = [
+                'idbantochuc' => $organizerId > 0 ? $organizerId : null,
+                'iddonvi' => isset($account['iddonvi_bantochuc']) ? (int) $account['iddonvi_bantochuc'] : null,
+                'madonvi' => (string) ($account['madonvi_bantochuc'] ?? ''),
+                'tendonvi' => (string) ($account['tendonvi_bantochuc'] ?? ''),
+                'maloaidonvi' => (string) ($account['maloaidonvi_bantochuc'] ?? ''),
+                'can_higher_eligibility' => $organizerId > 0
+                    && $organizerActive
+                    && $unitActive
+                    && $unitTypeActive
+                    && $unitCanOrganize,
+            ];
+        }
+
         return $user;
     }
 

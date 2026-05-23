@@ -116,8 +116,6 @@ const natureLabels = {
     MO_RONG: "Mở rộng",
 };
 
-const achievementBasedRequirements = new Set(["VO_DICH", "A_QUAN", "HANG_BA", "TOP_N", "THEO_XEP_HANG"]);
-
 function escapeHtml(value) {
     return String(value ?? "")
         .replaceAll("&", "&amp;")
@@ -193,8 +191,30 @@ function todayIsoDate() {
     return `${year}-${month}-${day}`;
 }
 
+function toInputDateTime(value) {
+    const text = String(value || "").trim();
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(text)) return text;
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(text)) return text.slice(0, 16).replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return `${text}T00:00`;
+    return "";
+}
+
+function toApiDateTime(value) {
+    const text = String(value || "").trim();
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(text)) return `${text.replace("T", " ")}:00`;
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(text)) return `${text}:00`;
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(text)) return text;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return `${text} 00:00:00`;
+    return text;
+}
+
 function isBeforeTournamentStart(item) {
-    const startDate = String(item?.thoigianbatdau || "").slice(0, 10);
+    const startTime = String(item?.thoigianbatdau || "").trim();
+    if (/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?$/.test(startTime)) {
+        return new Date(startTime.replace(" ", "T")) > new Date();
+    }
+
+    const startDate = startTime.slice(0, 10);
     return /^\d{4}-\d{2}-\d{2}$/.test(startDate) && startDate > todayIsoDate();
 }
 
@@ -241,6 +261,10 @@ function levelById(id) {
     return tournamentOptions.levels.find((item) => Number(item.idcapgiaidau) === Number(id)) || null;
 }
 
+function isLowestTournamentLevel(level = levelById(fields.level.value)) {
+    return String(level?.macapgiaidau || "").toUpperCase() === "XA_PHUONG";
+}
+
 function regionsForLevel(levelId) {
     return tournamentOptions.regions.filter((item) => Number(item.idcapgiaidau) === Number(levelId));
 }
@@ -249,24 +273,14 @@ function selectedRegion() {
     return tournamentOptions.regions.find((item) => Number(item.idkhuvuc) === Number(fields.region.value)) || null;
 }
 
-function achievementLevelsForSelectedTournamentLevel() {
-    const level = levelById(fields.level.value);
-    if (!level) return [];
-    return (tournamentOptions.achievement_levels || []).filter((item) => String(item.macapgiaidau) === String(level.capdoituongthamgia));
-}
-
 function selectedParticipantTeamType() {
     return String(levelById(fields.level.value)?.capdoituongthamgia || "");
 }
 
-function selectedAchievementRequirements() {
-    return fields.achievementRequirements.filter((item) => item.checked).map((item) => item.value);
-}
-
 function setAchievementRequirements(values = []) {
-    const selected = new Set(values);
     for (const input of fields.achievementRequirements) {
-        input.checked = selected.has(input.value);
+        input.checked = false;
+        input.disabled = true;
     }
 }
 
@@ -327,9 +341,9 @@ function updateTeamLimitOptions(preferred = {}, preview = eligibilityPreview) {
     fields.maxTeams.disabled = false;
 
     if (preview) {
-        fields.teamCountHint.textContent = `Có ${eligibleTeams} đội đủ điều kiện theo cấp giải nguồn, thành tích và mùa giải đang chọn. Số đội tối đa có thể đặt lớn hơn để nhận thêm đăng ký hoặc ngoại lệ.`;
+        fields.teamCountHint.textContent = `Có ${eligibleTeams} đội phù hợp theo cấp nguồn hoặc suất đại diện trong khu vực. Số đội tối đa có thể đặt lớn hơn để nhận thêm đăng ký.`;
     } else {
-        fields.teamCountHint.textContent = `Khu vực này hiện có ${activeTeams} đội đang hoạt động phù hợp cấp giải. Chọn điều kiện thành tích để tính số đội hợp lệ.`;
+        fields.teamCountHint.textContent = `Khu vực này hiện có ${activeTeams} đội đang hoạt động phù hợp theo cấp nguồn hoặc suất đại diện.`;
     }
 
     const maxTeams = Number(fields.maxTeams.value || 0);
@@ -397,41 +411,46 @@ function updateRegionsForSelectedLevel(selectedRegionId = "") {
 function updateEligibilityControls(selectedAchievementLevelId = "") {
     const level = levelById(fields.level.value);
     const participantLevel = String(level?.capdoituongthamgia || "");
-    const achievementLevels = achievementLevelsForSelectedTournamentLevel();
-    const achievementRequired = selectedAchievementRequirements().some((item) => achievementBasedRequirements.has(item));
+    const sourceFieldGroup = fields.achievementLevel.closest(".eligibility-achievement-source") || fields.achievementLevel.closest("div");
+    const achievementGroup = fields.achievementRequirements[0]?.closest(".eligibility-achievements") || null;
+    const recentSeasonsFieldGroup = fields.recentSeasons.closest("div");
+    const participationFlagsGroup = fields.officialOnly.closest(".participation-flags");
 
-    fields.achievementLevel.innerHTML = achievementLevels.length === 0
-        ? '<option value="">Không có cấp giải nguồn phù hợp</option>'
-        : achievementLevels.map((item) => (
-            `<option value="${Number(item.idcapgiaidau)}">${escapeHtml(item.tencapgiaidau || item.macapgiaidau)}</option>`
-        )).join("");
-
-    if (selectedAchievementLevelId && fields.achievementLevel.querySelector(`option[value="${selectedAchievementLevelId}"]`)) {
-        fields.achievementLevel.value = String(selectedAchievementLevelId);
+    for (const input of fields.achievementRequirements) {
+        input.checked = false;
+        input.disabled = true;
     }
 
-    fields.achievementLevel.disabled = !achievementRequired || achievementLevels.length === 0;
-    if (!achievementRequired) {
-        fields.achievementLevel.value = "";
-    }
+    if (sourceFieldGroup) sourceFieldGroup.classList.add("hidden");
+    if (achievementGroup) achievementGroup.classList.add("hidden");
+    if (recentSeasonsFieldGroup) recentSeasonsFieldGroup.classList.add("hidden");
+    if (participationFlagsGroup) participationFlagsGroup.classList.add("hidden");
+    fields.achievementLevel.innerHTML = '<option value="">Không xét thành tích nguồn</option>';
+    fields.achievementLevel.value = "";
+    fields.achievementLevel.disabled = true;
+    fields.recentSeasons.value = "1";
+    fields.recentSeasons.disabled = true;
+    fields.officialOnly.checked = false;
+    fields.officialOnly.disabled = true;
+    fields.allowException.checked = false;
+    fields.allowException.disabled = true;
 
     fields.eligibilityHint.textContent = participantLevel
-        ? `Đội tham gia được suy ra là cấp ${participantLevel}. Khi yêu cầu thành tích, cấp giải nguồn phải cùng cấp này.`
+        ? `Đội được đăng ký khi cấp nguồn hoặc suất đại diện hiện tại khớp cấp ${participantLevel}.`
         : "Chọn cấp giải hiện tại để hệ thống xác định cấp đội tham gia.";
 }
 
 function buildEligibilityPreviewUrl() {
-    const requirements = selectedAchievementRequirements();
     const params = new URLSearchParams({
         idcapgiaidau: fields.level.value,
         idkhuvucphamvi: fields.region.value,
         capdoituongthamgia: selectedParticipantTeamType(),
-        thanh_tich_duoc_phep: requirements.length > 0 ? requirements.join(",") : "KHONG_YEU_CAU",
-        idcapgiaidau_thanh_tich_nguon: fields.achievementLevel.value,
-        so_mua_giai_gan_nhat_duoc_tinh: fields.recentSeasons.value || "1",
-        chi_tinh_giai_chinh_thuc: fields.officialOnly.checked ? "1" : "0",
+        thanh_tich_duoc_phep: "KHONG_YEU_CAU",
+        idcapgiaidau_thanh_tich_nguon: "",
+        so_mua_giai_gan_nhat_duoc_tinh: "",
+        chi_tinh_giai_chinh_thuc: "0",
         bat_buoc_cung_khuvuc: "1",
-        cho_phep_btc_duyet_ngoai_le: fields.allowException.checked ? "1" : "0",
+        cho_phep_btc_duyet_ngoai_le: "0",
     });
 
     return `${eligibilityPreviewApi}?${params.toString()}`;
@@ -439,10 +458,7 @@ function buildEligibilityPreviewUrl() {
 
 async function refreshEligibilityPreview(preferred = {}) {
     const level = levelById(fields.level.value);
-    const requirements = selectedAchievementRequirements();
-    const achievementBased = requirements.some((item) => achievementBasedRequirements.has(item));
-
-    if (!level || !fields.region.value || (achievementBased && !fields.achievementLevel.value)) {
+    if (!level || !fields.region.value) {
         eligibilityPreview = null;
         updateTeamLimitOptions(preferred);
         return;
@@ -616,8 +632,8 @@ function openTournamentModal(mode, item = null) {
         fields.law.value = item.idluat ? String(item.idluat) : "";
         fields.gender.value = item.gioitinh || "NAM";
         fields.nature.value = item.tinhchat || "CHINH_THUC";
-        fields.start.value = item.thoigianbatdau || "";
-        fields.end.value = item.thoigianketthuc || "";
+        fields.start.value = toInputDateTime(item.thoigianbatdau);
+        fields.end.value = toInputDateTime(item.thoigianketthuc);
         fields.size.value = item.quymo || 10;
         fields.image.value = item.hinhanh || "";
         fields.placeNote.value = item.ghichu_diadiem || "";
@@ -676,16 +692,15 @@ function collectTournamentPayload() {
     const imageMode = selectedImageMode();
     const scale = Number(fields.maxTeams.value || fields.size.value || 0);
     const selectedLevel = levelById(fields.level.value);
-    const achievementRequirements = selectedAchievementRequirements();
-    const achievementBased = achievementRequirements.some((item) => achievementBasedRequirements.has(item));
-    const achievementLevelId = achievementBased && fields.achievementLevel.value ? Number(fields.achievementLevel.value) : null;
+    const achievementRequirements = [];
+    const achievementLevelId = null;
     const eligibility = {
         capdoituongthamgia: selectedLevel?.capdoituongthamgia || "DON_VI",
-        thanh_tich_duoc_phep: achievementRequirements.length > 0 ? achievementRequirements : ["KHONG_YEU_CAU"],
+        thanh_tich_duoc_phep: ["KHONG_YEU_CAU"],
         idcapgiaidau_thanh_tich_nguon: achievementLevelId,
         hang_toi_thieu_duoc_phep: null,
-        so_mua_giai_gan_nhat_duoc_tinh: Number(fields.recentSeasons.value || 1),
-        cho_phep_btc_duyet_ngoai_le: fields.allowException.checked,
+        so_mua_giai_gan_nhat_duoc_tinh: null,
+        cho_phep_btc_duyet_ngoai_le: false,
     };
 
     return {
@@ -695,8 +710,8 @@ function collectTournamentPayload() {
         idluat: fields.law.value ? Number(fields.law.value) : null,
         gioitinh: fields.gender.value,
         tinhchat: fields.nature.value,
-        thoigianbatdau: fields.start.value,
-        thoigianketthuc: fields.end.value,
+        thoigianbatdau: toApiDateTime(fields.start.value),
+        thoigianketthuc: toApiDateTime(fields.end.value),
         quymo: scale,
         hinhanh: imageMode === "url" ? (fields.image.value.trim() || null) : (editingTournament?.hinhanh || null),
         image_mode: imageMode,
@@ -727,7 +742,7 @@ function collectTournamentPayload() {
         },
         dieukien: {
             ten_dieukien: "Điều kiện tham gia mặc định",
-            chi_tinh_giai_chinh_thuc: fields.officialOnly.checked,
+            chi_tinh_giai_chinh_thuc: false,
             bat_buoc_cung_khuvuc: true,
             ...eligibility,
         },
@@ -740,8 +755,8 @@ function validateTournamentPayload(payload) {
     if (!payload.idkhuvucphamvi) return "Vui lòng chọn khu vực phạm vi.";
     if (!payload.idluat) return "Vui lòng chọn luật thi đấu.";
     if (!["NAM", "NU"].includes(payload.gioitinh)) return "Vui lòng chọn giới tính giải đấu.";
-    if (payload.thoigianbatdau === "" || payload.thoigianketthuc === "") return "Vui lòng nhập ngày bắt đầu và ngày kết thúc.";
-    if (payload.thoigianketthuc < payload.thoigianbatdau) return "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.";
+    if (payload.thoigianbatdau === "" || payload.thoigianketthuc === "") return "Vui lòng nhập thời gian bắt đầu và thời gian kết thúc.";
+    if (payload.thoigianketthuc <= payload.thoigianbatdau) return "Thời gian kết thúc phải sau thời gian bắt đầu.";
     if (!Number.isInteger(payload.quymo) || payload.quymo <= 0) return "Quy mô phải là số nguyên lớn hơn 0.";
     if (payload.dieule.so_doi_toi_thieu < 2) return "Số đội tối thiểu phải từ 2 trở lên.";
     if (payload.dieule.so_doi_toi_da < payload.dieule.so_doi_toi_thieu) return "Số đội tối đa phải lớn hơn hoặc bằng số đội tối thiểu.";
@@ -750,7 +765,6 @@ function validateTournamentPayload(payload) {
     if (payload.dieule.so_vdv_toi_da_moi_doi < 6 || payload.dieule.so_vdv_toi_da_moi_doi > 14) return "Số VĐV tối đa mỗi đội phải từ 6 đến 14.";
     if (payload.dieule.so_vdv_toi_da_moi_doi < payload.dieule.so_vdv_toi_thieu_moi_doi) return "Số VĐV tối đa mỗi đội phải lớn hơn hoặc bằng số tối thiểu.";
     if (Number.isNaN(payload.dieule.le_phi_tham_gia) || payload.dieule.le_phi_tham_gia < 0) return "Lệ phí tham gia phải là số không âm.";
-    if (payload.dieukien.thanh_tich_duoc_phep.some((item) => achievementBasedRequirements.has(item)) && !payload.dieukien.idcapgiaidau_thanh_tich_nguon) return "Vui lòng chọn cấp giải nguồn của thành tích.";
     if (payload.image_mode === "upload" && !payload.image_upload_name && !payload.hinhanh) return "Vui lòng chọn tệp ảnh hoặc chuyển sang chế độ gắn URL.";
     return "";
 }

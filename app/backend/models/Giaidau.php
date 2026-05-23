@@ -17,6 +17,7 @@ final class Giaidau extends Model
                 btc.idnguoidung,
                 btc.idcapbantochuc,
                 btc.idkhuvucquanly,
+                btc.iddonvi,
                 btc.idbantochuccha,
                 btc.donvi,
                 btc.chucvu,
@@ -27,6 +28,13 @@ final class Giaidau extends Model
                 kv.makhuvuc AS makhuvucquanly,
                 kv.tenkhuvuc AS tenkhuvucquanly,
                 kv.capkhuvuc AS capkhuvucquanly_thucte,
+                dv.madonvi,
+                dv.tendonvi,
+                dv.trangthai AS trangthai_donvi,
+                ldv.maloaidonvi,
+                ldv.tenloaidonvi,
+                ldv.duoc_to_chuc_giai,
+                ldv.trangthai AS trangthai_loaidonvi,
                 tk.idtaikhoan,
                 tk.username,
                 nd.hodem,
@@ -35,6 +43,8 @@ final class Giaidau extends Model
              FROM Bantochuc btc
              JOIN Capbantochuc cbtc ON cbtc.idcapbantochuc = btc.idcapbantochuc
              JOIN Khuvuc kv ON kv.idkhuvuc = btc.idkhuvucquanly
+             LEFT JOIN Donvi dv ON dv.iddonvi = btc.iddonvi
+             LEFT JOIN Loaidonvi ldv ON ldv.idloaidonvi = dv.idloaidonvi
              JOIN Nguoidung nd ON nd.idnguoidung = btc.idnguoidung
              JOIN Taikhoan tk ON tk.idtaikhoan = nd.idtaikhoan
              WHERE tk.idtaikhoan = :account_id
@@ -102,15 +112,47 @@ final class Giaidau extends Model
         );
     }
 
+    public function teamIdsForCoach(int $coachId): array
+    {
+        $statement = $this->db()->prepare(
+            "SELECT iddoibong
+             FROM Doibong
+             WHERE idhuanluyenvien = :coach_id
+               AND trangthai = 'HOAT_DONG'"
+        );
+        $statement->execute(['coach_id' => $coachId]);
+
+        return array_map('intval', array_column($statement->fetchAll(), 'iddoibong'));
+    }
+
     public function openTournamentsForCoach(int $coachId, array $filters = []): array
     {
         $where = [
-            "gd.trangthai = 'DA_CONG_BO'",
-            "gd.trangthaidangky = 'DANG_MO'",
-            'DATE(gd.thoigianbatdau) > CURRENT_DATE()',
+            "(
+                (
+                    gd.trangthai = 'DA_CONG_BO'
+                    AND gd.trangthaidangky = 'DANG_MO'
+                    AND gd.thoigianbatdau > CURRENT_TIMESTAMP
+                    AND EXISTS (
+                        SELECT 1
+                        FROM Doibong db_scope
+                        JOIN Khuvuc kv_scope ON kv_scope.idkhuvuc = db_scope.idkhuvucdaidien
+                        LEFT JOIN Capgiaidau cg_source ON cg_source.macapgiaidau = kv_scope.capkhuvuc
+                        WHERE db_scope.idhuanluyenvien = :coach_id_scope
+                          AND db_scope.trangthai = 'HOAT_DONG'
+                          AND fn_khuvuc_la_con(db_scope.idkhuvucdaidien, gd.idkhuvucphamvi) = 1
+                          AND (
+                            cg_source.idcapgiaidau = gd.idcapgiaidau
+                            OR db_scope.idcapgiaidau_duoc_tham_gia = gd.idcapgiaidau
+                          )
+                    )
+                )
+                OR COALESCE(my_reg.my_registration_count, 0) > 0
+            )",
         ];
         $bindings = [
-            'coach_id' => $coachId,
+            'coach_id_registration' => $coachId,
+            'coach_id_scope' => $coachId,
         ];
 
         if (($filters['q'] ?? '') !== '') {
@@ -171,7 +213,7 @@ final class Giaidau extends Model
                     SUM(CASE WHEN trangthai = 'CHO_DUYET' THEN 1 ELSE 0 END) AS my_pending_count,
                     SUM(CASE WHEN trangthai = 'DA_DUYET' THEN 1 ELSE 0 END) AS my_approved_count
                 FROM Dangkygiaidau
-                WHERE idhuanluyenvien = :coach_id
+                WHERE idhuanluyenvien = :coach_id_registration
                 GROUP BY idgiaidau
              ) my_reg ON my_reg.idgiaidau = gd.idgiaidau
              WHERE " . implode(' AND ', $where) . "
@@ -302,8 +344,8 @@ final class Giaidau extends Model
     {
         $where = [
             "trangthai = 'DA_CONG_BO'",
-            'DATE(thoigianbatdau) <= CURRENT_DATE()',
-            'DATE(thoigianketthuc) >= CURRENT_DATE()',
+            'thoigianbatdau <= CURRENT_TIMESTAMP',
+            'thoigianketthuc >= CURRENT_TIMESTAMP',
         ];
         $bindings = [];
 
@@ -513,9 +555,13 @@ final class Giaidau extends Model
                     SELECT COUNT(*)
                     FROM Doibong db
                     JOIN Khuvuc kvdb ON kvdb.idkhuvuc = db.idkhuvucdaidien
+                    JOIN Capgiaidau cgnguon ON cgnguon.macapgiaidau = kvdb.capkhuvuc
                     WHERE db.trangthai = 'HOAT_DONG'
-                      AND kvdb.capkhuvuc = cg.capdoituongthamgia
                       AND fn_khuvuc_la_con(db.idkhuvucdaidien, kv.idkhuvuc) = 1
+                      AND (
+                          cgnguon.idcapgiaidau = cg.idcapgiaidau
+                          OR db.idcapgiaidau_duoc_tham_gia = cg.idcapgiaidau
+                      )
                 ) AS active_team_count
              FROM Bantochuc btc
              JOIN Khuvuc kv ON kv.idkhuvuc = btc.idkhuvucquanly
@@ -536,12 +582,16 @@ final class Giaidau extends Model
             "SELECT COUNT(*) AS total
              FROM Doibong db
              JOIN Khuvuc kvdb ON kvdb.idkhuvuc = db.idkhuvucdaidien
-             JOIN Capgiaidau cg ON cg.idcapgiaidau = :level_id
+             JOIN Capgiaidau cgnguon ON cgnguon.macapgiaidau = kvdb.capkhuvuc
              WHERE db.trangthai = 'HOAT_DONG'
-               AND kvdb.capkhuvuc = cg.capdoituongthamgia
-               AND fn_khuvuc_la_con(db.idkhuvucdaidien, :region_id) = 1",
+               AND fn_khuvuc_la_con(db.idkhuvucdaidien, :region_id) = 1
+               AND (
+                    cgnguon.idcapgiaidau = :source_level_id
+                    OR db.idcapgiaidau_duoc_tham_gia = :approved_level_id
+               )",
             [
-                'level_id' => $levelId,
+                'source_level_id' => $levelId,
+                'approved_level_id' => $levelId,
                 'region_id' => $regionId,
             ]
         );
@@ -555,13 +605,17 @@ final class Giaidau extends Model
             "SELECT DISTINCT db.iddoibong
              FROM Doibong db
              JOIN Khuvuc kvdb ON kvdb.idkhuvuc = db.idkhuvucdaidien
-             JOIN Capgiaidau cg ON cg.idcapgiaidau = :level_id
+             JOIN Capgiaidau cgnguon ON cgnguon.macapgiaidau = kvdb.capkhuvuc
              WHERE db.trangthai = 'HOAT_DONG'
-               AND kvdb.capkhuvuc = cg.capdoituongthamgia
-               AND fn_khuvuc_la_con(db.idkhuvucdaidien, :region_id) = 1"
+               AND fn_khuvuc_la_con(db.idkhuvucdaidien, :region_id) = 1
+               AND (
+                    cgnguon.idcapgiaidau = :source_level_id
+                    OR db.idcapgiaidau_duoc_tham_gia = :approved_level_id
+                )"
         );
         $statement->execute([
-            'level_id' => $levelId,
+            'source_level_id' => $levelId,
+            'approved_level_id' => $levelId,
             'region_id' => $regionId,
         ]);
 
@@ -570,6 +624,8 @@ final class Giaidau extends Model
 
     public function eligibleTeamCountForCriteria(int $levelId, int $regionId, array $conditions): int
     {
+        return $this->activeTeamCountForScope($levelId, $regionId);
+
         $achievementConditions = array_values(array_filter(
             $conditions,
             static fn (array $condition): bool => in_array(
@@ -667,6 +723,8 @@ final class Giaidau extends Model
 
     public function eligibleTeamIdsForCriteria(int $levelId, int $regionId, array $conditions): array
     {
+        return $this->activeTeamIdsForScope($levelId, $regionId);
+
         $achievementConditions = array_values(array_filter(
             $conditions,
             static fn (array $condition): bool => in_array(
@@ -787,10 +845,13 @@ final class Giaidau extends Model
         $explicitIds = array_map('intval', array_column($statement->fetchAll(), 'iddoibong'));
         $higherEligibilityIds = (new Tucachthamgia())->acceptedTeamIdsForTournament($tournamentId);
 
-        return $this->filterTeamIdsByTournamentGender(
+        $scopeFilteredIds = $this->filterTeamIdsByTournamentScope(
             array_values(array_unique(array_merge($ids, $explicitIds, $higherEligibilityIds))),
-            (string) ($tournament['gioitinh'] ?? 'NAM')
+            (int) ($tournament['idcapgiaidau'] ?? 0),
+            (int) ($tournament['idkhuvucphamvi'] ?? 0)
         );
+
+        return $this->filterTeamIdsByTournamentGender($scopeFilteredIds, (string) ($tournament['gioitinh'] ?? 'NAM'));
     }
 
     public function teamEligibilityForTournament(int $tournamentId, int $teamId): array
@@ -810,10 +871,13 @@ final class Giaidau extends Model
                 db.tendoibong,
                 db.trangthai,
                 db.idkhuvucdaidien,
+                db.idcapgiaidau_duoc_tham_gia,
                 kv.tenkhuvuc AS tenkhuvucdaidien,
-                kv.capkhuvuc AS capkhuvucdaidien
+                kv.capkhuvuc AS capkhuvucdaidien,
+                cgnguon.idcapgiaidau AS idcapgiaidau_nguon
              FROM Doibong db
              JOIN Khuvuc kv ON kv.idkhuvuc = db.idkhuvucdaidien
+             LEFT JOIN Capgiaidau cgnguon ON cgnguon.macapgiaidau = kv.capkhuvuc
              WHERE db.iddoibong = :team_id
              LIMIT 1",
             ['team_id' => $teamId]
@@ -830,6 +894,36 @@ final class Giaidau extends Model
             return [
                 'eligible' => false,
                 'reason' => 'Doi bong khong o trang thai hoat dong.',
+            ];
+        }
+
+        $tournamentLevelId = (int) ($tournament['idcapgiaidau'] ?? 0);
+
+        if ($tournamentLevelId <= 0 || !$this->teamCanEnterTournamentLevel($team, $tournamentLevelId)) {
+            return [
+                'eligible' => false,
+                'reason' => 'Doi bong chua co cap nguon hoac suat dai dien phu hop cap giai nay.',
+                'team_region_level' => (string) ($team['capkhuvucdaidien'] ?? ''),
+                'team_region_name' => (string) ($team['tenkhuvucdaidien'] ?? ''),
+                'team_source_tournament_level_id' => (int) ($team['idcapgiaidau_nguon'] ?? 0),
+                'team_approved_tournament_level_id' => (int) ($team['idcapgiaidau_duoc_tham_gia'] ?? 0),
+            ];
+        }
+
+        $teamInTournamentScope = $this->first(
+            "SELECT fn_khuvuc_la_con(:team_region_id, :tournament_region_id) AS in_scope",
+            [
+                'team_region_id' => (int) $team['idkhuvucdaidien'],
+                'tournament_region_id' => (int) $tournament['idkhuvucphamvi'],
+            ]
+        );
+
+        if ((int) ($teamInTournamentScope['in_scope'] ?? 0) !== 1) {
+            return [
+                'eligible' => false,
+                'reason' => 'Doi bong khong thuoc pham vi khu vuc cua giai dau.',
+                'team_region_level' => (string) ($team['capkhuvucdaidien'] ?? ''),
+                'team_region_name' => (string) ($team['tenkhuvucdaidien'] ?? ''),
             ];
         }
 
@@ -889,6 +983,52 @@ final class Giaidau extends Model
             $teamIds,
             fn (int $teamId): bool => $this->teamGenderIsCompatible($teamId, $gender)
         ));
+    }
+
+    private function filterTeamIdsByTournamentScope(array $teamIds, int $levelId, int $regionId): array
+    {
+        $teamIds = array_values(array_unique(array_map('intval', $teamIds)));
+
+        if ($teamIds === [] || $levelId <= 0 || $regionId <= 0) {
+            return [];
+        }
+
+        $bindings = [
+            'source_level_id' => $levelId,
+            'approved_level_id' => $levelId,
+            'region_id' => $regionId,
+        ];
+        $placeholders = [];
+
+        foreach ($teamIds as $index => $teamId) {
+            $key = 'team_id_' . $index;
+            $placeholders[] = ':' . $key;
+            $bindings[$key] = $teamId;
+        }
+
+        $statement = $this->db()->prepare(
+            "SELECT DISTINCT db.iddoibong
+             FROM Doibong db
+             JOIN Khuvuc kvdb ON kvdb.idkhuvuc = db.idkhuvucdaidien
+             JOIN Capgiaidau cgnguon ON cgnguon.macapgiaidau = kvdb.capkhuvuc
+             WHERE db.iddoibong IN (" . implode(', ', $placeholders) . ")
+               AND fn_khuvuc_la_con(db.idkhuvucdaidien, :region_id) = 1
+               AND (
+                    cgnguon.idcapgiaidau = :source_level_id
+                    OR db.idcapgiaidau_duoc_tham_gia = :approved_level_id
+                )"
+        );
+        $statement->execute($bindings);
+
+        return array_map('intval', array_column($statement->fetchAll(), 'iddoibong'));
+    }
+
+    private function teamCanEnterTournamentLevel(array $team, int $tournamentLevelId): bool
+    {
+        $sourceLevelId = (int) ($team['idcapgiaidau_nguon'] ?? 0);
+        $approvedLevelId = (int) ($team['idcapgiaidau_duoc_tham_gia'] ?? 0);
+
+        return $sourceLevelId === $tournamentLevelId || $approvedLevelId === $tournamentLevelId;
     }
 
     private function teamGenderIsCompatible(int $teamId, string $gender): bool
@@ -1167,7 +1307,7 @@ final class Giaidau extends Model
                      ngaycapnhat = CURRENT_TIMESTAMP
                  WHERE idgiaidau = :tournament_id
                    AND trangthai = 'DA_CONG_BO'
-                   AND DATE(thoigianbatdau) > CURRENT_DATE()"
+                   AND thoigianbatdau > CURRENT_TIMESTAMP"
             );
 
             $statement->execute(['tournament_id' => $tournamentId]);

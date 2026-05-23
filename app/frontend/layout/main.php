@@ -46,7 +46,7 @@ $navByRole = [
         ],
         'Quản lý' => [
             ['icon' => 'DB', 'label' => 'Đội bóng', 'href' => '/ban-to-chuc/doi-bong'],
-            ['icon' => 'DC', 'label' => 'Tư cách cấp trên', 'href' => '/ban-to-chuc/tu-cach-cap-tren'],
+            ['icon' => 'DC', 'label' => 'Suất đại diện', 'href' => '/ban-to-chuc/tu-cach-cap-tren'],
             ['icon' => 'SD', 'label' => 'Sân đấu', 'href' => '/ban-to-chuc/san-dau'],
             ['icon' => 'TT', 'label' => 'Trọng tài', 'href' => '/ban-to-chuc/trong-tai'],
             ['icon' => 'TK', 'label' => 'Tài khoản HLV', 'href' => '/ban-to-chuc/tai-khoan-hlv'],
@@ -116,6 +116,7 @@ $navGroups = $role !== null && isset($navByRole[$role]) ? $navByRole[$role] : [
         ['icon' => 'TC', 'label' => 'Trang chủ', 'href' => '/dashboard'],
     ],
 ];
+
 $roleLabel = $role !== null ? ($roleLabels[$role] ?? $role) : 'Hệ thống';
 $roleInitial = $role !== null ? ($roleInitials[$role] ?? 'VT') : 'VT';
 $appTitle = trim((string)($pageTitle ?? $moduleTitle ?? 'Trang chủ quản lý bóng chuyền'));

@@ -25,11 +25,24 @@ final class Taikhoan extends Model
                 nd.hodem,
                 nd.ten,
                 hlv.idhuanluyenvien,
-                hlv.idkhuvuccongtac
+                hlv.idkhuvuccongtac,
+                btc.idbantochuc,
+                btc.iddonvi AS iddonvi_bantochuc,
+                btc.trangthai AS trangthai_bantochuc,
+                dv.madonvi AS madonvi_bantochuc,
+                dv.tendonvi AS tendonvi_bantochuc,
+                dv.trangthai AS trangthai_donvi_bantochuc,
+                ldv.maloaidonvi AS maloaidonvi_bantochuc,
+                ldv.tenloaidonvi AS tenloaidonvi_bantochuc,
+                ldv.duoc_to_chuc_giai AS duoc_to_chuc_giai_bantochuc,
+                ldv.trangthai AS trangthai_loaidonvi_bantochuc
             FROM Taikhoan tk
             JOIN Role r ON r.idrole = tk.idrole
             LEFT JOIN Nguoidung nd ON nd.idtaikhoan = tk.idtaikhoan
             LEFT JOIN Huanluyenvien hlv ON hlv.idnguoidung = nd.idnguoidung
+            LEFT JOIN Bantochuc btc ON btc.idnguoidung = nd.idnguoidung
+            LEFT JOIN Donvi dv ON dv.iddonvi = btc.iddonvi
+            LEFT JOIN Loaidonvi ldv ON ldv.idloaidonvi = dv.idloaidonvi
             WHERE tk.username = :username
                OR tk.email = :email
             LIMIT 1",

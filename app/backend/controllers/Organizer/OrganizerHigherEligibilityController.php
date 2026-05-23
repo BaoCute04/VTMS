@@ -21,6 +21,14 @@ final class OrganizerHigherEligibilityController extends Controller
 
     public function page(Request $request): Response
     {
+        $authorization = $this->service->authorize($this->accountId());
+
+        if (($authorization['ok'] ?? false) !== true) {
+            return $this->view('errors.403', [
+                'pageTitle' => 'VTMS - Khong co quyen xet tu cach cap tren',
+            ], 'main', 403);
+        }
+
         return $this->view('bantochuc.higher-eligibility', [
             'pageTitle' => 'VTMS - Tu cach tham gia cap tren',
             'styles' => ['css/organizer-teams.css'],
@@ -32,12 +40,22 @@ final class OrganizerHigherEligibilityController extends Controller
     {
         return $this->respond($this->service->overview($this->accountId(), [
             'q' => $request->query('q', ''),
+            'source_tournament_id' => $request->query('source_tournament_id', ''),
+            'achievement' => $request->query('achievement', ''),
         ]));
     }
 
     public function mark(Request $request): Response
     {
         return $this->respond($this->service->markEligible($request->all(), $this->accountId()));
+    }
+
+    public function review(Request $request): Response
+    {
+        return $this->respond($this->service->reviewProfile([
+            'idthanhtich' => $request->query('idthanhtich', $request->query('achievement_id', '')),
+            'idgiaidau_dich' => $request->query('idgiaidau_dich', $request->query('target_tournament_id', '')),
+        ], $this->accountId()));
     }
 
     public function nominate(Request $request): Response

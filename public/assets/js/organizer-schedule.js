@@ -249,7 +249,11 @@
     }
 
     function tournamentDateInputLimit(field, time) {
-        const date = String(selectedTournament?.[field] || "").slice(0, 10);
+        const raw = String(selectedTournament?.[field] || "");
+        const exact = toInputDateTime(raw);
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(exact)) return exact;
+
+        const date = raw.slice(0, 10);
         return date ? `${date}T${time}` : "";
     }
 
@@ -273,7 +277,11 @@
     }
 
     function tournamentBoundaryMs(field, time) {
-        const date = String(selectedTournament?.[field] || "").slice(0, 10);
+        const raw = String(selectedTournament?.[field] || "");
+        const exact = toInputDateTime(raw);
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(exact)) return dateTimeMs(exact);
+
+        const date = raw.slice(0, 10);
         return date ? dateTimeMs(`${date}T${time}`) : null;
     }
 
@@ -611,7 +619,7 @@
 
     function renderTournaments() {
         if (tournaments.length === 0) {
-            tList.innerHTML = '<li class="empty">Không có giải đấu đã công bố.</li>';
+            tList.innerHTML = '<li class="empty">Không có giải đấu hợp lệ.</li>';
             return;
         }
 
@@ -834,7 +842,7 @@
         gmTitle.textContent = "Thêm bảng đấu";
         gmName.value = "";
         gmStatus.value = "HOAT_DONG";
-        gmStart.value = selectedTournament?.thoigianbatdau || "";
+        gmStart.value = String(selectedTournament?.thoigianbatdau || "").slice(0, 10);
         gmEnd.value = "";
         gmDesc.value = "";
         gmRound.value = selectedRoundKey || defaultRoundKey("VONG_DIEM");
@@ -855,7 +863,7 @@
         gmTitle.textContent = "Sửa bảng đấu";
         gmName.value = group.tenbang || "";
         gmStatus.value = group.trangthai || "HOAT_DONG";
-        gmStart.value = selectedTournament?.thoigianbatdau || group.thoigianbatdau || "";
+        gmStart.value = String(group.thoigianbatdau || selectedTournament?.thoigianbatdau || "").slice(0, 10);
         gmEnd.value = group.thoigianketthuc || "";
         gmDesc.value = group.mota || "";
         gmRound.value = roundKeyFromEntity(group) || defaultRoundKey("VONG_DIEM");
@@ -892,11 +900,19 @@
         }
 
         if (payload.thoigianketthuc) {
-            if (payload.thoigianketthuc < (selectedTournament?.thoigianbatdau || "")) {
+            const groupStartDate = String(gmStart.value || selectedTournament?.thoigianbatdau || "").slice(0, 10);
+            const tournamentStartDate = String(selectedTournament?.thoigianbatdau || "").slice(0, 10);
+            const tournamentEndDate = String(selectedTournament?.thoigianketthuc || "").slice(0, 10);
+
+            if (groupStartDate && payload.thoigianketthuc <= groupStartDate) {
+                return "Thời gian kết thúc bảng đấu phải sau thời gian bắt đầu bảng đấu.";
+            }
+
+            if (tournamentStartDate && payload.thoigianketthuc < tournamentStartDate) {
                 return "Thời gian kết thúc bảng đấu không được trước ngày bắt đầu giải đấu.";
             }
 
-            if (selectedTournament?.thoigianketthuc && payload.thoigianketthuc > selectedTournament.thoigianketthuc) {
+            if (tournamentEndDate && payload.thoigianketthuc > tournamentEndDate) {
                 return "Thời gian kết thúc bảng đấu không được sau ngày kết thúc giải đấu.";
             }
         }
