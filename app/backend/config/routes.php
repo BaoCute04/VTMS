@@ -138,6 +138,7 @@ return static function (Router $router): void {
     $router->post('/api/organizer/tournaments/{id}/registrations/{registrationId}/reject', [OrganizerTournamentController::class, 'rejectRegistration'], ['auth', 'role:BAN_TO_CHUC']);
     $router->post('/api/organizer/tournaments/{id}/registrations/{registrationId}/remove', [OrganizerTournamentController::class, 'removeRegistration'], ['auth', 'role:BAN_TO_CHUC']);
     $router->get('/api/organizer/higher-eligibility', [OrganizerHigherEligibilityController::class, 'index'], ['auth', 'role:BAN_TO_CHUC']);
+    $router->get('/api/organizer/higher-eligibility/review', [OrganizerHigherEligibilityController::class, 'review'], ['auth', 'role:BAN_TO_CHUC']);
     $router->post('/api/organizer/higher-eligibility/mark', [OrganizerHigherEligibilityController::class, 'mark'], ['auth', 'role:BAN_TO_CHUC']);
     $router->post('/api/organizer/higher-eligibility/{proposalId}/nominate', [OrganizerHigherEligibilityController::class, 'nominate'], ['auth', 'role:BAN_TO_CHUC']);
     $router->post('/api/organizer/higher-eligibility/{proposalId}/approve', [OrganizerHigherEligibilityController::class, 'approve'], ['auth', 'role:BAN_TO_CHUC']);

@@ -69,17 +69,67 @@ final class Doibong extends Model
                 db.tendoibong,
                 db.logo,
                 db.idkhuvucdaidien,
+                db.idcapgiaidau_duoc_tham_gia,
                 db.diaphuong,
                 db.mota,
                 db.idhuanluyenvien,
                 db.trangthai,
                 db.ngaytao,
                 db.ngaycapnhat,
+                cgnguon.idcapgiaidau AS idcapgiaidau_nguon,
+                cgnguon.macapgiaidau AS macapgiaidau_nguon,
+                cgnguon.tencapgiaidau AS tencapgiaidau_nguon,
+                cgtiep.macapgiaidau AS macapgiaidau_duoc_tham_gia,
+                cgtiep.tencapgiaidau AS tencapgiaidau_duoc_tham_gia,
+                COALESCE(cgtiep.idcapgiaidau, cgnguon.idcapgiaidau) AS idcapgiaidau_hien_tai,
+                COALESCE(cgtiep.macapgiaidau, cgnguon.macapgiaidau) AS macapgiaidau_hien_tai,
+                COALESCE(cgtiep.tencapgiaidau, cgnguon.tencapgiaidau) AS tencapgiaidau_hien_tai,
+                dctt.iddecu AS iddecu_thi_tiep,
+                dctt.trangthai AS trangthai_decu_thi_tiep,
+                dcgiai.idgiaidau_decu_tham_gia,
+                dcgiai.tengiaidau_decu_tham_gia,
+                dctt.idcapgiaidau_dich AS idcapgiaidau_thi_tiep,
+                cgdectiep.macapgiaidau AS macapgiaidau_thi_tiep,
+                cgdectiep.tencapgiaidau AS tencapgiaidau_thi_tiep,
                 COALESCE(tv.total_members, 0) AS total_members,
                 COALESCE(tv.active_members, 0) AS active_members,
                 COALESCE(dk.total_registrations, 0) AS total_registrations,
                 COALESCE(dk.approved_registrations, 0) AS approved_registrations
              FROM Doibong db
+             LEFT JOIN Khuvuc kv ON kv.idkhuvuc = db.idkhuvucdaidien
+             LEFT JOIN Capgiaidau cgnguon ON cgnguon.macapgiaidau = kv.capkhuvuc
+             LEFT JOIN Capgiaidau cgtiep ON cgtiep.idcapgiaidau = db.idcapgiaidau_duoc_tham_gia
+             LEFT JOIN decutucachthamgia dctt ON dctt.iddecu = (
+                SELECT dc2.iddecu
+                FROM decutucachthamgia dc2
+                WHERE dc2.iddoibong = db.iddoibong
+                  AND dc2.trangthai IN ('DU_DIEU_KIEN', 'DA_DE_CU', 'DA_XAC_NHAN')
+                ORDER BY FIELD(dc2.trangthai, 'DA_XAC_NHAN', 'DA_DE_CU', 'DU_DIEU_KIEN'),
+                         dc2.ngaycapnhat DESC,
+                         dc2.ngay_xacnhan DESC,
+                         dc2.ngay_decu DESC,
+                         dc2.ngay_danhdau DESC,
+                         dc2.iddecu DESC
+                LIMIT 1
+             )
+             LEFT JOIN (
+                SELECT
+                    grouped.iddoibong,
+                    GROUP_CONCAT(grouped.idgiaidau_dich ORDER BY grouped.thoigianbatdau ASC, grouped.idgiaidau_dich ASC SEPARATOR ',') AS idgiaidau_decu_tham_gia,
+                    GROUP_CONCAT(grouped.tengiaidau ORDER BY grouped.thoigianbatdau ASC, grouped.idgiaidau_dich ASC SEPARATOR ', ') AS tengiaidau_decu_tham_gia
+                FROM (
+                    SELECT DISTINCT
+                        dc2.iddoibong,
+                        dc2.idgiaidau_dich,
+                        gd2.tengiaidau,
+                        gd2.thoigianbatdau
+                    FROM decutucachthamgia dc2
+                    JOIN Giaidau gd2 ON gd2.idgiaidau = dc2.idgiaidau_dich
+                    WHERE dc2.trangthai IN ('DU_DIEU_KIEN', 'DA_DE_CU', 'DA_XAC_NHAN')
+                ) grouped
+                GROUP BY grouped.iddoibong
+             ) dcgiai ON dcgiai.iddoibong = db.iddoibong
+             LEFT JOIN Capgiaidau cgdectiep ON cgdectiep.idcapgiaidau = dctt.idcapgiaidau_dich
              LEFT JOIN (
                 SELECT
                     iddoibong,
@@ -113,13 +163,63 @@ final class Doibong extends Model
                 db.tendoibong,
                 db.logo,
                 db.idkhuvucdaidien,
+                db.idcapgiaidau_duoc_tham_gia,
                 db.diaphuong,
                 db.mota,
                 db.idhuanluyenvien,
                 db.trangthai,
                 db.ngaytao,
-                db.ngaycapnhat
+                db.ngaycapnhat,
+                cgnguon.idcapgiaidau AS idcapgiaidau_nguon,
+                cgnguon.macapgiaidau AS macapgiaidau_nguon,
+                cgnguon.tencapgiaidau AS tencapgiaidau_nguon,
+                cgtiep.macapgiaidau AS macapgiaidau_duoc_tham_gia,
+                cgtiep.tencapgiaidau AS tencapgiaidau_duoc_tham_gia,
+                COALESCE(cgtiep.idcapgiaidau, cgnguon.idcapgiaidau) AS idcapgiaidau_hien_tai,
+                COALESCE(cgtiep.macapgiaidau, cgnguon.macapgiaidau) AS macapgiaidau_hien_tai,
+                COALESCE(cgtiep.tencapgiaidau, cgnguon.tencapgiaidau) AS tencapgiaidau_hien_tai,
+                dctt.iddecu AS iddecu_thi_tiep,
+                dctt.trangthai AS trangthai_decu_thi_tiep,
+                dcgiai.idgiaidau_decu_tham_gia,
+                dcgiai.tengiaidau_decu_tham_gia,
+                dctt.idcapgiaidau_dich AS idcapgiaidau_thi_tiep,
+                cgdectiep.macapgiaidau AS macapgiaidau_thi_tiep,
+                cgdectiep.tencapgiaidau AS tencapgiaidau_thi_tiep
              FROM Doibong db
+             LEFT JOIN Khuvuc kv ON kv.idkhuvuc = db.idkhuvucdaidien
+             LEFT JOIN Capgiaidau cgnguon ON cgnguon.macapgiaidau = kv.capkhuvuc
+             LEFT JOIN Capgiaidau cgtiep ON cgtiep.idcapgiaidau = db.idcapgiaidau_duoc_tham_gia
+             LEFT JOIN decutucachthamgia dctt ON dctt.iddecu = (
+                SELECT dc2.iddecu
+                FROM decutucachthamgia dc2
+                WHERE dc2.iddoibong = db.iddoibong
+                  AND dc2.trangthai IN ('DU_DIEU_KIEN', 'DA_DE_CU', 'DA_XAC_NHAN')
+                ORDER BY FIELD(dc2.trangthai, 'DA_XAC_NHAN', 'DA_DE_CU', 'DU_DIEU_KIEN'),
+                         dc2.ngaycapnhat DESC,
+                         dc2.ngay_xacnhan DESC,
+                         dc2.ngay_decu DESC,
+                         dc2.ngay_danhdau DESC,
+                         dc2.iddecu DESC
+                LIMIT 1
+             )
+             LEFT JOIN (
+                SELECT
+                    grouped.iddoibong,
+                    GROUP_CONCAT(grouped.idgiaidau_dich ORDER BY grouped.thoigianbatdau ASC, grouped.idgiaidau_dich ASC SEPARATOR ',') AS idgiaidau_decu_tham_gia,
+                    GROUP_CONCAT(grouped.tengiaidau ORDER BY grouped.thoigianbatdau ASC, grouped.idgiaidau_dich ASC SEPARATOR ', ') AS tengiaidau_decu_tham_gia
+                FROM (
+                    SELECT DISTINCT
+                        dc2.iddoibong,
+                        dc2.idgiaidau_dich,
+                        gd2.tengiaidau,
+                        gd2.thoigianbatdau
+                    FROM decutucachthamgia dc2
+                    JOIN Giaidau gd2 ON gd2.idgiaidau = dc2.idgiaidau_dich
+                    WHERE dc2.trangthai IN ('DU_DIEU_KIEN', 'DA_DE_CU', 'DA_XAC_NHAN')
+                ) grouped
+                GROUP BY grouped.iddoibong
+             ) dcgiai ON dcgiai.iddoibong = db.iddoibong
+             LEFT JOIN Capgiaidau cgdectiep ON cgdectiep.idcapgiaidau = dctt.idcapgiaidau_dich
              WHERE db.iddoibong = :team_id
                AND db.idhuanluyenvien = :coach_id
              LIMIT 1",
@@ -474,6 +574,44 @@ final class Doibong extends Model
                 'tournament_id' => $tournamentId,
                 'team_id' => $teamId,
             ]
+        );
+    }
+
+    public function teamProfileForHigherEligibility(int $teamId): ?array
+    {
+        return $this->first(
+            "SELECT
+                db.iddoibong,
+                db.idhuanluyenvien,
+                db.tendoibong,
+                db.logo,
+                db.diaphuong,
+                db.mota,
+                db.trangthai AS trangthaidoibong,
+                db.ngaytao AS doibong_ngaytao,
+                db.ngaycapnhat AS doibong_ngaycapnhat,
+                hlv.bangcap AS huanluyenvien_bangcap,
+                hlv.kinhnghiem AS huanluyenvien_kinhnghiem,
+                hlv.trangthai AS huanluyenvien_trangthai,
+                nd.idnguoidung AS huanluyenvien_idnguoidung,
+                nd.hodem AS huanluyenvien_hodem,
+                nd.ten AS huanluyenvien_ten,
+                nd.gioitinh AS huanluyenvien_gioitinh,
+                nd.ngaysinh AS huanluyenvien_ngaysinh,
+                nd.quequan AS huanluyenvien_quequan,
+                nd.diachi AS huanluyenvien_diachi,
+                nd.avatar AS huanluyenvien_avatar,
+                TRIM(CONCAT(COALESCE(nd.hodem, ''), ' ', COALESCE(nd.ten, ''))) AS huanluyenvien_hoten,
+                tk.username AS huanluyenvien_username,
+                tk.email AS huanluyenvien_email,
+                tk.sodienthoai AS huanluyenvien_sodienthoai
+             FROM Doibong db
+             JOIN Huanluyenvien hlv ON hlv.idhuanluyenvien = db.idhuanluyenvien
+             JOIN Nguoidung nd ON nd.idnguoidung = hlv.idnguoidung
+             JOIN Taikhoan tk ON tk.idtaikhoan = nd.idtaikhoan
+             WHERE db.iddoibong = :team_id
+             LIMIT 1",
+            ['team_id' => $teamId]
         );
     }
 

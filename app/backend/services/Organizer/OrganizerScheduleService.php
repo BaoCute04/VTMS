@@ -958,11 +958,11 @@ final class OrganizerScheduleService
             return null;
         }
 
-        $tournamentStart = DateTimeImmutable::createFromFormat('Y-m-d', (string) $tournament['thoigianbatdau']);
-        $tournamentEnd = DateTimeImmutable::createFromFormat('Y-m-d', (string) $tournament['thoigianketthuc']);
+        $tournamentStart = DateTimeImmutable::createFromFormat('Y-m-d', substr((string) $tournament['thoigianbatdau'], 0, 10));
+        $tournamentEnd = DateTimeImmutable::createFromFormat('Y-m-d', substr((string) $tournament['thoigianketthuc'], 0, 10));
 
-        if ($tournamentStart !== false && $date < $tournamentStart) {
-            $errors['thoigianketthuc'] = 'Thoi gian ket thuc bang dau khong duoc truoc ngay bat dau giai dau.';
+        if ($tournamentStart !== false && $date <= $tournamentStart) {
+            $errors['thoigianketthuc'] = 'Thoi gian ket thuc bang dau phai sau thoi gian bat dau bang dau.';
         }
 
         if ($tournamentEnd !== false && $date > $tournamentEnd) {
@@ -1163,17 +1163,10 @@ final class OrganizerScheduleService
 
     private function validateMatchTimeWithinTournament(array $match, array $tournament, array &$errors): void
     {
-        $startDate = substr((string) ($tournament['thoigianbatdau'] ?? ''), 0, 10);
-        $endDate = substr((string) ($tournament['thoigianketthuc'] ?? ''), 0, 10);
+        $tournamentStart = $this->dateTimeFromDatabaseValue($tournament['thoigianbatdau'] ?? null, '00:00:00');
+        $tournamentEnd = $this->dateTimeFromDatabaseValue($tournament['thoigianketthuc'] ?? null, '23:59:59');
 
-        if ($startDate === '' || $endDate === '') {
-            return;
-        }
-
-        $tournamentStart = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $startDate . ' 00:00:00');
-        $tournamentEnd = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $endDate . ' 23:59:59');
-
-        if ($tournamentStart === false || $tournamentEnd === false) {
+        if ($tournamentStart === null || $tournamentEnd === null) {
             return;
         }
 
@@ -1197,15 +1190,21 @@ final class OrganizerScheduleService
         }
     }
 
-    private function dateTimeFromDatabaseValue(mixed $value): ?DateTimeImmutable
+    private function dateTimeFromDatabaseValue(mixed $value, string $dateOnlyTime = '00:00:00'): ?DateTimeImmutable
     {
-        $text = trim((string) ($value ?? ''));
+        $text = str_replace('T', ' ', trim((string) ($value ?? '')));
 
         if ($text === '') {
             return null;
         }
 
-        $date = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', str_replace('T', ' ', $text));
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $text)) {
+            $text .= ' ' . $dateOnlyTime;
+        } elseif (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $text)) {
+            $text .= ':00';
+        }
+
+        $date = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $text);
 
         return $date === false ? null : $date;
     }
@@ -1233,9 +1232,9 @@ final class OrganizerScheduleService
             $lastEnd = $startAt
                 ->modify('+' . $lastDayOffset . ' days')
                 ->modify('+' . ($lastSlot * ($matchMinutes + $gapMinutes) + $matchMinutes) . ' minutes');
-            $tournamentEnd = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', (string) $tournament['thoigianketthuc'] . ' 23:59:59');
+            $tournamentEnd = $this->dateTimeFromDatabaseValue($tournament['thoigianketthuc'] ?? null, '23:59:59');
 
-            if ($tournamentEnd !== false && $lastEnd > $tournamentEnd) {
+            if ($tournamentEnd !== null && $lastEnd > $tournamentEnd) {
                 $errors['thoigianketthuc'] = 'Lich so bo 45 tran vuot qua thoi gian ket thuc giai dau.';
             }
         }
@@ -1285,7 +1284,7 @@ final class OrganizerScheduleService
         $raw = trim((string) ($payload['thoigianbatdau'] ?? $payload['start_at'] ?? ''));
 
         if ($raw === '') {
-            $raw = (string) $tournament['thoigianbatdau'] . ' 08:00:00';
+            $raw = (string) ($tournament['thoigianbatdau'] ?? '');
         }
 
         $normalized = str_replace('T', ' ', $raw);
@@ -1303,9 +1302,9 @@ final class OrganizerScheduleService
             return null;
         }
 
-        $tournamentStart = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', (string) $tournament['thoigianbatdau'] . ' 00:00:00');
+        $tournamentStart = $this->dateTimeFromDatabaseValue($tournament['thoigianbatdau'] ?? null, '08:00:00');
 
-        if ($tournamentStart !== false && $date < $tournamentStart) {
+        if ($tournamentStart !== null && $date < $tournamentStart) {
             $errors['thoigianbatdau'] = 'Thoi gian bat dau lich khong duoc truoc ngay bat dau giai dau.';
         }
 
@@ -1371,8 +1370,8 @@ final class OrganizerScheduleService
             return $this->failure('Khong tim thay giai dau.', 404);
         }
 
-        if ((string) $tournament['trangthai'] !== 'DA_CONG_BO') {
-            return $this->failure('Chi duoc quan ly lich thi dau cua giai dau da cong bo.', 409);
+        if ((string) $tournament['trangthai'] === 'DA_HUY') {
+            return $this->failure('Khong the quan ly lich thi dau cua giai dau da huy.', 409);
         }
 
         if ($requireClosedRegistration && (string) $tournament['trangthaidangky'] !== 'DA_DONG') {

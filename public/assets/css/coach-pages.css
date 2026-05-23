@@ -290,6 +290,12 @@ textarea {
 .badge.gray { background: #e2e8f0; color: #334155; }
 .badge.proc { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
 
+.team-level-note {
+    margin-left: 8px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
 .coach-modal {
     position: fixed;
     inset: 0;

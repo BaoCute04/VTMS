@@ -63,6 +63,9 @@
     const mdVenueAddr = document.getElementById("md_venueAddr");
     const mdRefs = document.getElementById("md_refs");
     const mdAlert = document.getElementById("md_alert");
+    const mdResultSection = document.getElementById("md_resultSection");
+    const mdResultScore = document.getElementById("md_resultScore");
+    const mdResultSets = document.getElementById("md_resultSets");
 
     const assignmentStatusMap = {
         CHO_XAC_NHAN: ["ok", "Đã xác nhận"],
@@ -418,6 +421,55 @@
         return name || username || `#${referee.idtrongtai || ""}`;
     }
 
+    function resetMatchResult() {
+        mdResultSection?.classList.add("hidden");
+
+        if (mdResultScore) {
+            mdResultScore.innerHTML = "";
+        }
+
+        if (mdResultSets) {
+            mdResultSets.innerHTML = "";
+        }
+    }
+
+    function renderMatchResult(detail, team1, team2) {
+        const result = detail.ketqua || null;
+
+        if (!mdResultSection || !mdResultScore || !mdResultSets || detail.trangthai !== "DA_KET_THUC") {
+            return;
+        }
+
+        const team1Name = team1.tendoibong || "Đội 1";
+        const team2Name = team2.tendoibong || "Đội 2";
+
+        if (!result) {
+            mdResultScore.innerHTML = '<p class="match-result-empty">Trận đã kết thúc nhưng chưa có kết quả được ghi nhận.</p>';
+            mdResultSection.classList.remove("hidden");
+            return;
+        }
+
+        mdResultScore.innerHTML = `
+            <div>
+                <span>${escapeHtml(team1Name)}</span>
+                <strong>${escapeHtml(result.sosetdoi1 ?? 0)}</strong>
+            </div>
+            <b>-</b>
+            <div>
+                <strong>${escapeHtml(result.sosetdoi2 ?? 0)}</strong>
+                <span>${escapeHtml(team2Name)}</span>
+            </div>
+        `;
+
+        const sets = Array.isArray(result.sets) ? result.sets : [];
+        mdResultSets.innerHTML = sets.length === 0
+            ? ""
+            : sets.map((set) => `
+                <span>Set ${escapeHtml(set.setthu)}: ${escapeHtml(set.diemdoi1 ?? 0)} - ${escapeHtml(set.diemdoi2 ?? 0)}</span>
+            `).join("");
+        mdResultSection.classList.remove("hidden");
+    }
+
     async function openMatchDetail(matchId) {
         hideMatchAlert();
         mdMatchId.value = matchId || "";
@@ -433,6 +485,7 @@
         mdVenueAddr.value = "";
         mdSub.textContent = "Đang tải thông tin trận đấu...";
         mdRefs.innerHTML = '<tr><td colspan="4" class="empty">Đang tải dữ liệu...</td></tr>';
+        resetMatchResult();
         matchDetailModal.classList.remove("hidden");
 
         try {
@@ -478,6 +531,7 @@
                         </tr>
                     `;
                 }).join("");
+            renderMatchResult(detail, team1, team2);
         } catch (error) {
             mdRefs.innerHTML = '<tr><td colspan="4" class="empty">Không thể tải tổ trọng tài.</td></tr>';
             showMatchAlert(error.message || "Không thể tải thông tin chi tiết trận đấu.");

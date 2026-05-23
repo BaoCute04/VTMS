@@ -22,7 +22,7 @@ final class Tucachthamgia extends Model
             'gsrc.idbantochuc = :organizer_id',
             "tt.trangthai = 'HOP_LE'",
             "tt.danhhieu = 'VO_DICH'",
-            "cgsrc.macapgiaidau IN ('QUAN_HUYEN', 'TINH_THANH')",
+            "gsrc.tinhchat IN ('CHINH_THUC', 'PHONG_TRAO')",
             "gdich.trangthai <> 'DA_HUY'",
         ];
         $bindings = ['organizer_id' => $organizerId];
@@ -30,6 +30,16 @@ final class Tucachthamgia extends Model
         if (($filters['q'] ?? '') !== '') {
             $where[] = "(db.tendoibong LIKE :keyword OR gsrc.tengiaidau LIKE :keyword OR gdich.tengiaidau LIKE :keyword)";
             $bindings['keyword'] = '%' . $filters['q'] . '%';
+        }
+
+        if (($filters['source_tournament_id'] ?? '') !== '') {
+            $where[] = 'tt.idgiaidau = :source_tournament_id';
+            $bindings['source_tournament_id'] = (int) $filters['source_tournament_id'];
+        }
+
+        if (($filters['achievement'] ?? '') !== '') {
+            $where[] = 'tt.danhhieu = :achievement';
+            $bindings['achievement'] = (string) $filters['achievement'];
         }
 
         $statement = $this->db()->prepare(
@@ -72,16 +82,9 @@ final class Tucachthamgia extends Model
              JOIN Giaidau gsrc ON gsrc.idgiaidau = tt.idgiaidau
              JOIN Capgiaidau cgsrc ON cgsrc.idcapgiaidau = tt.idcapgiaidau
              JOIN Khuvuc kvsrc ON kvsrc.idkhuvuc = gsrc.idkhuvucphamvi
-             JOIN Capgiaidau cgdich ON cgdich.macapgiaidau = CASE
-                WHEN cgsrc.macapgiaidau = 'QUAN_HUYEN' THEN 'TINH_THANH'
-                WHEN cgsrc.macapgiaidau = 'TINH_THANH' THEN 'QUOC_GIA'
-                ELSE ''
-             END
+             JOIN Capgiaidau cgdich ON cgdich.idcapgiaidau = cgsrc.idcapgiaidau - 1
              JOIN Giaidau gdich ON gdich.idcapgiaidau = cgdich.idcapgiaidau
-                AND gdich.idkhuvucphamvi = CASE
-                    WHEN cgsrc.macapgiaidau IN ('QUAN_HUYEN', 'TINH_THANH') THEN kvsrc.idkhuvuccha
-                    ELSE NULL
-                END
+                AND gdich.idkhuvucphamvi = kvsrc.idkhuvuccha
              JOIN Khuvuc kvdich ON kvdich.idkhuvuc = gdich.idkhuvucphamvi
              JOIN Bantochuc btcnhan ON btcnhan.idbantochuc = gdich.idbantochuc
              LEFT JOIN decutucachthamgia dc ON dc.idthanhtich = tt.idthanhtich
@@ -199,7 +202,8 @@ final class Tucachthamgia extends Model
                  ngaycapnhat = CURRENT_TIMESTAMP
              WHERE iddecu = :proposal_id
                AND idbantochuc_decu = :organizer_id
-               AND trangthai = 'DU_DIEU_KIEN'"
+               AND trangthai = 'DU_DIEU_KIEN'
+               AND idcapgiaidau_dich = idcapgiaidau_nguon - 1"
         );
         $statement->execute([
             'proposal_id' => $proposalId,
@@ -228,7 +232,8 @@ final class Tucachthamgia extends Model
                      ngaycapnhat = CURRENT_TIMESTAMP
                  WHERE iddecu = :proposal_id
                    AND idbantochuc_nhan = :organizer_id
-                   AND trangthai = 'DA_DE_CU'"
+                   AND trangthai = 'DA_DE_CU'
+                   AND idcapgiaidau_dich = idcapgiaidau_nguon - 1"
             );
             $statement->execute([
                 'new_status' => $newStatus,
@@ -245,8 +250,12 @@ final class Tucachthamgia extends Model
 
             if ($approved) {
                 $proposal = $this->proposal($proposalId);
-                if ($proposal !== null && $this->canCreateExplicitEligibility($proposal)) {
-                    $this->grantExplicitEligibility($proposal, $accountId, $note);
+                if ($proposal !== null) {
+                    $this->grantHigherTournamentLevel($proposal);
+
+                    if ($this->canCreateExplicitEligibility($proposal)) {
+                        $this->grantExplicitEligibility($proposal, $accountId, $note);
+                    }
                 }
             }
 
@@ -296,6 +305,26 @@ final class Tucachthamgia extends Model
     private function canCreateExplicitEligibility(array $proposal): bool
     {
         return (string) ($proposal['capkhuvuc_doi'] ?? '') === (string) ($proposal['capdoituongthamgia'] ?? '');
+    }
+
+    private function grantHigherTournamentLevel(array $proposal): void
+    {
+        $statement = $this->db()->prepare(
+            "UPDATE Doibong
+             SET idcapgiaidau_duoc_tham_gia = CASE
+                    WHEN idcapgiaidau_duoc_tham_gia IS NULL
+                      OR :compared_target_level_id < idcapgiaidau_duoc_tham_gia
+                        THEN :assigned_target_level_id
+                    ELSE idcapgiaidau_duoc_tham_gia
+                 END,
+                 ngaycapnhat = CURRENT_TIMESTAMP
+             WHERE iddoibong = :team_id"
+        );
+        $statement->execute([
+            'compared_target_level_id' => (int) $proposal['idcapgiaidau_dich'],
+            'assigned_target_level_id' => (int) $proposal['idcapgiaidau_dich'],
+            'team_id' => (int) $proposal['iddoibong'],
+        ]);
     }
 
     private function grantExplicitEligibility(array $proposal, int $accountId, ?string $note): void

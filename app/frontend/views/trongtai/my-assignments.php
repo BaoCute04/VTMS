@@ -235,6 +235,13 @@
             </table>
         </div>
 
+        <section class="match-result hidden" id="md_resultSection" aria-live="polite">
+            <hr />
+            <h3>Tỷ số trận đấu</h3>
+            <div class="match-result-score" id="md_resultScore"></div>
+            <div class="match-result-sets" id="md_resultSets"></div>
+        </section>
+
         <div id="md_alert" class="assignments-alert hidden"></div>
 
         <div class="modal-actions">

@@ -13,6 +13,48 @@
     let teams = [];
     let current = null;
 
+    function renderCurrentLevel(team) {
+        const currentLevel = team.tencapgiaidau_hien_tai || team.macapgiaidau_hien_tai || "—";
+        const sourceLevel = team.tencapgiaidau_nguon || team.macapgiaidau_nguon || "";
+        const approvedLevel = team.tencapgiaidau_duoc_tham_gia || team.macapgiaidau_duoc_tham_gia || "";
+        const note = approvedLevel && sourceLevel && approvedLevel !== sourceLevel
+            ? `<span class="team-level-note">Nguồn: ${ui.escapeHtml(sourceLevel)}</span>`
+            : "";
+
+        return `<span class="badge proc">${ui.escapeHtml(currentLevel)}</span>${note}`;
+    }
+
+    function renderProposalBadge(status) {
+        const map = {
+            DU_DIEU_KIEN: ["ok", "Đủ điều kiện"],
+            DA_DE_CU: ["wait", "Đã đề cử"],
+            DA_XAC_NHAN: ["ok", "Đã xác nhận"],
+        };
+        const [className, label] = map[status] || ui.badge(status);
+
+        return `<span class="badge ${className}">${ui.escapeHtml(label)}</span>`;
+    }
+
+    function renderNextLevel(team) {
+        const nextLevel = team.tencapgiaidau_thi_tiep
+            || team.tencapgiaidau_duoc_tham_gia
+            || team.macapgiaidau_thi_tiep
+            || team.macapgiaidau_duoc_tham_gia
+            || "";
+
+        if (!nextLevel) {
+            return "—";
+        }
+
+        const status = team.trangthai_decu_thi_tiep ? renderProposalBadge(team.trangthai_decu_thi_tiep) : "";
+        return `<span class="badge proc">${ui.escapeHtml(nextLevel)}</span>${status ? ` ${status}` : ""}`;
+    }
+
+    function renderRecommendedTournament(team) {
+        const tournament = team.tengiaidau_decu_tham_gia || "";
+        return tournament ? ui.escapeHtml(tournament) : "—";
+    }
+
     function renderInfo() {
         if (!current) {
             teamInfo.innerHTML = '<p class="empty">Chưa có thông tin đội bóng. Vui lòng tạo đội.</p>';
@@ -26,6 +68,9 @@
                 <strong>Tên đội</strong><div>${ui.escapeHtml(current.tendoibong)}</div>
                 <strong>Địa phương</strong><div>${ui.escapeHtml(current.diaphuong || "")}</div>
                 <strong>Logo</strong><div>${logo || "—"}</div>
+                <strong>Cấp độ thi đấu hiện tại</strong><div>${renderCurrentLevel(current)}</div>
+                <strong>Cấp độ thi đấu tiếp</strong><div>${renderNextLevel(current)}</div>
+                <strong>Giải được đề cử tham gia</strong><div>${renderRecommendedTournament(current)}</div>
                 <strong>Trạng thái</strong><div><span class="badge ${badgeClass}">${ui.escapeHtml(label)}</span></div>
                 <strong>Số thành viên</strong><div>${ui.escapeHtml(current.active_members ?? current.total_members ?? "—")}</div>
                 <strong>Mô tả</strong><div>${ui.escapeHtml(current.mota || "")}</div>

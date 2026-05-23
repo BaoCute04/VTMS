@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Backend\Services\Organizer;
 
 use App\Backend\Models\Giaidau;
+use App\Backend\Models\Doibong;
 use App\Backend\Models\Tucachthamgia;
 use Throwable;
 
@@ -12,10 +13,12 @@ final class OrganizerHigherEligibilityService
 {
     public function __construct(
         private ?Giaidau $tournaments = null,
-        private ?Tucachthamgia $eligibility = null
+        private ?Tucachthamgia $eligibility = null,
+        private ?Doibong $teams = null
     ) {
         $this->tournaments ??= new Giaidau();
         $this->eligibility ??= new Tucachthamgia();
+        $this->teams ??= new Doibong();
     }
 
     public function overview(int $accountId, array $filters = []): array
@@ -67,6 +70,12 @@ final class OrganizerHigherEligibilityService
             return $this->failure('Khong tim thay doi vo dich phu hop de xet tu cach.', 404);
         }
 
+        $reviewErrors = $this->reviewErrors($payload, (int) $candidate['iddoibong']);
+
+        if ($reviewErrors !== []) {
+            return $this->failure('Can xem xet day du HLV va VDV truoc khi danh dau du dieu kien.', 422, $reviewErrors);
+        }
+
         try {
             $proposalId = $this->eligibility->markEligible($candidate, $accountId, $note);
 
@@ -79,6 +88,48 @@ final class OrganizerHigherEligibilityService
         } catch (Throwable) {
             return $this->failure('Khong the danh dau tu cach tham gia.', 500);
         }
+    }
+
+    public function reviewProfile(array $payload, int $accountId): array
+    {
+        $organizer = $this->activeOrganizer($accountId);
+
+        if (isset($organizer['ok']) && $organizer['ok'] === false) {
+            return $organizer;
+        }
+
+        [$achievementId, $targetTournamentId, , $errors] = $this->candidatePayload($payload);
+
+        if ($errors !== []) {
+            return $this->failure('Du lieu xem xet doi bong khong hop le.', 422, $errors);
+        }
+
+        $candidate = $this->eligibility->candidate($achievementId, $targetTournamentId, (int) $organizer['idbantochuc']);
+
+        if ($candidate === null) {
+            return $this->failure('Khong tim thay doi vo dich phu hop de xet tu cach.', 404);
+        }
+
+        $profile = $this->teams->teamProfileForHigherEligibility((int) $candidate['iddoibong']);
+
+        if ($profile === null) {
+            return $this->failure('Khong tim thay ho so doi bong.', 404);
+        }
+
+        $profile['idgiaidau'] = (int) $candidate['idgiaidau_nguon'];
+        $profile['tengiaidau'] = (string) $candidate['tengiaidau_nguon'];
+        $profile['trangthaidangky'] = 'THANH_TICH';
+        $profile['members'] = $this->teams->membersForTeam((int) $candidate['iddoibong']);
+
+        return [
+            'ok' => true,
+            'status' => 200,
+            'message' => 'Lay ho so doi bong de xem xet thanh cong.',
+            'data' => [
+                'candidate' => $candidate,
+                'profile' => $profile,
+            ],
+        ];
     }
 
     public function nominate(int $proposalId, array $payload, int $accountId): array
@@ -102,7 +153,7 @@ final class OrganizerHigherEligibilityService
             );
 
             if (!$updated) {
-                return $this->failure('Chi duoc de cu doi da duoc danh dau du dieu kien.', 409);
+                return $this->failure('Chi duoc de cu doi da duoc danh dau du dieu kien len dung 1 cap cao hon.', 409);
             }
 
             return [
@@ -123,6 +174,21 @@ final class OrganizerHigherEligibilityService
     public function reject(int $proposalId, array $payload, int $accountId): array
     {
         return $this->decide($proposalId, $payload, $accountId, false);
+    }
+
+    public function authorize(int $accountId): array
+    {
+        $organizer = $this->activeOrganizer($accountId);
+
+        if (isset($organizer['ok']) && $organizer['ok'] === false) {
+            return $organizer;
+        }
+
+        return [
+            'ok' => true,
+            'status' => 200,
+            'message' => 'Ban to chuc duoc phep xet tu cach cap tren.',
+        ];
     }
 
     private function decide(int $proposalId, array $payload, int $accountId, bool $approved): array
@@ -155,7 +221,7 @@ final class OrganizerHigherEligibilityService
             );
 
             if (!$updated) {
-                return $this->failure('Chi duoc xu ly de cu dang cho xac nhan va thuoc quyen BTC hien tai.', 409);
+                return $this->failure('Chi duoc xu ly de cu dang cho xac nhan, thuoc quyen BTC hien tai va len dung 1 cap cao hon.', 409);
             }
 
             return [
@@ -182,14 +248,68 @@ final class OrganizerHigherEligibilityService
             return $this->failure('Ban to chuc khong o trang thai hoat dong.', 403);
         }
 
+        if (
+            (string) ($organizer['trangthai_donvi'] ?? '') !== 'HOAT_DONG'
+            || (string) ($organizer['trangthai_loaidonvi'] ?? '') !== 'HOAT_DONG'
+            || (int) ($organizer['duoc_to_chuc_giai'] ?? 0) !== 1
+        ) {
+            return $this->failure('Don vi cua ban to chuc khong co tham quyen xet doi thang de cu len cap tren.', 403);
+        }
+
         return $organizer;
     }
 
     private function filters(array $filters): array
     {
+        $sourceTournamentId = trim((string) ($filters['source_tournament_id'] ?? ''));
+        $achievement = strtoupper(trim((string) ($filters['achievement'] ?? '')));
+
         return [
             'q' => trim((string) ($filters['q'] ?? '')),
+            'source_tournament_id' => ctype_digit($sourceTournamentId) && (int) $sourceTournamentId > 0
+                ? (int) $sourceTournamentId
+                : '',
+            'achievement' => in_array($achievement, ['VO_DICH'], true) ? $achievement : '',
         ];
+    }
+
+    private function reviewErrors(array $payload, int $teamId): array
+    {
+        $errors = [];
+        $coachReviewed = filter_var(
+            $payload['reviewed_coach'] ?? $payload['hlv_da_xet'] ?? false,
+            FILTER_VALIDATE_BOOLEAN
+        );
+
+        if (!$coachReviewed) {
+            $errors['reviewed_coach'] = 'Can xac nhan HLV du dieu kien.';
+        }
+
+        $reviewedMemberIds = array_values(array_unique(array_filter(array_map(
+            static fn (mixed $value): int => ctype_digit((string) $value) ? (int) $value : 0,
+            is_array($payload['reviewed_member_ids'] ?? null) ? $payload['reviewed_member_ids'] : []
+        ))));
+
+        $requiredMemberIds = array_values(array_map(
+            static fn (array $member): int => (int) $member['idthanhvien'],
+            array_filter(
+                $this->teams->membersForTeam($teamId),
+                static fn (array $member): bool => (string) ($member['trangthaithanhvien'] ?? '') === 'DANG_THAM_GIA'
+            )
+        ));
+
+        if ($requiredMemberIds === []) {
+            $errors['reviewed_member_ids'] = 'Doi bong chua co VDV dang tham gia de xet.';
+            return $errors;
+        }
+
+        $missingMemberIds = array_diff($requiredMemberIds, $reviewedMemberIds);
+
+        if ($missingMemberIds !== []) {
+            $errors['reviewed_member_ids'] = 'Can xac nhan tat ca VDV dang tham gia cua doi.';
+        }
+
+        return $errors;
     }
 
     private function candidatePayload(array $payload): array

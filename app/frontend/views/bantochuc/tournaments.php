@@ -93,13 +93,13 @@
             </div>
 
             <div>
-                <label for="m_start">Ngày bắt đầu</label>
-                <input id="m_start" type="date" />
+                <label for="m_start">Thời gian bắt đầu</label>
+                <input id="m_start" type="datetime-local" step="60" />
             </div>
 
             <div>
-                <label for="m_end">Ngày kết thúc</label>
-                <input id="m_end" type="date" />
+                <label for="m_end">Thời gian kết thúc</label>
+                <input id="m_end" type="datetime-local" step="60" />
             </div>
 
             <div>
@@ -188,13 +188,13 @@
                 <input id="m_fee" type="number" min="0" step="1000" value="0" placeholder="VD: 500000" />
             </div>
 
-            <div>
+            <div class="eligibility-achievement-source">
                 <label for="m_achievement_level">Cấp giải nguồn của thành tích</label>
                 <select id="m_achievement_level"></select>
                 <p id="m_eligibility_hint" class="field-hint">Cấp đội tham gia được suy ra tự động từ cấp giải hiện tại và cấp giải nguồn thành tích.</p>
             </div>
 
-            <div>
+            <div class="eligibility-achievements">
                 <label>Thành tích trong giải được phép</label>
                 <div class="achievement-options">
                     <label class="checkbox-field"><input type="checkbox" name="m_achievement_requirement" value="VO_DICH" /> Vô địch</label>

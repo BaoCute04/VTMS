@@ -213,7 +213,8 @@
 }
 
 .assignment-modal.hidden,
-.assignments-alert.hidden {
+.assignments-alert.hidden,
+.match-result.hidden {
     display: none;
 }
 
@@ -256,6 +257,68 @@
     margin: 6px 0 10px;
     color: var(--muted);
     font-size: 12.5px;
+}
+
+.match-result-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 10px;
+    padding: 14px;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    background: #f0fdf4;
+}
+
+.match-result-score div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.match-result-score span {
+    overflow-wrap: anywhere;
+    font-weight: 700;
+}
+
+.match-result-score strong {
+    min-width: 42px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: #16a34a;
+    color: #fff;
+    font-size: 20px;
+    line-height: 1;
+    text-align: center;
+}
+
+.match-result-score b {
+    color: #166534;
+    font-size: 20px;
+}
+
+.match-result-empty {
+    margin: 0;
+    color: #166534;
+}
+
+.match-result-sets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.match-result-sets span {
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 12.5px;
+    font-weight: 700;
 }
 
 .icon {
@@ -324,5 +387,10 @@
 @media (max-width: 900px) {
     .assignments-grid {
         grid-template-columns: 1fr;
+    }
+
+    .match-result-score,
+    .match-result-score div {
+        flex-direction: column;
     }
 }

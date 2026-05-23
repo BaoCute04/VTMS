@@ -32,7 +32,7 @@
 
     const tournamentRegistrationStatusText = {
         CHO_DUYET: "đang chờ duyệt",
-        DA_DUYET: "đã đăng ký tham gia",
+        DA_DUYET: "đã đăng ký",
         DA_KET_THUC: "đã kết thúc",
         DA_HUY: "rời giải đấu",
         TU_CHOI: "từ chối",
@@ -71,7 +71,7 @@
 
     function render() {
         if (tournaments.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty">Không có giải đấu đang mở đăng ký.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="empty">Không có giải đang mở đăng ký hoặc hồ sơ giải đấu đã gửi.</td></tr>';
             return;
         }
 
