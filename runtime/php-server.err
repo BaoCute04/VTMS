@@ -1,0 +1,110 @@
+[Sun May 31 11:18:03 2026] PHP 8.0.30 Development Server (http://127.0.0.1:8000) started
+[Sun May 31 11:18:20 2026] 127.0.0.1:56174 Accepted
+[Sun May 31 11:18:20 2026] 127.0.0.1:56174 Closing
+[Sun May 31 11:19:06 2026] 127.0.0.1:65367 Accepted
+[Sun May 31 11:19:06 2026] 127.0.0.1:65367 Closing
+[Sun May 31 11:19:35 2026] 127.0.0.1:62653 Accepted
+[Sun May 31 11:19:35 2026] 127.0.0.1:62653 Closing
+[Sun May 31 11:21:29 2026] 127.0.0.1:50061 Accepted
+[Sun May 31 11:21:29 2026] 127.0.0.1:50061 Closing
+[Sun May 31 11:21:55 2026] 127.0.0.1:50063 Accepted
+[Sun May 31 11:21:55 2026] 127.0.0.1:50063 Closing
+[Sun May 31 11:21:55 2026] 127.0.0.1:50065 Accepted
+[Sun May 31 11:21:55 2026] 127.0.0.1:50065 [200]: GET /assets/css/hethong-ungdung.css
+[Sun May 31 11:21:55 2026] 127.0.0.1:50065 Closing
+[Sun May 31 11:21:56 2026] 127.0.0.1:50066 Accepted
+[Sun May 31 11:21:56 2026] 127.0.0.1:50066 Closing
+[Sun May 31 11:21:59 2026] 127.0.0.1:50068 Accepted
+[Sun May 31 11:21:59 2026] 127.0.0.1:50068 Closing
+[Sun May 31 11:22:00 2026] 127.0.0.1:50070 Accepted
+[Sun May 31 11:22:00 2026] 127.0.0.1:50071 Accepted
+[Sun May 31 11:22:00 2026] 127.0.0.1:50070 [200]: GET /assets/js/congkhai-dangnhap.js
+[Sun May 31 11:22:00 2026] 127.0.0.1:50071 [200]: GET /assets/css/congkhai-dangnhap.css
+[Sun May 31 11:22:00 2026] 127.0.0.1:50070 Closing
+[Sun May 31 11:22:00 2026] 127.0.0.1:50071 Closing
+[Sun May 31 11:22:20 2026] 127.0.0.1:56860 Accepted
+[Sun May 31 11:22:20 2026] 127.0.0.1:56860 Closing
+[Sun May 31 11:22:20 2026] 127.0.0.1:56862 Accepted
+[Sun May 31 11:22:20 2026] 127.0.0.1:56862 Closing
+[Sun May 31 11:22:21 2026] 127.0.0.1:56864 Accepted
+[Sun May 31 11:22:21 2026] 127.0.0.1:56864 [200]: GET /assets/css/hethong-tuybiengiaodien.css
+[Sun May 31 11:22:21 2026] 127.0.0.1:56864 Closing
+[Sun May 31 11:22:21 2026] 127.0.0.1:56865 Accepted
+[Sun May 31 11:22:21 2026] 127.0.0.1:56865 [200]: GET /assets/js/hethong-khungungdung.js
+[Sun May 31 11:22:21 2026] 127.0.0.1:56866 Accepted
+[Sun May 31 11:22:21 2026] 127.0.0.1:56866 [200]: GET /assets/css/hethong-ungdung.css
+[Sun May 31 11:22:21 2026] 127.0.0.1:56865 Closing
+[Sun May 31 11:22:21 2026] 127.0.0.1:56866 Closing
+[Sun May 31 11:22:21 2026] 127.0.0.1:56867 Accepted
+[Sun May 31 11:22:21 2026] 127.0.0.1:56867 [200]: GET /assets/js/hethong-ngonngu.js
+[Sun May 31 11:22:21 2026] 127.0.0.1:56867 Closing
+[Sun May 31 11:23:06 2026] 127.0.0.1:59340 Accepted
+[Sun May 31 11:23:06 2026] 127.0.0.1:59340 Closing
+[Sun May 31 11:23:07 2026] 127.0.0.1:59342 Accepted
+[Sun May 31 11:23:07 2026] 127.0.0.1:59343 Accepted
+[Sun May 31 11:23:07 2026] 127.0.0.1:59344 Accepted
+[Sun May 31 11:23:07 2026] 127.0.0.1:59345 Accepted
+[Sun May 31 11:23:07 2026] 127.0.0.1:59345 [200]: GET /assets/js/hethong-khungungdung.js
+[Sun May 31 11:23:07 2026] 127.0.0.1:59342 [200]: GET /assets/css/hethong-tuybiengiaodien.css
+[Sun May 31 11:23:07 2026] 127.0.0.1:59343 [200]: GET /assets/css/hethong-ungdung.css
+[Sun May 31 11:23:07 2026] 127.0.0.1:59344 [200]: GET /assets/js/hethong-ngonngu.js
+[Sun May 31 11:23:07 2026] 127.0.0.1:59346 Accepted
+[Sun May 31 11:23:07 2026] 127.0.0.1:59347 Accepted
+[Sun May 31 11:23:07 2026] 127.0.0.1:59346 [200]: GET /assets/css/quantri-taikhoan.css
+[Sun May 31 11:23:07 2026] 127.0.0.1:59345 Closing
+[Sun May 31 11:23:07 2026] 127.0.0.1:59347 [200]: GET /assets/js/quantri-taikhoan.js
+[Sun May 31 11:23:07 2026] 127.0.0.1:59342 Closing
+[Sun May 31 11:23:07 2026] 127.0.0.1:59343 Closing
+[Sun May 31 11:23:07 2026] 127.0.0.1:59344 Closing
+[Sun May 31 11:23:07 2026] 127.0.0.1:59346 Closing
+[Sun May 31 11:23:07 2026] 127.0.0.1:59347 Closing
+[Sun May 31 11:23:07 2026] 127.0.0.1:59348 Accepted
+[Sun May 31 11:23:07 2026] 127.0.0.1:59348 Closing
+[Sun May 31 11:23:08 2026] 127.0.0.1:59350 Accepted
+[Sun May 31 11:23:08 2026] 127.0.0.1:59350 Closing
+[Sun May 31 11:23:11 2026] 127.0.0.1:59352 Accepted
+[Sun May 31 11:23:11 2026] 127.0.0.1:59352 Closing
+[Sun May 31 11:23:11 2026] 127.0.0.1:59354 Accepted
+[Sun May 31 11:23:11 2026] 127.0.0.1:59354 [200]: GET /assets/css/hethong-ungdung.css
+[Sun May 31 11:23:11 2026] 127.0.0.1:59355 Accepted
+[Sun May 31 11:23:11 2026] 127.0.0.1:59354 Closing
+[Sun May 31 11:23:11 2026] 127.0.0.1:59355 [200]: GET /assets/css/quantri-quanlynguoidung.css
+[Sun May 31 11:23:11 2026] 127.0.0.1:59355 Closing
+[Sun May 31 11:23:11 2026] 127.0.0.1:59356 Accepted
+[Sun May 31 11:23:11 2026] 127.0.0.1:59356 [200]: GET /assets/js/hethong-khungungdung.js
+[Sun May 31 11:23:11 2026] 127.0.0.1:59357 Accepted
+[Sun May 31 11:23:11 2026] 127.0.0.1:59358 Accepted
+[Sun May 31 11:23:11 2026] 127.0.0.1:59357 [200]: GET /assets/js/hethong-ngonngu.js
+[Sun May 31 11:23:11 2026] 127.0.0.1:59359 Accepted
+[Sun May 31 11:23:11 2026] 127.0.0.1:59358 [200]: GET /assets/js/quantri-quanlynguoidung.js
+[Sun May 31 11:23:11 2026] 127.0.0.1:59356 Closing
+[Sun May 31 11:23:11 2026] 127.0.0.1:59359 [200]: GET /assets/css/hethong-tuybiengiaodien.css
+[Sun May 31 11:23:11 2026] 127.0.0.1:59357 Closing
+[Sun May 31 11:23:11 2026] 127.0.0.1:59358 Closing
+[Sun May 31 11:23:11 2026] 127.0.0.1:59359 Closing
+[Sun May 31 11:23:12 2026] 127.0.0.1:59360 Accepted
+[Sun May 31 11:23:12 2026] 127.0.0.1:59360 Closing
+[Sun May 31 11:23:15 2026] 127.0.0.1:59362 Accepted
+[Sun May 31 11:23:15 2026] 127.0.0.1:59362 Closing
+[Sun May 31 11:23:15 2026] 127.0.0.1:59364 Accepted
+[Sun May 31 11:23:15 2026] 127.0.0.1:59365 Accepted
+[Sun May 31 11:23:15 2026] 127.0.0.1:59366 Accepted
+[Sun May 31 11:23:15 2026] 127.0.0.1:59367 Accepted
+[Sun May 31 11:23:15 2026] 127.0.0.1:59365 [200]: GET /assets/css/hethong-tuybiengiaodien.css
+[Sun May 31 11:23:15 2026] 127.0.0.1:59366 [200]: GET /assets/js/quantri-nhatkyhethong.js
+[Sun May 31 11:23:15 2026] 127.0.0.1:59368 Accepted
+[Sun May 31 11:23:15 2026] 127.0.0.1:59364 [200]: GET /assets/css/quantri-nhatkyhethong.css
+[Sun May 31 11:23:15 2026] 127.0.0.1:59367 [200]: GET /assets/js/hethong-ngonngu.js
+[Sun May 31 11:23:15 2026] 127.0.0.1:59369 Accepted
+[Sun May 31 11:23:15 2026] 127.0.0.1:59368 [200]: GET /assets/css/hethong-ungdung.css
+[Sun May 31 11:23:15 2026] 127.0.0.1:59369 [200]: GET /assets/js/hethong-khungungdung.js
+[Sun May 31 11:23:15 2026] 127.0.0.1:59365 Closing
+[Sun May 31 11:23:15 2026] 127.0.0.1:59366 Closing
+[Sun May 31 11:23:15 2026] 127.0.0.1:59364 Closing
+[Sun May 31 11:23:15 2026] 127.0.0.1:59367 Closing
+[Sun May 31 11:23:15 2026] 127.0.0.1:59368 Closing
+[Sun May 31 11:23:15 2026] 127.0.0.1:59369 Closing
+[Sun May 31 11:23:16 2026] 127.0.0.1:59370 Accepted
+[Sun May 31 11:23:16 2026] 127.0.0.1:59370 Closing
+[Sun May 31 11:23:16 2026] 127.0.0.1:59372 Accepted
+[Sun May 31 11:23:16 2026] 127.0.0.1:59372 Closing

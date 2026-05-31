@@ -28,7 +28,7 @@ C:\xampp\php\php.exe -S localhost:8000 -t public public/server.php
 Mo trinh duyet tai:
 
 ```text
-http://localhost:8000
+https://localhost:8000
 ```
 
 ## Tai khoan mau
