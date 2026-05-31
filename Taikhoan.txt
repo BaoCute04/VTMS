@@ -1,10 +1,83 @@
-Phường	BTC tổ chức giải	HLV đội TDTT	HLV đội tư nhân
-Phường Sài Gòn	btc_phuong_saigon	hlv_tt_tdtt_saigon	hlv_tunhan_saigon
-Phường Bến Thành	btc_ben_thanh	hlv_tdtt_benthanh_01	hlv_tu_nhan_benthanh
-Phường Hoàn Kiếm	btc_hoan_kiem	hlv_tdtt_hoankiem_01	hlv_tu_nhan_hoankiem
+I) Kiêm tra logic: 
+- Mỗi năm được tính là 1 mùa, loại giai chính thức ơ tất ca các cấp (quốc gia, tinh thành, phường xã) mỗi năm chi được tô chức 1 lần
+- khu vực nào thì chi thi đấu trong khu vực đó.
+- trọng tài khu vực nào thì giám sát các trận đấu ơ khu vực đó.
+- trận đấu ơ khu vực nào thì chi được phép tô chức tại sân đấu trong khu vực đó.
+- mỗi đội hình có ít nhất 6 vđv với 6 vị trí trong đội hình, tất ca đều là nam
+- bô sung các khu vực: Việt Nam(cấp quốc gia); Hà Nội, Đà Nẵng, Hồ Chí Minh (Cấp tinh thành); Phường Sài Gòn, Phường Bình Dương, Phường Vũng Tàu (Cấp phường xã, tất ca đều là cấp con cua cấp tinh thành Hồ Chí Minh).
+II) Tạo script bô sung cho tôi các dữ liệu sau: 
+- Chú thích chi là hiêu ngữ nghĩa xem nó thuộc khu vực nào, còn dữ liệu thực tế thì theo cài đặt cách hiêu cua csdl.
+1, Dữ liệu tài khoan quocgia: 
+- 1 tài khoan btc cấp quốc gia (btc_quocgia)
+- 2 tài khoan hlv cấp quốc gia (hlv_quocgia_01, hlv_quocgia_02)
+- 12 tài khoan vdv cấp quốc gia (vdv_quocgia_01 -> 12), có 6 vị trí thì chia đều mỗi 6 vdv theo thứ tự sẽ có đu 6 vị trí (1-6,7-12). 
+- Huấn luyện viên hlv_quocgia_01 quan lý đội bóng có tên doi_quocgia_01 với đội hình từ vdv 01 -> 06. Huấn luyện viên hlv_quocgia_02 quan lý đội bóng có tên doi_quocgia_02 với đội hình từ vdv 07 -> 12. 
+- Tất ca tài khoan đều thuộc đơn vị "liên đoàn bóng chuyền quốc gia".
 
-Trọng tài cấp phường/xã - mật khẩu `hashed_ref`
-Phường	Tài khoản trọng tài
-Phường Sài Gòn	ref_phuong_saigon_01, ref_phuong_saigon_02, ref_phuong_saigon_03
-Phường Bến Thành	ref_phuong_benthanh_01, ref_phuong_benthanh_02, ref_phuong_benthanh_03
-Phường Hoàn Kiếm	ref_phuong_hoankiem_01, ref_phuong_hoankiem_02, ref_phuong_hoankiem_03
+2, dữ liệu tài khoan tinh thành: 
+*** chú thích Tất ca tai khoan: hn - khu vực 'Hà Nội'; dn - khu vực 'Đà Nẵng'; hcm - khu vực 'Hồ Chí Minh'.
+- 3 tài khoan btc cấp tinh thành (btc_hn, btc_hcm, btc_dn).
+- 6 tài khoan hlv cấp tinh thành (hlv_hn_01, hlv_hn_02, hlv_hcm_01, hlv_hcm_02, hlv_dn_01, hlv_dn_02)
+- 36 tài khoan vdv cấp tinh thành (vdv_tinh_01 -> 36), có 6 vị trí thì chia đều mỗi 6 vdv theo thứ tự sẽ có đu 6 vị trí (1-6,7-12,13-18,19-24,25-30,31-36). 
+- Huấn luyện viên hlv_hn_01 quan lý đội bóng có tên doi_hn_01 với đội hình từ vdv 01 -> 06. Huấn luyện viên hlv_hn_02 quan lý đội bóng có tên doi_hn_02 với đội hình từ vdv 07 -> 12. 
+- Huấn luyện viên hlv_dn_01 quan lý đội bóng có tên doi_dn_01 với đội hình từ vdv 13 -> 18. Huấn luyện viên hlv_dn_02 quan lý đội bóng có tên doi_dn_02 với đội hình từ vdv 19 -> 24. 
+- Huấn luyện viên hlv_hcm_01 quan lý đội bóng có tên doi_hcm_01 với đội hình từ vdv 25 -> 30. Huấn luyện viên hlv_hcm_02 quan lý đội bóng có tên doi_hcm_02 với đội hình từ vdv 31 -> 36. 
+- tai khoan btc_hn thuộc đơn vị "sơ VH-TT tinh Ha Noi".
+- tai khoan hlv_hn_01, hlv_hn_02, vdv_tinh_01 -> 12 thuộc đơn bị "trung tam tdtt tinh Ha Noi".
+- tai khoan btc_dn thuộc đơn vị "sơ VH-TT tinh Da Nang".
+- tai khoan hlv_dn_01, hlv_dn_02, vdv_tinh_13 -> 24 thuộc đơn bị "trung tam tdtt tinh Da Nang".
+- tai khoan btc_hcm thuộc đơn vị "sơ VH-TT thanh pho Ho Chi Minh".
+- tai khoan hlv_hcm_01, hlv_hcm_02, vdv_tinh_25 -> 36 thuộc đơn bị "trung tam tdtt tinh Ho Chi Minh"
+
+3, Dữ liệu tài khoan phường xã:
+*** chú thích Tất ca tai khoan: binhduong - khu vực 'Phường Bình Dương'; vungtau - khu vực 'Phường Vũng Tàu'; saigon - khu vực 'Phường Sài Gòn'
+- 2 tai khoan btc cấp phường xã (btc_phuong_binhduong_01, btc_phuong_vungtau_01).
+- 2 tai khoan hlv cấp phường xã (hlv_phuong_binhduong_01, hlv_phuong_vungtau_01).
+- 2 tai khoan hlv tư nhân (hlv_tunhan_binhduong_01, hlv_tunhan_vungtau_01).
+- 24 tài khoan vdv (vdv_phuong_01 -> 24), có 6 vị trí thì chia đều mỗi 6 vdv theo thứ tự sẽ có đu 6 vị trí (1-6,7-12,13-18,19-24)
+- Huấn luyện viên hlv_phuong_binhduong_01 quan lý đội bóng có tên doi_phuong_binhduong_01 với đội hình từ vdv 01 -> 06. Huấn luyện viên hlv_phuong_vungtau_01 quan lý đội bóng có tên doi_phuong_vungtau_01 với đội hình từ vdv 07 -> 12. 
+- Huấn luyện viên hlv_tunhan_binhduong_01 quan lý đội bóng có tên doi_tunhan_binhduong_01 với đội hình từ vdv 13 -> 18. Huấn luyện viên hlv_tunhan_vungtau_01 quan lý đội bóng có tên doi_tunhan_vungtau_01 với đội hình từ vdv 19 -> 24. 
+- tài khoan btc_phuong_binhduong_01 thuộc đơn vị "trung tam vh-tt Phường Bình Dương".
+- tài khoan hlv_phuong_binhduong_01, vdv_phuong_01 -> 06 thuộc đơn vị "trung tam tdtt Phường Bình Dương".
+- tài khoan btc_phuong_vungtau_01 thuộc đơn vị "trung tam vh-tt Phường Vũng Tàu".
+- tài khoan hlv_phuong_vungtau_01, vdv_phuong_07 -> 12 thuộc đơn vị "trung tam tdtt Phường Vũng Tàu".
+- tai khoan hlv_tunhan_binhduong_01, vdv_phuong_13 -> 18 thuộc đơn vị "tư nhân Bình Dương 01"
+- tai khoan hlv_tunhan_vungtau_01, vdv_phuong_19 -> 24 thuộc đơn vị "tư nhân Bình Dương 01"
+
+4, Dữ liệu tài khoan trọng tài
+*** chú thích: sư dụng chú thích từ đầu tới bây giờ; tất ca tài khoan tt: 01,04,07 - tọng tài chính; 02,05,08 - tọng tài phụ; 03,06,09 - giám sát).
+- 3 tài khoan trọng tài cấp quốc gia: tt_quocgia_01 -> 03; thuộc đơn vị "liên đoàn bóng chuyền Việt Nam"
+- 9 tài khoan trọng tài cấp tinh: tt_hn_01 -> 03; tt_dn_01 -> 03; tt_hcm_01 -> 03. 
++ tt_hn_01 -> 03 thuộc đơn vị "sơ vh-tt Hà Nội"
++ tt_dn_01 -> 03 thuộc đơn vị "sơ vh-tt Đà Nẵng"
++ tt_hcm_01 -> 03 thuộc đơn vị "sơ vh-tt Hồ Chí Minh"
+- 12 tài khoan trọng tài cấp phường xã: tt_phuong_binhduong_01 -> 06,  tt_phuong_vungtau_01 -> 06. 
++ tt_phuong_binhduong_01 -> 06 thuộc đơn vị "trung tam vh-tt Phường Bình Dương"
++ tt_phuong_vungtau_01 -> 06 thuộc đơn vị "trung tam vh-tt Phường Vũng Tàu"
+
+5, Dữ liệu sân đấu
+*** chú thích: nhớ lưu ý phân cấp khu vực, bô sung các khu vực chưa có vào csdl.
+- sân 1: "sân số 1 liên đoàn bóng chuyền Việt Nam" nằm tại khu vực "Mỹ Đình, Hà Nội, Việt Nam" cấp sân quốc gia
+- sân 2: "sân số 2 liên đoàn bóng chuyền Việt Nam" nằm tại khu vực "Mỹ Đình, Hà Nội, Việt Nam" cấp sân quốc gia
+- sân 3: "sân số 1 trung tâm tdtt Hà Nội" nằm tại khu vực "Đống Đa, Hà Nội, Việt Nam" cấp sân tinh thành
+- sân 4: "sân số 2 trung tâm tdtt Hà Nội" nằm tại khu vực "Đống Đa, Hà Nội, Việt Nam" cấp sân tinh thành
+- sân 5: "sân số 1 trung tâm tdtt Đà Nẵng" nằm tại khu vực "kv1, Đà Nẵng, Việt Nam" cấp sân tinh thành
+- sân 6: "sân số 2 trung tâm tdtt Đà Nẵng" nằm tại khu vực "kv1, Đà Nẵng, Việt Nam" cấp sân tinh thành
+- sân 7: "sân số 1 trung tâm tdtt Hồ Chí Minh" nằm tại khu vực "Phường Sài Gòn, Hồ Chí Minh, Việt Nam" cấp sân tinh thành
+- sân 8: "sân số 2 trung tâm tdtt Hồ Chí Minh" nằm tại khu vực "Phường Sài Gòn, Hồ Chí Minh, Việt Nam" cấp sân tinh thành
+- sân 9: "sân số 1 trung tâm tdtt Phường Sài Gòn" nằm tại khu vực "Phường Sài Gòn, Hồ Chí Minh, Việt Nam" cấp sân phường xã
+- sân 10: "sân số 2 trung tâm tdtt Phường Sài Gòn" nằm tại khu vực "Phường Sài Gòn, Hồ Chí Minh, Việt Nam" cấp sân phường xã
+- sân 11: "sân số 1 trung tâm tdtt Phường Bình Dương" nằm tại khu vực "Phường Bình Dương, Hồ Chí Minh, Việt Nam" cấp sân phường xã
+- sân 12: "sân số 2 trung tâm tdtt Phường Bình Dương" nằm tại khu vực "Phường Bình Dương, Hồ Chí Minh, Việt Nam" cấp sân phường xã
+- sân 13: "sân số 1 trung tâm tdtt Phường Vũng Tàu" nằm tại khu vực "Phường Vũng Tàu, Hồ Chí Minh, Việt Nam" cấp sân phường xã
+- sân 14: "sân số 2 trung tâm tdtt Phường Vũng Tàu" nằm tại khu vực "Phường Vũng Tàu, Hồ Chí Minh, Việt Nam" cấp sân phường xã
+
+
+
+
+
+
+
+
+nếu đã tồn tại bang đấu, trận đấu trong giai đấu, thì khi sưa thông tin ngày giờ bắt đầu kết thúc cua giai đấu, phai lưu ý thời gian cua bang đấu và trận đấu, thời gian bắt đầu cua giai luôn sớm hơn thời gian bắt đầu cua tất ca trận đấu ca khi sưa thời gian cua trận đấu hay là giai đấu. Thời gian kết thúc giai muộn hơn hoặc bằng thời gian kết thúc trận đấu cuối cùng, Trong lúc tạo giai đấu không cần phai nhập thời gian kết thúc, khi trận đấu cuối cùng kết thúc, nếu chưa có thời gian kết thúc giai thì nó sẽ tự động ghi thời gian kết thúc giai = thời gian kết thúc trận đấu cuối cùng.
+

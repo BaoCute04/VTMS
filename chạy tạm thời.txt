@@ -1,0 +1,14 @@
+cd d:\Tai_Lieu_IUH\Tailieu_Nam4_HK2\CongNgheMoi\VTMS\VTMS
+
+Chạy php server
+Start-Process -FilePath "C:\xampp\php\php.exe" `
+  -ArgumentList @("-S","127.0.0.1:8000","-t","public","public/server.php") `
+  -WorkingDirectory (Get-Location) `
+  -WindowStyle Hidden
+
+Chạy Cloudflare Tunnel
+.\tools\cloudflared.exe tunnel --url http://127.0.0.1:8000 --no-autoupdate
+
+Lấy URL đổi, sửa .env
+
+Dừng: Stop-Process -Name php, cloudflared -Force
